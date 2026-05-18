@@ -1,0 +1,731 @@
+
+// ============================================================
+// File: \backend-core\domain\pom.xml
+// ============================================================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.smartmatch</groupId>
+        <artifactId>backend-core</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>domain</artifactId>
+    <packaging>jar</packaging>
+
+    <name>SmartMatch Domain</name>
+    <description>Entities, Value Objects, Repository Ports, Business Rules</description>
+
+    <dependencies>
+        <!-- JPA API (chỉ annotations) - quan trọng nhất để fix lỗi hiện tại -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+
+        <!-- Validation -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>21</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\admin\model\SystemLog.java
+// ============================================================
+
+package com.smartmatch.domain.admin.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "system_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SystemLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "action", nullable = false)
+    private String action;
+
+    @Column(name = "details", columnDefinition = "TEXT")
+    private String details;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\admin\repository\SystemLogRepository.java
+// ============================================================
+
+package com.smartmatch.domain.admin.repository;
+
+import com.smartmatch.domain.admin.model.SystemLog;
+import java.util.List;
+
+public interface SystemLogRepository {
+    SystemLog save(SystemLog systemLog);
+    List<SystemLog> findAll();
+    List<SystemLog> findByUserId(Long userId);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\model\AiMatchScore.java
+// ============================================================
+
+package com.smartmatch.domain.application.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "ai_match_scores")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AiMatchScore {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "application_id", nullable = false, unique = true)
+    private Long applicationId;
+
+    @Column(name = "confidence_score", nullable = false)
+    private Float confidenceScore;
+
+    @Column(name = "analysis_details", columnDefinition = "TEXT")
+    private String analysisDetails;
+
+    @Column(name = "evaluated_at", nullable = false)
+    private LocalDateTime evaluatedAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\model\Application.java
+// ============================================================
+
+package com.smartmatch.domain.application.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "applications")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Application {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "job_id", nullable = false)
+    private Long jobId;
+
+    @Column(name = "cv_id", nullable = false)
+    private Long cvId;
+
+    @Column(name = "candidate_id", nullable = false)
+    private Long candidateId;
+
+    @Column(name = "cover_letter", columnDefinition = "TEXT")
+    private String coverLetter;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ApplicationStatus status;
+
+    @Column(name = "applied_at", nullable = false, updatable = false)
+    private LocalDateTime appliedAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\model\ApplicationStatus.java
+// ============================================================
+
+package com.smartmatch.domain.application.model;
+
+public enum ApplicationStatus {
+    PENDING,
+    REVIEWED,
+    ACCEPTED,
+    REJECTED
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\repository\AiMatchScoreRepository.java
+// ============================================================
+
+package com.smartmatch.domain.application.repository;
+
+import com.smartmatch.domain.application.model.AiMatchScore;
+import java.util.Optional;
+
+public interface AiMatchScoreRepository {
+    AiMatchScore save(AiMatchScore aiMatchScore);
+    Optional<AiMatchScore> findByApplicationId(Long applicationId);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\repository\ApplicationRepository.java
+// ============================================================
+
+package com.smartmatch.domain.application.repository;
+
+import com.smartmatch.domain.application.model.Application;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+public interface ApplicationRepository {
+    Application save(Application application);
+    Optional<Application> findById(Long id);
+    List<Application> findByJobId(Long jobId);
+    List<Application> findByCvId(Long cvId);
+    Page<Application> findByJobId(Long jobId, Pageable pageable);
+    Page<Application> findByCandidateId(Long candidateId, Pageable pageable);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\auth\model\Role.java
+// ============================================================
+
+package com.smartmatch.domain.auth.model;
+
+public enum Role {
+    CANDIDATE,
+    EMPLOYER,
+    ADMIN
+}
+
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\auth\model\User.java
+// ============================================================
+
+package com.smartmatch.domain.auth.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\auth\model\UserStatus.java
+// ============================================================
+
+package com.smartmatch.domain.auth.model;
+
+public enum UserStatus {
+    ACTIVE,
+    INACTIVE,
+    BANNED
+}
+
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\auth\repository\UserRepository.java
+// ============================================================
+
+package com.smartmatch.domain.auth.repository;
+
+import com.smartmatch.domain.auth.model.User;
+import java.util.List;
+import java.util.Optional;
+
+public interface UserRepository {
+    User save(User user);
+    Optional<User> findById(Long id);
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+    List<User> findAll();
+    void deleteById(Long id);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\CandidateProfile.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "candidate_profiles")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CandidateProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
+
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "dob")
+    private LocalDate dob;
+
+    @Column(name = "address")
+    private String address;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\CandidateSkill.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "candidate_skills")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CandidateSkill {
+    @EmbeddedId
+    private CandidateSkillId id;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\CandidateSkillId.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.*;
+import java.io.Serializable;
+
+@Embeddable
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+public class CandidateSkillId implements Serializable {
+    @Column(name = "candidate_id")
+    private Long candidateId;
+
+    @Column(name = "skill_id")
+    private Long skillId;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\CvDocument.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "cv_documents")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CvDocument {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "candidate_id", nullable = false)
+    private Long candidateId;
+
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
+
+    @Column(name = "raw_text", columnDefinition = "LONGTEXT")
+    private String rawText;
+
+    @Column(name = "is_generated", nullable = false)
+    private Boolean isGenerated;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\Skill.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "skills")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Skill {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\repository\CandidateProfileRepository.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.repository;
+
+import com.smartmatch.domain.candidate.model.CandidateProfile;
+import java.util.Optional;
+
+public interface CandidateProfileRepository {
+    CandidateProfile save(CandidateProfile profile);
+    Optional<CandidateProfile> findByUserId(Long userId);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\repository\CandidateSkillRepository.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.repository;
+
+import com.smartmatch.domain.candidate.model.CandidateSkill;
+import java.util.List;
+
+public interface CandidateSkillRepository {
+    CandidateSkill save(CandidateSkill candidateSkill);
+    List<CandidateSkill> findByCandidateId(Long candidateId);
+    void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\repository\CvDocumentRepository.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.repository;
+
+import com.smartmatch.domain.candidate.model.CvDocument;
+import java.util.List;
+import java.util.Optional;
+
+public interface CvDocumentRepository {
+    CvDocument save(CvDocument cvDocument);
+    Optional<CvDocument> findById(Long id);
+    List<CvDocument> findByCandidateId(Long candidateId);
+    void deleteById(Long id);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\repository\SkillRepository.java
+// ============================================================
+
+package com.smartmatch.domain.candidate.repository;
+
+import com.smartmatch.domain.candidate.model.Skill;
+import java.util.List;
+import java.util.Optional;
+
+public interface SkillRepository {
+    Skill save(Skill skill);
+    Optional<Skill> findByName(String name);
+    List<Skill> findAll();
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\model\CompanyProfile.java
+// ============================================================
+
+package com.smartmatch.domain.employer.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "company_profiles")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CompanyProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
+
+    @Column(name = "company_name", nullable = false)
+    private String companyName;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "website")
+    private String website;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false)
+    private VerificationStatus verificationStatus;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\model\VerificationStatus.java
+// ============================================================
+
+package com.smartmatch.domain.employer.model;
+
+public enum VerificationStatus {
+    PENDING,
+    APPROVED,
+    REJECTED
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\repository\CompanyProfileRepository.java
+// ============================================================
+
+package com.smartmatch.domain.employer.repository;
+
+import com.smartmatch.domain.employer.model.CompanyProfile;
+import java.util.Optional;
+
+public interface CompanyProfileRepository {
+    CompanyProfile save(CompanyProfile companyProfile);
+    Optional<CompanyProfile> findByUserId(Long userId);
+    Optional<CompanyProfile> findById(Long id);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
+// ============================================================
+
+// Sửa file: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
+package com.smartmatch.domain.job.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
+
+/**
+ * Thực thể (Entity) đại diện cho Tin tuyển dụng.
+ * Thuộc Bounded Context: Job (Miền Tuyển dụng).
+ * Map với Bảng 3-7: Bảng job_postings trong Data Dictionary.
+ */
+@Entity
+@Table(name = "job_postings")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class JobPosting {
+
+    /**
+     * Khóa chính định danh tin tuyển dụng.
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * Khóa ngoại tham chiếu đến company_profiles(id).
+     */
+    @Column(name = "company_id", nullable = false)
+    private Long companyId;
+
+    /**
+     * Tiêu đề vị trí công việc.
+     */
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    /**
+     * Mô tả chi tiết nhiệm vụ công việc.
+     */
+    @Column(name = "description", columnDefinition = "TEXT", nullable = false)
+    private String description;
+
+    // ... (Thêm comment tương tự cho các trường còn lại)
+
+    /**
+     * Trạng thái tin (PENDING, ACTIVE, CLOSED, REJECTED).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private JobStatus status;
+
+    /**
+     * Ngày giờ đăng tải tin lên hệ thống (Không cho phép update sau khi tạo).
+     */
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * Ngày giờ hết hạn nhận đơn ứng tuyển.
+     */
+    @Column(name = "expired_at")
+    private LocalDateTime expiredAt;
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobStatus.java
+// ============================================================
+
+package com.smartmatch.domain.job.model;
+
+public enum JobStatus {
+    PENDING,
+    ACTIVE,
+    CLOSED,
+    REJECTED
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\repository\JobPostingRepository.java
+// ============================================================
+
+package com.smartmatch.domain.job.repository;
+
+import com.smartmatch.domain.job.model.JobPosting;
+import com.smartmatch.domain.job.model.JobStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface JobPostingRepository {
+    JobPosting save(JobPosting jobPosting);
+    Optional<JobPosting> findById(Long id);
+    List<JobPosting> findAll();
+    void deleteById(Long id);
+    Page<JobPosting> findByCompanyId(Long companyId, Pageable pageable);
+    Page<JobPosting> findByStatus(JobStatus status, Pageable pageable);
+    Page<JobPosting> searchJobs(String keyword, String location, JobStatus status, Pageable pageable);
+    long countByStatus(JobStatus status);
+}

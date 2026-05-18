@@ -1,6 +1,5 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.application.model.JobApplication;
 import com.smartmatch.infrastructure.persistence.jpa.JobApplicationJpaEntity;
 import org.springframework.stereotype.Component;
 

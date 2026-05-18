@@ -1,0 +1,1101 @@
+
+// ============================================================
+// File: \backend-core\application\pom.xml
+// ============================================================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.smartmatch</groupId>
+        <artifactId>backend-core</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>application</artifactId>
+    <packaging>jar</packaging>
+
+    <name>SmartMatch Application</name>
+    <description>Use Cases, Services, DTOs, Mappers</description>
+
+    <dependencies>
+        <!-- Phụ thuộc vào domain -->
+        <dependency>
+            <groupId>com.smartmatch</groupId>
+            <artifactId>domain</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- MapStruct -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+
+        <!-- Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.22</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+</project>
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\DashboardStatsResponse.java
+// ============================================================
+
+package com.smartmatch.application.admin.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class DashboardStatsResponse {
+    private long totalCandidates;
+    private long totalEmployers;
+    private long activeJobs;
+    private long totalApplications;
+    private double successfulMatchRate;
+}
+
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\SystemLogResponse.java
+// ============================================================
+
+package com.smartmatch.application.admin.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Nhật ký hệ thống")
+public class SystemLogResponse {
+
+    @Schema(description = "ID log", example = "1")
+    private Long id;
+
+    @Schema(description = "ID user thực hiện (có thể null nếu là hệ thống/guest)", example = "10")
+    private Long userId;
+
+    @Schema(description = "Hành động", example = "APPROVE_JOB")
+    private String action;
+
+    @Schema(description = "Chi tiết", example = "Duyệt tin tuyển dụng ID 100")
+    private String details;
+
+    @Schema(description = "Thời gian ghi nhận")
+    private LocalDateTime createdAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\service\AdminService.java
+// ============================================================
+
+package com.smartmatch.application.admin.service;
+
+import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.dto.SystemLogResponse;
+import com.smartmatch.domain.job.model.JobStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Admin.
+ * Lưu trữ nhật ký (Audit Log) và các chỉ số thống kê (Dashboard).
+ */
+public interface AdminService {
+
+    /**
+     * Lưu vết thao tác của người dùng/hệ thống vào database.
+     * Phương thức này thường được gọi ngầm bởi các AOP/Interceptors.
+     */
+    void logAction(Long userId, String action, String details);
+
+    /**
+     * Xem danh sách nhật ký hệ thống (có phân trang, dành cho Admin).
+     */
+    Page<SystemLogResponse> getSystemLogs(Pageable pageable);
+
+    /**
+     * Xem danh sách nhật ký của một User cụ thể.
+     */
+    Page<SystemLogResponse> getLogsByUser(Long userId, Pageable pageable);
+
+    /* * Lưu ý: Các thao tác như duyệt tin (Job), duyệt công ty (Employer), khóa tài khoản (Auth)
+     * nên được định tuyến gọi đến các Service của Bounded Context tương ứng để đảm bảo tính DDD.
+     */
+
+    /**
+     * Lấy các chỉ số tổng quan để hiển thị lên Dashboard Admin.
+     */
+    DashboardStatsResponse getDashboardStatistics();
+
+    /**
+     * Admin phê duyệt hoặc từ chối một tin tuyển dụng bị báo cáo hoặc đăng mới.
+     * Thao tác này sẽ ghi log hệ thống tự động.
+     */
+    void moderateJobPosting(Long adminId, Long jobId, JobStatus newStatus, String reason);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\AuthResponse.java
+// ============================================================
+
+package com.smartmatch.application.auth.dto;
+
+import com.smartmatch.domain.auth.model.Role;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Response trả về sau khi đăng nhập thành công")
+public class AuthResponse {
+
+    @Schema(description = "JWT Access Token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    private String accessToken;
+
+    @Schema(description = "Loại token", example = "Bearer")
+    private String tokenType = "Bearer";
+
+    @Schema(description = "ID người dùng", example = "1")
+    private Long userId;
+
+    @Schema(description = "Email người dùng", example = "user@example.com")
+    private String email;
+
+    @Schema(description = "Vai trò người dùng", example = "CANDIDATE")
+    private Role role;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\LoginRequest.java
+// ============================================================
+
+package com.smartmatch.application.auth.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+@Schema(description = "Request body cho chức năng đăng nhập")
+public class LoginRequest {
+
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không đúng định dạng")
+    @Schema(description = "Địa chỉ email đăng nhập", example = "user@example.com")
+    private String email;
+
+    @NotBlank(message = "Mật khẩu không được để trống")
+    @Schema(description = "Mật khẩu tài khoản", example = "securePass123")
+    private String password;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\RegisterRequest.java
+// ============================================================
+
+package com.smartmatch.application.auth.dto;
+
+import com.smartmatch.domain.auth.model.Role;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+@Schema(description = "Request body cho chức năng đăng ký tài khoản")
+public class RegisterRequest {
+
+    @NotBlank(message = "Email không được để trống")
+    @Email(message = "Email không đúng định dạng")
+    @Schema(description = "Địa chỉ email đăng ký", example = "user@example.com")
+    private String email;
+
+    @NotBlank(message = "Mật khẩu không được để trống")
+    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @Schema(description = "Mật khẩu (tối thiểu 8 ký tự)", example = "securePass123")
+    private String password;
+
+    @NotNull(message = "Vai trò không được để trống")
+    @Schema(description = "Vai trò người dùng: CANDIDATE hoặc EMPLOYER", example = "CANDIDATE")
+    private Role role;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\UserResponse.java
+// ============================================================
+
+package com.smartmatch.application.auth.dto;
+
+import com.smartmatch.domain.auth.model.Role;
+import com.smartmatch.domain.auth.model.UserStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin tài khoản người dùng")
+public class UserResponse {
+
+    @Schema(description = "ID người dùng", example = "1")
+    private Long id;
+
+    @Schema(description = "Email người dùng", example = "user@example.com")
+    private String email;
+
+    @Schema(description = "Vai trò người dùng", example = "CANDIDATE")
+    private Role role;
+
+    @Schema(description = "Trạng thái tài khoản", example = "ACTIVE")
+    private UserStatus status;
+
+    @Schema(description = "Thời điểm tạo tài khoản")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "Thời điểm cập nhật gần nhất")
+    private LocalDateTime updatedAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\service\AuthService.java
+// ============================================================
+
+package com.smartmatch.application.auth.service;
+
+import com.smartmatch.application.auth.dto.AuthResponse;
+import com.smartmatch.application.auth.dto.LoginRequest;
+import com.smartmatch.application.auth.dto.RegisterRequest;
+import com.smartmatch.application.auth.dto.UserResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Auth.
+ * Tầng Infrastructure sẽ cài đặt (implement) interface này.
+ */
+public interface AuthService {
+
+    /**
+     * Đăng ký tài khoản mới (CANDIDATE hoặc EMPLOYER).
+     *
+     * @param request thông tin đăng ký
+     * @return thông tin tài khoản vừa tạo
+     */
+    UserResponse register(RegisterRequest request);
+
+    /**
+     * Đăng nhập và trả về JWT token.
+     *
+     * @param request thông tin đăng nhập
+     * @return JWT token và thông tin người dùng
+     */
+    AuthResponse login(LoginRequest request);
+
+    /**
+     * Lấy thông tin người dùng theo ID.
+     *
+     * @param userId ID người dùng
+     * @return thông tin tài khoản
+     */
+    UserResponse getUserById(Long userId);
+
+    /**
+     * Lấy danh sách tất cả người dùng (dành cho Admin).
+     *
+     * @param pageable thông tin phân trang
+     * @return danh sách tài khoản có phân trang
+     */
+    Page<UserResponse> getAllUsers(Pageable pageable);
+
+    /**
+     * Khóa tài khoản vi phạm (dành cho Admin - RBAC).
+     *
+     * @param userId ID tài khoản cần khóa
+     */
+    void banUser(Long userId);
+
+    /**
+     * Mở khóa tài khoản (dành cho Admin - RBAC).
+     *
+     * @param userId ID tài khoản cần mở khóa
+     */
+    void unbanUser(Long userId);
+
+    void requestPasswordReset(String email);
+    void resetPassword(String token, String newPassword);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateProfileRequest.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
+import lombok.Data;
+
+import java.time.LocalDate;
+
+@Data
+@Schema(description = "Request body tạo hoặc cập nhật hồ sơ ứng viên")
+public class CandidateProfileRequest {
+
+    @NotBlank(message = "Họ tên không được để trống")
+    @Schema(description = "Họ và tên đầy đủ", example = "Nguyễn Văn An")
+    private String fullName;
+
+    @Pattern(regexp = "^(\\+84|0)[0-9]{9,10}$", message = "Số điện thoại không hợp lệ")
+    @Schema(description = "Số điện thoại liên hệ", example = "0901234567")
+    private String phone;
+
+    @Schema(description = "Giới tính", example = "Nam", allowableValues = {"Nam", "Nữ", "Khác"})
+    private String gender;
+
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ")
+    @Schema(description = "Ngày sinh (yyyy-MM-dd)", example = "2000-05-15")
+    private LocalDate dob;
+
+    @Schema(description = "Địa chỉ cư trú hiện tại", example = "123 Nguyễn Huệ, Q1, TP.HCM")
+    private String address;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateProfileResponse.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin hồ sơ ứng viên")
+public class CandidateProfileResponse {
+
+    @Schema(description = "ID hồ sơ ứng viên", example = "1")
+    private Long id;
+
+    @Schema(description = "ID tài khoản liên kết", example = "5")
+    private Long userId;
+
+    @Schema(description = "Họ và tên đầy đủ", example = "Nguyễn Văn An")
+    private String fullName;
+
+    @Schema(description = "Số điện thoại liên hệ", example = "0901234567")
+    private String phone;
+
+    @Schema(description = "Giới tính", example = "Nam")
+    private String gender;
+
+    @Schema(description = "Ngày sinh", example = "2000-05-15")
+    private LocalDate dob;
+
+    @Schema(description = "Địa chỉ cư trú", example = "TP.HCM")
+    private String address;
+
+    @Schema(description = "Danh sách kỹ năng của ứng viên")
+    private List<SkillResponse> skills;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CvDocumentResponse.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin tài liệu CV")
+public class CvDocumentResponse {
+
+    @Schema(description = "ID tài liệu CV", example = "1")
+    private Long id;
+
+    @Schema(description = "ID hồ sơ ứng viên sở hữu CV", example = "3")
+    private Long candidateId;
+
+    @Schema(description = "Đường dẫn lưu trữ file CV trên server", example = "/uploads/cv/cv_1.pdf")
+    private String filePath;
+
+    @Schema(description = "Văn bản thô được trích xuất từ CV (phục vụ AI)")
+    private String rawText;
+
+    @Schema(description = "CV tạo từ biểu mẫu (true) hay tải lên file (false)", example = "false")
+    private Boolean isGenerated;
+
+    @Schema(description = "Thời điểm tạo/tải lên CV")
+    private LocalDateTime createdAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\SkillResponse.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin kỹ năng")
+public class SkillResponse {
+
+    @Schema(description = "ID kỹ năng", example = "1")
+    private Long id;
+
+    @Schema(description = "Tên kỹ năng", example = "Java")
+    private String name;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\service\CandidateService.java
+// ============================================================
+
+package com.smartmatch.application.candidate.service;
+
+import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
+import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
+import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.dto.SkillResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Candidate.
+ * Quản lý vòng đời dữ liệu ứng viên: hồ sơ, CV, kỹ năng.
+ */
+public interface CandidateService {
+
+    /**
+     * Tạo hồ sơ cá nhân cho ứng viên sau khi đăng ký.
+     * Ràng buộc: mỗi userId chỉ có đúng 1 hồ sơ (quan hệ 1-1 với User).
+     *
+     * @param userId  ID tài khoản ứng viên
+     * @param request thông tin hồ sơ cần tạo
+     * @return hồ sơ ứng viên vừa được tạo
+     */
+    CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request);
+
+    /**
+     * Cập nhật thông tin hồ sơ cá nhân ứng viên.
+     *
+     * @param userId  ID tài khoản ứng viên
+     * @param request thông tin hồ sơ cần cập nhật
+     * @return hồ sơ ứng viên sau khi cập nhật
+     */
+    CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request);
+
+    /**
+     * Lấy hồ sơ ứng viên theo userId.
+     *
+     * @param userId ID tài khoản
+     * @return hồ sơ ứng viên kèm danh sách kỹ năng
+     */
+    CandidateProfileResponse getProfileByUserId(Long userId);
+
+    /**
+     * Tải lên file CV (PDF hoặc Word) lên server.
+     * Nghiệp vụ: kiểm tra MIME type, giới hạn 5MB, lưu file_path và raw_text.
+     *
+     * @param userId ID tài khoản ứng viên
+     * @param file   file CV cần tải lên
+     * @return thông tin tài liệu CV vừa lưu
+     */
+    CvDocumentResponse uploadCv(Long userId, MultipartFile file);
+
+    /**
+     * Lấy danh sách tất cả các phiên bản CV của ứng viên.
+     *
+     * @param userId ID tài khoản ứng viên
+     * @return danh sách CV (1 ứng viên có thể có nhiều phiên bản CV)
+     */
+    List<CvDocumentResponse> getCvsByUserId(Long userId);
+
+    /**
+     * Xóa một phiên bản CV.
+     *
+     * @param userId     ID tài khoản ứng viên (để kiểm tra quyền sở hữu)
+     * @param cvId       ID tài liệu CV cần xóa
+     */
+    void deleteCv(Long userId, Long cvId);
+
+    /**
+     * Thêm kỹ năng vào hồ sơ ứng viên.
+     *
+     * @param userId  ID tài khoản ứng viên
+     * @param skillId ID kỹ năng cần thêm (từ danh mục Skills chuẩn hóa)
+     * @return danh sách kỹ năng sau khi thêm
+     */
+    List<SkillResponse> addSkill(Long userId, Long skillId);
+
+    /**
+     * Xóa kỹ năng khỏi hồ sơ ứng viên.
+     *
+     * @param userId  ID tài khoản ứng viên
+     * @param skillId ID kỹ năng cần xóa
+     */
+    void removeSkill(Long userId, Long skillId);
+
+    /**
+     * Lấy danh sách kỹ năng của ứng viên.
+     *
+     * @param userId ID tài khoản ứng viên
+     * @return danh sách kỹ năng
+     */
+    List<SkillResponse> getSkillsByUserId(Long userId);
+
+    /**
+     * Lấy danh sách tất cả kỹ năng trong danh mục chuẩn hóa hệ thống.
+     *
+     * @return danh sách kỹ năng chuẩn hóa (Master Data)
+     */
+    List<SkillResponse> getAllSkills();
+
+    /**
+     * Tự động kết xuất và lưu CV dựa trên template do hệ thống cung cấp.
+     */
+    CvDocumentResponse generateCvFromTemplate(Long userId, String templateId, String jsonData);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\dto\CompanyProfileRequest.java
+// ============================================================
+
+package com.smartmatch.application.employer.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.Data;
+
+@Data
+@Schema(description = "Request body tạo hoặc cập nhật hồ sơ doanh nghiệp")
+public class CompanyProfileRequest {
+
+    @NotBlank(message = "Tên công ty không được để trống")
+    @Schema(description = "Tên chính thức của doanh nghiệp", example = "Công ty TNHH SmartTech")
+    private String companyName;
+
+    @Schema(description = "Mô tả tổng quan văn hóa, môi trường làm việc")
+    private String description;
+
+    @Pattern(regexp = "^(https?://)?([\\w.-]+)\\.([a-z]{2,6})(:[0-9]{1,5})?(/.*)?$",
+            message = "Website không đúng định dạng URL")
+    @Schema(description = "Website chính thức", example = "https://smarttech.vn")
+    private String website;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\dto\CompanyProfileResponse.java
+// ============================================================
+
+package com.smartmatch.application.employer.dto;
+
+import com.smartmatch.domain.employer.model.VerificationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin hồ sơ doanh nghiệp")
+public class CompanyProfileResponse {
+
+    @Schema(description = "ID hồ sơ doanh nghiệp", example = "1")
+    private Long id;
+
+    @Schema(description = "ID tài khoản nhà tuyển dụng liên kết", example = "10")
+    private Long userId;
+
+    @Schema(description = "Tên chính thức của doanh nghiệp", example = "Công ty TNHH SmartTech")
+    private String companyName;
+
+    @Schema(description = "URL ảnh logo công ty", example = "https://cdn.smartmatch.vn/logos/smarttech.png")
+    private String logoUrl;
+
+    @Schema(description = "Website chính thức", example = "https://smarttech.vn")
+    private String website;
+
+    @Schema(description = "Mô tả tổng quan văn hóa, môi trường làm việc")
+    private String description;
+
+    @Schema(description = "Trạng thái xác minh pháp lý", example = "PENDING")
+    private VerificationStatus verificationStatus;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\service\EmployerService.java
+// ============================================================
+
+package com.smartmatch.application.employer.service;
+
+import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
+import com.smartmatch.application.employer.dto.CompanyProfileRequest;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.smartmatch.domain.employer.model.VerificationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Employer.
+ * Quản lý hồ sơ doanh nghiệp, xác minh pháp lý và logo công ty.
+ */
+public interface EmployerService {
+
+    /**
+     * Tạo hồ sơ doanh nghiệp lần đầu (sau khi đăng ký tài khoản EMPLOYER).
+     * Ràng buộc: mỗi userId chỉ có đúng 1 hồ sơ công ty (quan hệ 1-1).
+     * Trạng thái mặc định: PENDING (chờ Admin kiểm duyệt).
+     *
+     * @param userId  ID tài khoản nhà tuyển dụng
+     * @param request thông tin công ty cần tạo
+     * @return hồ sơ công ty vừa được tạo
+     */
+    CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request);
+
+    /**
+     * Cập nhật thông tin hồ sơ doanh nghiệp.
+     * Nghiệp vụ: sau khi cập nhật, trạng thái verification_status reset về PENDING
+     * nếu có thay đổi thông tin pháp lý quan trọng.
+     *
+     * @param userId  ID tài khoản nhà tuyển dụng
+     * @param request thông tin cần cập nhật
+     * @return hồ sơ công ty sau khi cập nhật
+     */
+    CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
+
+    /**
+     * Lấy hồ sơ doanh nghiệp theo userId.
+     *
+     * @param userId ID tài khoản nhà tuyển dụng
+     * @return hồ sơ doanh nghiệp
+     */
+    CompanyProfileResponse getProfileByUserId(Long userId);
+
+    /**
+     * Lấy hồ sơ doanh nghiệp theo ID hồ sơ công ty (public endpoint).
+     *
+     * @param companyId ID hồ sơ công ty
+     * @return hồ sơ doanh nghiệp
+     */
+    CompanyProfileResponse getProfileById(Long companyId);
+
+    /**
+     * Tải lên ảnh logo công ty.
+     * Nghiệp vụ: kiểm tra MIME type (JPG/PNG), giới hạn 5MB, lưu lại logo_url.
+     *
+     * @param userId ID tài khoản nhà tuyển dụng
+     * @param logo   file ảnh logo
+     * @return hồ sơ công ty sau khi cập nhật logo
+     */
+    CompanyProfileResponse uploadLogo(Long userId, MultipartFile logo);
+
+    /**
+     * Admin: Lấy danh sách tất cả công ty có phân trang, có thể lọc theo trạng thái.
+     *
+     * @param status   trạng thái xác minh để lọc (có thể null)
+     * @param pageable thông tin phân trang
+     * @return danh sách hồ sơ công ty
+     */
+    Page<CompanyProfileResponse> getAllCompanies(VerificationStatus status, Pageable pageable);
+
+    /**
+     * Admin: Phê duyệt hoặc từ chối hồ sơ doanh nghiệp.
+     * Sau khi phê duyệt (APPROVED), nhà tuyển dụng mới có thể đăng tin.
+     *
+     * @param companyId          ID hồ sơ công ty
+     * @param verificationStatus trạng thái xác minh mới (APPROVED / REJECTED)
+     */
+    void updateVerificationStatus(Long companyId, VerificationStatus verificationStatus);
+
+    /**
+     * Tìm kiếm ứng viên chủ động dựa trên từ khóa kỹ năng (Dành cho nhà tuyển dụng đã xác thực).
+     */
+    Page<CandidateProfileResponse> searchCandidatesBySkill(String skillName, Pageable pageable);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
+// ============================================================
+
+package com.smartmatch.application.job.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Schema(description = "Request body tạo hoặc cập nhật tin tuyển dụng")
+public class JobPostingRequest {
+
+    @NotBlank(message = "Tiêu đề công việc không được để trống")
+    @Schema(description = "Tiêu đề vị trí tuyển dụng", example = "Senior Java Backend Developer")
+    private String title;
+
+    @NotBlank(message = "Mô tả công việc không được để trống")
+    @Schema(description = "Mô tả chi tiết nhiệm vụ công việc")
+    private String description;
+
+    @NotBlank(message = "Yêu cầu công việc không được để trống")
+    @Schema(description = "Yêu cầu kỹ năng chuyên môn và kinh nghiệm")
+    private String requirements;
+
+    @Schema(description = "Khoảng mức lương chi trả dự kiến", example = "20 - 35 triệu VNĐ")
+    private String salaryRange;
+
+    @NotBlank(message = "Địa điểm làm việc không được để trống")
+    @Schema(description = "Địa điểm làm việc", example = "TP. Hồ Chí Minh")
+    private String location;
+
+    @NotNull(message = "Ngày hết hạn không được để trống")
+    @Future(message = "Ngày hết hạn phải là ngày trong tương lai")
+    @Schema(description = "Ngày giờ hết hạn nhận đơn ứng tuyển", example = "2025-12-31T23:59:59")
+    private LocalDateTime expiredAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
+// ============================================================
+
+package com.smartmatch.application.job.dto;
+
+import com.smartmatch.domain.job.model.JobStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin chi tiết tin tuyển dụng")
+public class JobPostingResponse {
+
+    @Schema(description = "ID tin tuyển dụng", example = "1")
+    private Long id;
+
+    @Schema(description = "ID công ty đăng tuyển", example = "10")
+    private Long companyId;
+
+    @Schema(description = "Tiêu đề vị trí tuyển dụng", example = "Senior Java Backend Developer")
+    private String title;
+
+    @Schema(description = "Mô tả công việc")
+    private String description;
+
+    @Schema(description = "Yêu cầu kỹ năng")
+    private String requirements;
+
+    @Schema(description = "Khoảng mức lương dự kiến", example = "20 - 35 triệu VNĐ")
+    private String salaryRange;
+
+    @Schema(description = "Địa điểm làm việc", example = "TP. Hồ Chí Minh")
+    private String location;
+
+    @Schema(description = "Trạng thái tin đăng", example = "ACTIVE")
+    private JobStatus status;
+
+    @Schema(description = "Thời gian đăng tải")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "Thời gian hết hạn")
+    private LocalDateTime expiredAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\JobService.java
+// ============================================================
+
+package com.smartmatch.application.job.service;
+
+import com.smartmatch.application.job.dto.JobPostingRequest;
+import com.smartmatch.application.job.dto.JobPostingResponse;
+import com.smartmatch.domain.job.model.JobStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Job.
+ * Quản lý vòng đời của tin tuyển dụng (Job Posting).
+ */
+public interface JobService {
+
+    /**
+     * Nhà tuyển dụng tạo tin tuyển dụng mới.
+     * Trạng thái mặc định thường là PENDING (chờ kiểm duyệt) hoặc ACTIVE tùy business.
+     */
+    JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request);
+
+    /**
+     * Nhà tuyển dụng cập nhật tin tuyển dụng.
+     */
+    JobPostingResponse updateJobPosting(Long companyId, Long jobId, JobPostingRequest request);
+
+    /**
+     * Lấy chi tiết một tin tuyển dụng (Public cho Ứng viên).
+     */
+    JobPostingResponse getJobById(Long jobId);
+
+    /**
+     * Lấy danh sách tin tuyển dụng của một công ty cụ thể.
+     */
+    Page<JobPostingResponse> getJobsByCompanyId(Long companyId, Pageable pageable);
+
+    /**
+     * Lấy danh sách tin tuyển dụng đang ACTIVE để hiển thị trên Job Board (Public).
+     * Có thể mở rộng thêm filter (từ khóa, địa điểm) trong tương lai.
+     */
+    Page<JobPostingResponse> searchActiveJobs(String keyword, String location, Pageable pageable);
+
+    /**
+     * Admin hoặc Nhà tuyển dụng thay đổi trạng thái tin tuyển dụng (Duyệt, Khóa, Đóng).
+     */
+    void changeJobStatus(Long jobId, JobStatus status);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\AiMatchScoreResponse.java
+// ============================================================
+
+package com.smartmatch.application.jobapplication.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Kết quả phân tích mức độ phù hợp từ AI")
+public class AiMatchScoreResponse {
+
+    @Schema(description = "Điểm số tương thích (%)", example = "85.5")
+    private Float confidenceScore;
+
+    @Schema(description = "Chi tiết phân tích (JSON string hoặc Text)", example = "Khớp kỹ năng: Java, Spring Boot. Thiếu: AWS.")
+    private String analysisDetails;
+
+    @Schema(description = "Thời điểm hệ thống AI hoàn tất đánh giá")
+    private LocalDateTime evaluatedAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\ApplicationRequest.java
+// ============================================================
+
+package com.smartmatch.application.jobapplication.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+@Schema(description = "Request body nộp đơn ứng tuyển việc làm")
+public class ApplicationRequest {
+
+    @NotNull(message = "ID công việc không được để trống")
+    @Schema(description = "ID của tin tuyển dụng", example = "100")
+    private Long jobId;
+
+    @NotNull(message = "ID CV không được để trống")
+    @Schema(description = "ID của CV tài liệu muốn nộp", example = "50")
+    private Long cvId;
+
+    @Schema(description = "Thư giới thiệu (Cover Letter)")
+    private String coverLetter;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\ApplicationResponse.java
+// ============================================================
+
+package com.smartmatch.application.jobapplication.dto;
+
+import com.smartmatch.domain.application.model.ApplicationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Thông tin đơn ứng tuyển")
+public class ApplicationResponse {
+
+    @Schema(description = "ID đơn ứng tuyển", example = "1")
+    private Long id;
+
+    @Schema(description = "ID công việc", example = "100")
+    private Long jobId;
+
+    @Schema(description = "ID ứng viên", example = "5")
+    private Long candidateId;
+
+    @Schema(description = "ID CV đã nộp", example = "50")
+    private Long cvId;
+
+    @Schema(description = "Thư giới thiệu")
+    private String coverLetter;
+
+    @Schema(description = "Trạng thái hồ sơ", example = "PENDING")
+    private ApplicationStatus status;
+
+    @Schema(description = "Thời gian nộp hồ sơ")
+    private LocalDateTime appliedAt;
+
+    @Schema(description = "Kết quả phân tích AI (Nếu đã được quét)")
+    private AiMatchScoreResponse aiScore;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\service\JobApplicationService.java
+// ============================================================
+
+package com.smartmatch.application.jobapplication.service;
+
+import com.smartmatch.application.jobapplication.dto.ApplicationRequest;
+import com.smartmatch.application.jobapplication.dto.ApplicationResponse;
+import com.smartmatch.domain.application.model.ApplicationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+/**
+ * Port (Use-case interface) cho Bounded Context Application (Ứng tuyển).
+ * Xử lý nộp đơn, theo dõi trạng thái và tích hợp với AI Engine.
+ */
+public interface JobApplicationService {
+
+    /**
+     * Ứng viên nộp hồ sơ cho một vị trí công việc.
+     */
+    ApplicationResponse applyForJob(Long candidateId, ApplicationRequest request);
+
+    /**
+     * Lấy danh sách hồ sơ ứng viên đã nộp (Dành cho Ứng viên theo dõi).
+     */
+    Page<ApplicationResponse> getApplicationsByCandidate(Long candidateId, Pageable pageable);
+
+    /**
+     * Lấy danh sách hồ sơ nộp vào một công việc cụ thể (Dành cho Nhà tuyển dụng sàng lọc).
+     */
+    Page<ApplicationResponse> getApplicationsByJob(Long companyId, Long jobId, Pageable pageable);
+
+    /**
+     * Xem chi tiết một đơn ứng tuyển.
+     */
+    ApplicationResponse getApplicationDetail(Long applicationId);
+
+    /**
+     * Nhà tuyển dụng chuyển trạng thái đơn ứng tuyển (Ví dụ: Từ PENDING sang REVIEWED/ACCEPTED).
+     * Hệ thống có thể trigger gửi email thông báo ở implementation.
+     */
+    void updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status);
+
+    /**
+     * Kích hoạt tiến trình gửi CV sang Backend-ML (Python) để phân tích và chấm điểm.
+     * Thường là call API nội bộ (Internal API).
+     */
+    void triggerAiMatching(Long applicationId);
+}

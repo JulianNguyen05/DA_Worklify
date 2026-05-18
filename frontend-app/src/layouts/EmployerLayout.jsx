@@ -40,8 +40,6 @@ const EmployerLayout = () => {
     { icon: Home, label: "Trang chủ", path: "/employer/dashboard" },
     { icon: Briefcase, label: "Quản lý tin tuyển dụng", path: "/employer/jobs" },
     { icon: Building2, label: "Hồ sơ công ty", path: "/employer/company" },
-    { icon: FileText, label: "Resume Scanner", path: "/employer/scan" },
-    { icon: Sparkles, label: "AI Matches", path: "/employer/matches" },
   ];
 
   const roleConfig = {

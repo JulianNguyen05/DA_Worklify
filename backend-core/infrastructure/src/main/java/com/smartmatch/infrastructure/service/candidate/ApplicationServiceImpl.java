@@ -4,8 +4,6 @@ import com.smartmatch.application.dto.application.ApplyJobRequest;
 import com.smartmatch.application.dto.application.JobApplicationResponse;
 import com.smartmatch.application.mapper.JobApplicationMapper;
 import com.smartmatch.application.service.candidate.ApplicationService;
-import com.smartmatch.domain.application.model.JobApplication;
-import com.smartmatch.domain.application.repository.JobApplicationRepository;
 import com.smartmatch.domain.common.enums.ApplicationStatus;
 import com.smartmatch.domain.common.enums.JobStatus;
 import com.smartmatch.domain.job.model.Job;

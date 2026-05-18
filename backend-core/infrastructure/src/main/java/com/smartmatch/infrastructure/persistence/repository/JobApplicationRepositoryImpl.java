@@ -1,7 +1,5 @@
 package com.smartmatch.infrastructure.persistence.repository;
 
-import com.smartmatch.domain.application.model.JobApplication;
-import com.smartmatch.domain.application.repository.JobApplicationRepository;
 import com.smartmatch.infrastructure.persistence.jpa.JobApplicationJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.JobApplicationMapper;
 import lombok.RequiredArgsConstructor;

@@ -15,8 +15,6 @@ const CandidateLayout = () => {
     { icon: FileStack, label: "Quản lý CV", path: "/candidate/resumes" },
     { icon: Briefcase, label: "Việc làm", path: "/candidate/jobs" },
     { icon: FileText, label: "Đơn ứng tuyển", path: "/candidate/applications" },
-    { icon: User, label: "Hồ sơ", path: "/candidate/profile" },
-    { icon: Sparkles, label: "AI Gợi ý", path: "/candidate/ai-match" },
   ];
 
   const roleConfig = {
