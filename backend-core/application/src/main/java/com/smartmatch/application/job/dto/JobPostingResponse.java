@@ -17,6 +17,7 @@ public class JobPostingResponse {
     private String requirements;
     private String salaryRange;
     private String location;
+    private String workType;
 
     private JobStatus status;
     private LocalDateTime createdAt;

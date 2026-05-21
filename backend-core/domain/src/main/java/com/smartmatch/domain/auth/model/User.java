@@ -1,9 +1,8 @@
 package com.smartmatch.domain.auth.model;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,43 +13,64 @@ public class User {
     private String email;
     private String password;
     private Role role;
-    private UserStatus status;
+
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
     private boolean mfaEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static User registerNew(String email, String encryptedPassword, Role role) {
-        if (email == null || !email.contains("@")) {
+    /**
+     * Phương thức khởi tạo chuẩn cho Domain.
+     * Validation được thực hiện trực tiếp tại đây để bảo vệ bất biến của thực thể.
+     */
+    public static User createNewUser(String email, String hashedPassword, Role role) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (email == null || !email.matches(emailRegex)) {
             throw new IllegalArgumentException("Định dạng email không hợp lệ.");
         }
-        return User.builder()
-                .email(email)
-                .password(encryptedPassword)
+
+        User user = User.builder()
+                .email(email.toLowerCase().trim())
+                .password(hashedPassword)
                 .role(role)
                 .status(UserStatus.ACTIVE)
                 .mfaEnabled(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
+
+        user.onCreate();
+        return user;
+    }
+
+    // Khởi tạo thời gian ban đầu
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Phương thức cập nhật thời gian mỗi khi thay đổi trạng thái
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void ban() {
         this.status = UserStatus.BANNED;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void unban() {
         this.status = UserStatus.ACTIVE;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void enableMultiFactorAuth() {
         this.mfaEnabled = true;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void changePassword(String newEncryptedPassword) {
         this.password = newEncryptedPassword;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 }

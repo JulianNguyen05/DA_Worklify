@@ -6,7 +6,7 @@ import com.smartmatch.domain.job.model.SavedJob;
 import com.smartmatch.domain.job.repository.SavedJobRepository;
 import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.JobPostingEntityMapper;
+import com.smartmatch.infrastructure.persistence.mapper.SavedJobEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.SavedJobJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SavedJobRepositoryAdapter implements SavedJobRepository {
     private final SavedJobJpaRepository jpaRepository;
-    private final JobPostingEntityMapper mapper;
+    private final SavedJobEntityMapper mapper;
 
     @Override
     public SavedJob save(SavedJob savedJob) {

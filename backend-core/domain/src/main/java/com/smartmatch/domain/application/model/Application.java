@@ -1,3 +1,4 @@
+// File: domain/src/main/java/com/smartmatch/domain/application/model/Application.java
 package com.smartmatch.domain.application.model;
 
 import lombok.AccessLevel;
@@ -18,7 +19,8 @@ public class Application {
     private String coverLetter;
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
-    private String blindTestUrl; // Tích hợp cơ chế kiểm thử mù (Blind Testing)
+
+    private String blindTestToken;
 
     public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
         if (jobId == null || cvId == null || candidateId == null) {
@@ -39,9 +41,7 @@ public class Application {
     }
 
     public void enableBlindTesting() {
-        // Sinh mã token ẩn danh hóa danh tính ứng viên
-        String uniqueMask = UUID.randomUUID().toString().substring(0, 12);
-        // Điều hướng thông tin qua sub-domain trung lập bảo mật chống định kiến sơ tuyển
-        this.blindTestUrl = String.format("https://appa.ungdungnghiencuu.com/review/%s", uniqueMask);
+        // Domain chỉ chịu trách nhiệm sinh chuỗi định danh ngẫu nhiên
+        this.blindTestToken = UUID.randomUUID().toString().substring(0, 12);
     }
 }

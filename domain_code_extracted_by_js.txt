@@ -151,6 +151,7 @@ public class AiMatchScore {
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\model\Application.java
 // ============================================================
 
+// File: domain/src/main/java/com/smartmatch/domain/application/model/Application.java
 package com.smartmatch.domain.application.model;
 
 import lombok.AccessLevel;
@@ -171,7 +172,8 @@ public class Application {
     private String coverLetter;
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
-    private String blindTestUrl; // Tích hợp cơ chế kiểm thử mù (Blind Testing)
+
+    private String blindTestToken;
 
     public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
         if (jobId == null || cvId == null || candidateId == null) {
@@ -192,10 +194,8 @@ public class Application {
     }
 
     public void enableBlindTesting() {
-        // Sinh mã token ẩn danh hóa danh tính ứng viên
-        String uniqueMask = UUID.randomUUID().toString().substring(0, 12);
-        // Điều hướng thông tin qua sub-domain trung lập bảo mật chống định kiến sơ tuyển
-        this.blindTestUrl = String.format("https://appa.ungdungnghiencuu.com/review/%s", uniqueMask);
+        // Domain chỉ chịu trách nhiệm sinh chuỗi định danh ngẫu nhiên
+        this.blindTestToken = UUID.randomUUID().toString().substring(0, 12);
     }
 }
 
@@ -208,6 +208,7 @@ package com.smartmatch.domain.application.model;
 public enum ApplicationStatus {
     PENDING,
     REVIEWED,
+    INTERVIEW_SCHEDULED,
     ACCEPTED,
     REJECTED
 }
@@ -262,10 +263,9 @@ public enum Role {
 
 package com.smartmatch.domain.auth.model;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -276,44 +276,65 @@ public class User {
     private String email;
     private String password;
     private Role role;
-    private UserStatus status;
+
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
     private boolean mfaEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static User registerNew(String email, String encryptedPassword, Role role) {
-        if (email == null || !email.contains("@")) {
+    /**
+     * Phương thức khởi tạo chuẩn cho Domain.
+     * Validation được thực hiện trực tiếp tại đây để bảo vệ bất biến của thực thể.
+     */
+    public static User createNewUser(String email, String hashedPassword, Role role) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (email == null || !email.matches(emailRegex)) {
             throw new IllegalArgumentException("Định dạng email không hợp lệ.");
         }
-        return User.builder()
-                .email(email)
-                .password(encryptedPassword)
+
+        User user = User.builder()
+                .email(email.toLowerCase().trim())
+                .password(hashedPassword)
                 .role(role)
                 .status(UserStatus.ACTIVE)
                 .mfaEnabled(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
+
+        user.onCreate();
+        return user;
+    }
+
+    // Khởi tạo thời gian ban đầu
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Phương thức cập nhật thời gian mỗi khi thay đổi trạng thái
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void ban() {
         this.status = UserStatus.BANNED;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void unban() {
         this.status = UserStatus.ACTIVE;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void enableMultiFactorAuth() {
         this.mfaEnabled = true;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 
     public void changePassword(String newEncryptedPassword) {
         this.password = newEncryptedPassword;
-        this.updatedAt = LocalDateTime.now();
+        this.onUpdate();
     }
 }
 
@@ -404,24 +425,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class CandidateSkill {
-    private final Long candidateId;
-    private final Long skillId;
-}
-
-// ============================================================
-// File: \backend-core\domain\src\main\java\com\smartmatch\domain\candidate\model\CandidateSkillId.java
-// ============================================================
-
-package com.smartmatch.domain.candidate.model;
-
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-public class CandidateSkillId {
     private final Long candidateId;
     private final Long skillId;
 }
@@ -547,13 +550,20 @@ public interface CvDocumentRepository {
 package com.smartmatch.domain.candidate.repository;
 
 import com.smartmatch.domain.candidate.model.Skill;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface SkillRepository {
+
     Skill save(Skill skill);
+
+    Optional<Skill> findById(Long id);
+
     Optional<Skill> findByName(String name);
+
     List<Skill> findAll();
+
     void deleteById(Long id);
 }
 
@@ -561,18 +571,31 @@ public interface SkillRepository {
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\DomainPage.java
 // ============================================================
 
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\DomainPage.java
 package com.smartmatch.domain.common;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import java.util.List;
 
-public interface DomainPage<T> {
-    List<T> getContent();
-    long getTotalElements();
-    int getTotalPages();
-    int getNumber();
-    int getSize();
-}
+@Getter
+@AllArgsConstructor
+public class DomainPage<T> {
+    private final List<T> content;
+    private final long totalElements;
+    private final int totalPages;
+    private final int pageNumber;
+    private final int pageSize;
 
+    // Phục vụ cho các phương thức kế thừa tên cũ nếu có module khác đang gọi .getNumber() hoặc .getSize()
+    public int getNumber() {
+        return this.pageNumber;
+    }
+
+    public int getSize() {
+        return this.pageSize;
+    }
+}
 
 // ============================================================
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\DomainPageable.java
@@ -694,17 +717,46 @@ public class JobPosting {
     private String requirements;
     private String salaryRange;
     private String location;
+    private String workType; // Đã giữ lại thuộc tính này để đồng bộ
 
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 
+    /**
+     * Phương thức khởi tạo một tin tuyển dụng mới từ nhà tuyển dụng.
+     * Trạng thái mặc định ban đầu là PENDING (Chờ kiểm duyệt từ Admin).
+     */
+    public static JobPosting createNewJob(Long companyId, String title, String description,
+                                          String requirements, String salaryRange, String location,
+                                          String workType, LocalDateTime expiredAt) {
+        validateRequiredFields(companyId, title);
+
+        if (expiredAt != null && expiredAt.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Thời hạn tin tuyển dụng phải ở trong tương lai.");
+        }
+
+        return JobPosting.builder()
+                .companyId(companyId)
+                .title(title)
+                .description(description)
+                .requirements(requirements)
+                .salaryRange(salaryRange)
+                .location(location)
+                .workType(workType)
+                .status(JobStatus.PENDING) // Hoặc DRAFT tùy thuộc quy trình nghiệp vụ của bạn
+                .createdAt(LocalDateTime.now())
+                .expiredAt(expiredAt)
+                .build();
+    }
+
+    /**
+     * Giữ lại phương thức cũ nếu các module khác hoặc testcase đang sử dụng
+     */
     public static JobPosting createDraft(Long companyId, String title, String description,
                                          String requirements, String salaryRange, String location,
                                          LocalDateTime expiredAt) {
-        if (companyId == null || title == null || title.trim().isEmpty()) {
-            throw new IllegalArgumentException("Dữ liệu tin tuyển dụng không hợp lệ.");
-        }
+        validateRequiredFields(companyId, title);
         return JobPosting.builder()
                 .companyId(companyId)
                 .title(title)
@@ -718,6 +770,7 @@ public class JobPosting {
                 .build();
     }
 
+    // Các phương thức hành vi của Domain (Domain Behaviors)
     public void publish() {
         this.status = JobStatus.ACTIVE;
     }
@@ -731,13 +784,25 @@ public class JobPosting {
     }
 
     public void updateDetails(String title, String description, String requirements,
-                              String salaryRange, String location, LocalDateTime expiredAt) {
+                              String salaryRange, String location, String workType, LocalDateTime expiredAt) {
+        validateRequiredFields(this.companyId, title);
         this.title = title;
         this.description = description;
         this.requirements = requirements;
         this.salaryRange = salaryRange;
         this.location = location;
+        this.workType = workType;
         this.expiredAt = expiredAt;
+    }
+
+    // Tách luật kiểm tra dữ liệu đầu vào (Invariants) ra hàm dùng chung
+    private static void validateRequiredFields(Long companyId, String title) {
+        if (companyId == null) {
+            throw new IllegalArgumentException("Mã doanh nghiệp không được để trống.");
+        }
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tiêu đề tin tuyển dụng không được để trống.");
+        }
     }
 }
 

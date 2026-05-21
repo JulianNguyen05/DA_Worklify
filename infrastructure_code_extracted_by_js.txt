@@ -6,10 +6,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.smartmatch</groupId>
         <artifactId>backend-core</artifactId>
@@ -20,97 +21,128 @@
     <packaging>jar</packaging>
 
     <name>SmartMatch Infrastructure</name>
-    <description>Persistence, Security, Config, External Services</description>
+
+    <description>
+        Persistence, Security, Config, External Services
+    </description>
 
     <dependencies>
+
+        <!-- Domain -->
         <dependency>
             <groupId>com.smartmatch</groupId>
             <artifactId>domain</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Application -->
         <dependency>
             <groupId>com.smartmatch</groupId>
             <artifactId>application</artifactId>
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
+        <!-- Servlet -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
+        <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Spring MVC -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- MySQL -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
 
+        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
             <version>0.12.6</version>
         </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
             <version>0.12.6</version>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <version>0.12.6</version>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-        </dependency>
 
     </dependencies>
 
     <build>
+
         <plugins>
+
+            <!-- Java Compiler -->
             <plugin>
+
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+
                 <configuration>
-                    <release>21</release> <annotationProcessorPaths>
-                    <path>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                        <version>1.18.30</version>
-                    </path>
-                    <path>
-                        <groupId>org.mapstruct</groupId>
-                        <artifactId>mapstruct-processor</artifactId>
-                        <version>1.6.0</version>
-                    </path>
-                </annotationProcessorPaths>
+
+                    <release>21</release>
+
+                    <annotationProcessorPaths>
+
+                        <!-- Lombok -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+
+                        <!-- MapStruct -->
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>1.6.0</version>
+                        </path>
+
+                    </annotationProcessorPaths>
+
                 </configuration>
+
             </plugin>
+
         </plugins>
+
     </build>
 
 </project>
@@ -156,14 +188,431 @@ public class AiMatchEventPublisherImpl {
 
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\AiMatchScoreRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.application.model.AiMatchScore;
+import com.smartmatch.domain.application.repository.AiMatchScoreRepository;
+import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.AiMatchScoreJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class AiMatchScoreRepositoryAdapter implements AiMatchScoreRepository {
+    private final AiMatchScoreJpaRepository jpaRepository;
+    private final ApplicationEntityMapper mapper;
+
+    @Override
+    public AiMatchScore save(AiMatchScore score) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(score)));
+    }
+
+    @Override
+    public Optional<AiMatchScore> findByApplicationId(Long applicationId) {
+        return jpaRepository.findByApplicationId(applicationId).map(mapper::toDomain);
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\ApplicationRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.application.model.Application;
+import com.smartmatch.domain.application.repository.ApplicationRepository;
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
+import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.ApplicationJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class ApplicationRepositoryAdapter implements ApplicationRepository {
+    private final ApplicationJpaRepository jpaRepository;
+    private final ApplicationEntityMapper mapper;
+
+    @Override
+    public Application save(Application application) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(application)));
+    }
+
+    @Override
+    public Optional<Application> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable) {
+        Page<ApplicationJpaEntity> page = jpaRepository.findByJobId(jobId, PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable) {
+        Page<ApplicationJpaEntity> page = jpaRepository.findByCandidateId(candidateId, PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public long countAll() {
+        return jpaRepository.count();
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CandidateProfileRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.candidate.model.CandidateProfile;
+import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
+import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.CandidateProfileJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class CandidateProfileRepositoryAdapter implements CandidateProfileRepository {
+    private final CandidateProfileJpaRepository jpaRepository;
+    private final CandidateEntityMapper mapper;
+
+    @Override
+    public CandidateProfile save(CandidateProfile profile) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(profile)));
+    }
+
+    @Override
+    public Optional<CandidateProfile> findByUserId(Long userId) {
+        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CandidateSkillRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.candidate.model.CandidateSkill;
+import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
+import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.CandidateSkillJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository {
+    private final CandidateSkillJpaRepository jpaRepository;
+    private final CandidateEntityMapper mapper;
+
+    @Override
+    public CandidateSkill save(CandidateSkill candidateSkill) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(candidateSkill)));
+    }
+
+    @Override
+    public List<CandidateSkill> findByCandidateId(Long candidateId) {
+        return jpaRepository.findByCandidateId(candidateId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId) {
+        jpaRepository.deleteByCandidateIdAndSkillId(candidateId, skillId);
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CompanyProfileRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+import com.smartmatch.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.CompanyProfileJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository {
+    private final CompanyProfileJpaRepository jpaRepository;
+    private final CompanyProfileEntityMapper mapper;
+
+    @Override
+    public CompanyProfile save(CompanyProfile companyProfile) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(companyProfile)));
+    }
+
+    @Override
+    public Optional<CompanyProfile> findByUserId(Long userId) {
+        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<CompanyProfile> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CvDocumentRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.candidate.model.CvDocument;
+import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
+import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.CvDocumentJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class CvDocumentRepositoryAdapter implements CvDocumentRepository {
+    private final CvDocumentJpaRepository jpaRepository;
+    private final CandidateEntityMapper mapper;
+
+    @Override
+    public CvDocument save(CvDocument cvDocument) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(cvDocument)));
+    }
+
+    @Override
+    public Optional<CvDocument> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<CvDocument> findByCandidateId(Long candidateId) {
+        return jpaRepository.findByCandidateId(candidateId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        jpaRepository.deleteById(id);
+    }
+}
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\JobPostingRepositoryAdapter.java
 // ======================================================================
 
 package com.smartmatch.infrastructure.persistence.adapter;
 
-public class JobPostingRepositoryAdapter {
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import com.smartmatch.domain.job.model.JobPosting;
+import com.smartmatch.domain.job.model.JobStatus;
+import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
+import com.smartmatch.infrastructure.persistence.mapper.JobPostingEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.JobPostingJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class JobPostingRepositoryAdapter implements JobPostingRepository {
+    private final JobPostingJpaRepository jpaRepository;
+    private final JobPostingEntityMapper mapper;
+
+    @Override
+    public JobPosting save(JobPosting jobPosting) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(jobPosting)));
+    }
+
+    @Override
+    public Optional<JobPosting> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyId(companyId, PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.searchJobs(keyword, location, status, PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public long countByStatus(JobStatus status) {
+        return jpaRepository.countByStatus(status);
+    }
 }
 
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SavedJobRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import com.smartmatch.domain.job.model.SavedJob;
+import com.smartmatch.domain.job.repository.SavedJobRepository;
+import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import com.smartmatch.infrastructure.persistence.mapper.SavedJobEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.SavedJobJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class SavedJobRepositoryAdapter implements SavedJobRepository {
+    private final SavedJobJpaRepository jpaRepository;
+    private final SavedJobEntityMapper mapper;
+
+    @Override
+    public SavedJob save(SavedJob savedJob) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(savedJob)));
+    }
+
+    @Override
+    public Optional<SavedJob> findByCandidateIdAndJobId(Long candidateId, Long jobId) {
+        return jpaRepository.findByCandidateIdAndJobId(candidateId, jobId).map(mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<SavedJob> findByCandidateId(Long candidateId, DomainPageable pageable) {
+        Page<SavedJobJpaEntity> page = jpaRepository.findByCandidateId(candidateId, PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public void delete(SavedJob savedJob) {
+        jpaRepository.delete(mapper.toEntity(savedJob));
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SkillRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.candidate.model.Skill;
+import com.smartmatch.domain.candidate.repository.SkillRepository;
+import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.SkillJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class SkillRepositoryAdapter implements SkillRepository {
+    private final SkillJpaRepository jpaRepository;
+    private final CandidateEntityMapper mapper;
+
+    @Override
+    public Skill save(Skill skill) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(skill)));
+    }
+
+    @Override
+    public Optional<Skill> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<Skill> findByName(String name) {
+        return jpaRepository.findByName(name).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Skill> findAll() {
+        return jpaRepository.findAll().stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        jpaRepository.deleteById(id);
+    }
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SystemLogRepositoryAdapter.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter;
+
+import com.smartmatch.domain.admin.model.SystemLog;
+import com.smartmatch.domain.admin.repository.SystemLogRepository;
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
+import com.smartmatch.infrastructure.persistence.mapper.SystemLogEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.SystemLogJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class SystemLogRepositoryAdapter implements SystemLogRepository {
+    private final SystemLogJpaRepository jpaRepository;
+    private final SystemLogEntityMapper mapper;
+
+    @Override
+    public SystemLog save(SystemLog systemLog) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(systemLog)));
+    }
+
+    @Override
+    public DomainPage<SystemLog> findAll(DomainPageable pageable) {
+        Page<SystemLogJpaEntity> page = jpaRepository.findAll(PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\UserRepositoryAdapter.java
@@ -171,9 +620,88 @@ public class JobPostingRepositoryAdapter {
 
 package com.smartmatch.infrastructure.persistence.adapter;
 
-public class UserRepositoryAdapter {
+import com.smartmatch.domain.auth.model.User;
+import com.smartmatch.domain.auth.repository.UserRepository;
+import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
+import com.smartmatch.infrastructure.persistence.mapper.UserEntityMapper;
+import com.smartmatch.infrastructure.persistence.repository.UserJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class UserRepositoryAdapter implements UserRepository {
+
+    private final UserJpaRepository jpaRepository;
+    private final UserEntityMapper mapper;
+
+    @Override
+    public User save(User user) {
+        UserJpaEntity entity = mapper.toEntity(user);
+        return mapper.toDomain(jpaRepository.save(entity));
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return jpaRepository.findByEmail(email).map(mapper::toDomain);
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return jpaRepository.existsByEmail(email);
+    }
 }
 
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\util\PaginationMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.adapter.util;
+
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class PaginationMapper {
+
+    public static Pageable toSpringPageable(DomainPageable domainPageable) {
+        if (domainPageable == null) {
+            return Pageable.unpaged();
+        }
+        return PageRequest.of(domainPageable.getPageNumber(), domainPageable.getPageSize());
+    }
+
+    public static <T, E> DomainPage<T> toDomainPage(Page<E> springPage, Function<E, T> mapperFunction) {
+        List<T> content = springPage.getContent().stream()
+                .map(mapperFunction)
+                .collect(Collectors.toList());
+
+        return new DomainPage<T>() {
+            @Override
+            public List<T> getContent() { return content; }
+            @Override
+            public long getTotalElements() { return springPage.getTotalElements(); }
+            @Override
+            public int getTotalPages() { return springPage.getTotalPages(); }
+            @Override
+            public int getNumber() { return springPage.getNumber(); }
+            @Override
+            public int getSize() { return springPage.getSize(); }
+        };
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\AiMatchScoreJpaEntity.java
@@ -729,6 +1257,22 @@ public interface JobPostingEntityMapper {
 
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SavedJobEntityMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.mapper;
+
+import com.smartmatch.domain.job.model.SavedJob;
+import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface SavedJobEntityMapper {
+    SavedJobJpaEntity toEntity(SavedJob savedJob);
+    SavedJob toDomain(SavedJobJpaEntity entity);
+}
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SystemLogEntityMapper.java
 // ======================================================================
 
@@ -912,6 +1456,8 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
                                          @Param("location") String location,
                                          @Param("status") JobStatus status,
                                          Pageable pageable);
+
+    long countByStatus(JobStatus status);
 }
 
 
@@ -1019,66 +1565,6 @@ public class JwtAuthenticationFilter {
 package com.smartmatch.infrastructure.security;
 
 public class JwtService {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\AdminServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class AdminServiceImpl {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\AuthServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class AuthServiceImpl {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\CandidateServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class CandidateServiceImpl {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\EmployerServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class EmployerServiceImpl {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\JobApplicationServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class JobApplicationServiceImpl {
-}
-
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\service\JobServiceImpl.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.service;
-
-public class JobServiceImpl {
 }
 
 

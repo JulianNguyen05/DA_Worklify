@@ -21,5 +21,7 @@ public class JobPostingRequest {
     @NotBlank(message = "Địa điểm làm việc không được để trống")
     private String location;
 
+    private String workType;
+
     private LocalDateTime expiredAt;
 }
