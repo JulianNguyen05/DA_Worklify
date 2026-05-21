@@ -330,7 +330,6 @@ import lombok.*;
 @Builder
 public class CandidateSkillJpaEntity {
 
-    // Sử dụng surrogate key (ID tự tăng) cho bảng trung gian để dễ quản lý bằng JPA thay vì Composite Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -339,7 +338,7 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Integer skillId;
+    private Long skillId;
 }
 
 // ======================================================================
@@ -538,13 +537,11 @@ public class SkillJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(unique = true, nullable = false, length = 100)
     private String name;
 }
-
-
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SystemLogJpaEntity.java
@@ -590,7 +587,6 @@ public class SystemLogJpaEntity {
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-
 import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
@@ -623,6 +619,9 @@ public class UserJpaEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status;
+
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

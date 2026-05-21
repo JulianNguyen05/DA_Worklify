@@ -1,7 +1,6 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-
 import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
@@ -34,6 +33,9 @@ public class UserJpaEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status;
+
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

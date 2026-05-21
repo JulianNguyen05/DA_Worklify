@@ -1,3 +1,4 @@
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 package com.smartmatch.domain.job.model;
 
 import lombok.AccessLevel;
@@ -14,11 +15,18 @@ public class JobPosting {
     private Long companyId;
     private String title;
     private String description;
+
+    private String requirements;
+    private String salaryRange;
+    private String location;
+
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 
-    public static JobPosting createDraft(Long companyId, String title, String description, LocalDateTime expiredAt) {
+    public static JobPosting createDraft(Long companyId, String title, String description,
+                                         String requirements, String salaryRange, String location,
+                                         LocalDateTime expiredAt) {
         if (companyId == null || title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Dữ liệu tin tuyển dụng không hợp lệ.");
         }
@@ -26,6 +34,9 @@ public class JobPosting {
                 .companyId(companyId)
                 .title(title)
                 .description(description)
+                .requirements(requirements)
+                .salaryRange(salaryRange)
+                .location(location)
                 .status(JobStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .expiredAt(expiredAt)
@@ -44,9 +55,13 @@ public class JobPosting {
         this.status = JobStatus.REJECTED;
     }
 
-    public void updateDetails(String title, String description, LocalDateTime expiredAt) {
+    public void updateDetails(String title, String description, String requirements,
+                              String salaryRange, String location, LocalDateTime expiredAt) {
         this.title = title;
         this.description = description;
+        this.requirements = requirements;
+        this.salaryRange = salaryRange;
+        this.location = location;
         this.expiredAt = expiredAt;
     }
 }

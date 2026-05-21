@@ -673,6 +673,7 @@ public interface CompanyProfileRepository {
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 // ============================================================
 
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 package com.smartmatch.domain.job.model;
 
 import lombok.AccessLevel;
@@ -689,11 +690,18 @@ public class JobPosting {
     private Long companyId;
     private String title;
     private String description;
+
+    private String requirements;
+    private String salaryRange;
+    private String location;
+
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 
-    public static JobPosting createDraft(Long companyId, String title, String description, LocalDateTime expiredAt) {
+    public static JobPosting createDraft(Long companyId, String title, String description,
+                                         String requirements, String salaryRange, String location,
+                                         LocalDateTime expiredAt) {
         if (companyId == null || title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("Dữ liệu tin tuyển dụng không hợp lệ.");
         }
@@ -701,6 +709,9 @@ public class JobPosting {
                 .companyId(companyId)
                 .title(title)
                 .description(description)
+                .requirements(requirements)
+                .salaryRange(salaryRange)
+                .location(location)
                 .status(JobStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .expiredAt(expiredAt)
@@ -719,9 +730,13 @@ public class JobPosting {
         this.status = JobStatus.REJECTED;
     }
 
-    public void updateDetails(String title, String description, LocalDateTime expiredAt) {
+    public void updateDetails(String title, String description, String requirements,
+                              String salaryRange, String location, LocalDateTime expiredAt) {
         this.title = title;
         this.description = description;
+        this.requirements = requirements;
+        this.salaryRange = salaryRange;
+        this.location = location;
         this.expiredAt = expiredAt;
     }
 }
@@ -740,6 +755,43 @@ public enum JobStatus {
 }
 
 // ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\SavedJob.java
+// ============================================================
+
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\SavedJob.java
+package com.smartmatch.domain.job.model;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import java.time.LocalDateTime;
+
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class SavedJob {
+    private Long id;
+    private Long candidateId;
+    private Long jobId;
+    private LocalDateTime savedAt;
+
+    /**
+     * Factory method: Ứng viên lưu tin tuyển dụng.
+     */
+    public static SavedJob markAsSaved(Long candidateId, Long jobId) {
+        if (candidateId == null || jobId == null) {
+            throw new IllegalArgumentException("Thông tin lưu việc làm không hợp lệ.");
+        }
+        return SavedJob.builder()
+                .candidateId(candidateId)
+                .jobId(jobId)
+                .savedAt(LocalDateTime.now())
+                .build();
+    }
+}
+
+// ============================================================
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\repository\JobPostingRepository.java
 // ============================================================
 
@@ -754,4 +806,26 @@ public interface JobPostingRepository {
     DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable);
     DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable);
     long countByStatus(JobStatus status);
+}
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\repository\SavedJobRepository.java
+// ============================================================
+
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\repository\SavedJobRepository.java
+package com.smartmatch.domain.job.repository;
+
+import com.smartmatch.domain.job.model.SavedJob;
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import java.util.Optional;
+
+public interface SavedJobRepository {
+    SavedJob save(SavedJob savedJob);
+
+    Optional<SavedJob> findByCandidateIdAndJobId(Long candidateId, Long jobId);
+
+    DomainPage<SavedJob> findByCandidateId(Long candidateId, DomainPageable pageable);
+
+    void delete(SavedJob savedJob);
 }

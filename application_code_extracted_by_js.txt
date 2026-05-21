@@ -435,19 +435,29 @@ public interface EmployerService {
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
 // ============================================================
 
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
 package com.smartmatch.application.job.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
 public class JobPostingRequest {
     @NotBlank(message = "Tiêu đề công việc không được để trống")
     private String title;
+
     @NotBlank(message = "Mô tả công việc không được để trống")
     private String description;
+
+    @NotBlank(message = "Yêu cầu công việc không được để trống")
+    private String requirements;
+
+    private String salaryRange; // Có thể null nếu công ty muốn thỏa thuận
+
+    @NotBlank(message = "Địa điểm làm việc không được để trống")
+    private String location;
+
     private LocalDateTime expiredAt;
 }
 
@@ -455,12 +465,12 @@ public class JobPostingRequest {
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
 // ============================================================
 
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
 package com.smartmatch.application.job.dto;
 
 import com.smartmatch.domain.job.model.JobStatus;
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -470,16 +480,43 @@ public class JobPostingResponse {
     private Long companyId;
     private String title;
     private String description;
+
+    private String requirements;
+    private String salaryRange;
+    private String location;
+
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 }
 
 // ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\SavedJobResponse.java
+// ============================================================
+
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\SavedJobResponse.java
+package com.smartmatch.application.job.dto;
+
+import lombok.Builder;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class SavedJobResponse {
+    private Long id;
+    private Long candidateId;
+    private JobPostingResponse job; // Trả về luôn thông tin chi tiết của Job
+    private LocalDateTime savedAt;
+}
+
+// ============================================================
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\JobService.java
 // ============================================================
 
+// File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\JobService.java
 package com.smartmatch.application.job.service;
+
 import com.smartmatch.application.job.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.domain.common.DomainPageable;
@@ -491,6 +528,9 @@ public interface JobService {
     JobPostingResponse getJobById(Long jobId);
     PageResponse<JobPostingResponse> getJobsByCompany(Long companyId, DomainPageable pageable);
     PageResponse<JobPostingResponse> searchJobs(String keyword, String location, DomainPageable pageable);
+    void saveJobForCandidate(Long candidateId, Long jobId);
+    void unsaveJobForCandidate(Long candidateId, Long jobId);
+    PageResponse<SavedJobResponse> getSavedJobsByCandidate(Long candidateId, DomainPageable pageable);
 }
 
 // ============================================================

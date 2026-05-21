@@ -14,7 +14,6 @@ import lombok.*;
 @Builder
 public class CandidateSkillJpaEntity {
 
-    // Sử dụng surrogate key (ID tự tăng) cho bảng trung gian để dễ quản lý bằng JPA thay vì Composite Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,5 +22,5 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Integer skillId;
+    private Long skillId;
 }
