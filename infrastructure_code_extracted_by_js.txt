@@ -338,7 +338,7 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Long skillId;
+    private Integer skillId;
 }
 
 // ======================================================================
@@ -537,7 +537,7 @@ public class SkillJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(unique = true, nullable = false, length = 100)
     private String name;
@@ -651,12 +651,189 @@ public class UserEntityMapper {
 
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\AiMatchScoreJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface AiMatchScoreJpaRepository extends JpaRepository<AiMatchScoreJpaEntity, Long> {
+    Optional<AiMatchScoreJpaEntity> findByApplicationId(Long applicationId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\ApplicationJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface ApplicationJpaRepository extends JpaRepository<ApplicationJpaEntity, Long> {
+    boolean existsByJobIdAndCandidateId(Long jobId, Long candidateId);
+    List<ApplicationJpaEntity> findByJobId(Long jobId);
+    List<ApplicationJpaEntity> findByCandidateId(Long candidateId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CandidateProfileJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.CandidateProfileJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface CandidateProfileJpaRepository extends JpaRepository<CandidateProfileJpaEntity, Long> {
+    Optional<CandidateProfileJpaEntity> findByUserId(Long userId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CandidateSkillJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
+    List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
+    void deleteByCandidateIdAndSkillId(Long candidateId, Integer skillId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CompanyProfileJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.CompanyProfileJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface CompanyProfileJpaRepository extends JpaRepository<CompanyProfileJpaEntity, Long> {
+    Optional<CompanyProfileJpaEntity> findByUserId(Long userId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CvDocumentJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.CvDocumentJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface CvDocumentJpaRepository extends JpaRepository<CvDocumentJpaEntity, Long> {
+    List<CvDocumentJpaEntity> findByCandidateId(Long candidateId);
+}
+
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\JobPostingJpaRepository.java
 // ======================================================================
 
 package com.smartmatch.infrastructure.persistence.repository;
 
-public class JobPostingJpaRepository {
+import com.smartmatch.domain.job.model.JobStatus;
+import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEntity, Long> {
+    // [ĐÃ SỬA] Trả về List thay vì Page để khớp với Port của Domain
+    List<JobPostingJpaEntity> findByCompanyId(Long companyId);
+    List<JobPostingJpaEntity> findByStatus(JobStatus status);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SavedJobJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface SavedJobJpaRepository extends JpaRepository<SavedJobJpaEntity, Long> {
+    Optional<SavedJobJpaEntity> findByCandidateIdAndJobId(Long candidateId, Long jobId);
+    List<SavedJobJpaEntity> findByCandidateId(Long candidateId);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SkillJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.SkillJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Integer> {
+    Optional<SkillJpaEntity> findByName(String name);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SystemLogJpaRepository.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.repository;
+
+import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface SystemLogJpaRepository extends JpaRepository<SystemLogJpaEntity, Long> {
+    List<SystemLogJpaEntity> findByUserId(Long userId);
 }
 
 
@@ -664,11 +841,20 @@ public class JobPostingJpaRepository {
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\UserJpaRepository.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\UserJpaRepository.java
 package com.smartmatch.infrastructure.persistence.repository;
 
-public class UserJpaRepository {
-}
+import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
+@Repository
+public interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
+    Optional<UserJpaEntity> findByEmail(String email);
+    boolean existsByEmail(String email);
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java

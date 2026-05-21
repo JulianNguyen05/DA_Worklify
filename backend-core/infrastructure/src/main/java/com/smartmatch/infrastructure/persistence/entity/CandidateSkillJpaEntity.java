@@ -22,5 +22,5 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Long skillId;
+    private Integer skillId;
 }
