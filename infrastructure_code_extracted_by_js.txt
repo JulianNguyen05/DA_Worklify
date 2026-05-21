@@ -628,12 +628,122 @@ public class UserJpaEntity {
 }
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\ApplicationEntityMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.mapper;
+
+
+import com.smartmatch.domain.application.model.AiMatchScore;
+import com.smartmatch.domain.application.model.Application;
+import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface ApplicationEntityMapper {
+
+    ApplicationJpaEntity toEntity(Application application);
+    Application toDomain(ApplicationJpaEntity entity);
+
+    AiMatchScoreJpaEntity toEntity(AiMatchScore aiMatchScore);
+    AiMatchScore toDomain(AiMatchScoreJpaEntity entity);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CandidateEntityMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.mapper;
+
+import com.smartmatch.domain.candidate.model.CandidateProfile;
+import com.smartmatch.domain.candidate.model.CandidateSkill;
+import com.smartmatch.domain.candidate.model.CvDocument;
+import com.smartmatch.domain.candidate.model.Skill;
+import com.smartmatch.infrastructure.persistence.entity.CandidateProfileJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.CvDocumentJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.SkillJpaEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+@Mapper(componentModel = "spring")
+public interface CandidateEntityMapper {
+
+    CandidateProfileJpaEntity toEntity(CandidateProfile profile);
+    CandidateProfile toDomain(CandidateProfileJpaEntity entity);
+
+    CvDocumentJpaEntity toEntity(CvDocument document);
+    CvDocument toDomain(CvDocumentJpaEntity entity);
+
+    SkillJpaEntity toEntity(Skill skill);
+    Skill toDomain(SkillJpaEntity entity);
+
+    @Mapping(target = "id", ignore = true)
+    CandidateSkillJpaEntity toEntity(CandidateSkill candidateSkill);
+    CandidateSkill toDomain(CandidateSkillJpaEntity entity);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CompanyProfileEntityMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.mapper;
+
+import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.infrastructure.persistence.entity.CompanyProfileJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface CompanyProfileEntityMapper {
+
+    CompanyProfileJpaEntity toEntity(CompanyProfile profile);
+
+    CompanyProfile toDomain(CompanyProfileJpaEntity entity);
+}
+
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\JobPostingEntityMapper.java
 // ======================================================================
 
 package com.smartmatch.infrastructure.persistence.mapper;
 
-public class JobPostingEntityMapper {
+import com.smartmatch.domain.job.model.JobPosting;
+import com.smartmatch.domain.job.model.SavedJob;
+import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface JobPostingEntityMapper {
+
+    JobPostingJpaEntity toEntity(JobPosting jobPosting);
+    JobPosting toDomain(JobPostingJpaEntity entity);
+
+    SavedJobJpaEntity toEntity(SavedJob savedJob);
+    SavedJob toDomain(SavedJobJpaEntity entity);
+}
+
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SystemLogEntityMapper.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.mapper;
+
+import com.smartmatch.domain.admin.model.SystemLog;
+import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface SystemLogEntityMapper {
+
+    SystemLogJpaEntity toEntity(SystemLog log);
+
+    SystemLog toDomain(SystemLogJpaEntity entity);
 }
 
 
@@ -643,7 +753,16 @@ public class JobPostingEntityMapper {
 
 package com.smartmatch.infrastructure.persistence.mapper;
 
-public class UserEntityMapper {
+import com.smartmatch.domain.auth.model.User;
+import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface UserEntityMapper {
+
+    UserJpaEntity toEntity(User user);
+
+    User toDomain(UserJpaEntity entity);
 }
 
 

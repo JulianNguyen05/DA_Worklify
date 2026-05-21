@@ -1,0 +1,40 @@
+package com.smartmatch.infrastructure.persistence.adapter.util;
+
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public class PaginationMapper {
+
+    public static Pageable toSpringPageable(DomainPageable domainPageable) {
+        if (domainPageable == null) {
+            return Pageable.unpaged();
+        }
+        return PageRequest.of(domainPageable.getPageNumber(), domainPageable.getPageSize());
+    }
+
+    public static <T, E> DomainPage<T> toDomainPage(Page<E> springPage, Function<E, T> mapperFunction) {
+        List<T> content = springPage.getContent().stream()
+                .map(mapperFunction)
+                .collect(Collectors.toList());
+
+        return new DomainPage<T>() {
+            @Override
+            public List<T> getContent() { return content; }
+            @Override
+            public long getTotalElements() { return springPage.getTotalElements(); }
+            @Override
+            public int getTotalPages() { return springPage.getTotalPages(); }
+            @Override
+            public int getNumber() { return springPage.getNumber(); }
+            @Override
+            public int getSize() { return springPage.getSize(); }
+        };
+    }
+}

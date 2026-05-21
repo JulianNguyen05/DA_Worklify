@@ -28,4 +28,6 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
                                          @Param("location") String location,
                                          @Param("status") JobStatus status,
                                          Pageable pageable);
+
+    long countByStatus(JobStatus status);
 }
