@@ -1,76 +1,32 @@
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\auth\model\User.java
 package com.smartmatch.domain.auth.model;
 
-
-import lombok.*;
-
-import java.time.LocalDateTime;
+import com.smartmatch.domain.common.valueobject.EmailAddress;
+import com.smartmatch.domain.common.valueobject.PhoneNumber;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
     private Long id;
-    private String email;
-    private String password;
+
+    // Đã chuyển từ String sang Value Object
+    private EmailAddress email;
+    private PhoneNumber phone;
+
+    private String passwordHash;
     private Role role;
+    private boolean isMfaEnabled;
 
-    @Builder.Default
-    private UserStatus status = UserStatus.ACTIVE;
-
-    private boolean mfaEnabled;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    /**
-     * Phương thức khởi tạo chuẩn cho Domain.
-     * Validation được thực hiện trực tiếp tại đây để bảo vệ bất biến của thực thể.
-     */
-    public static User createNewUser(String email, String hashedPassword, Role role) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        if (email == null || !email.matches(emailRegex)) {
-            throw new IllegalArgumentException("Định dạng email không hợp lệ.");
+    // Business Behavior: Kích hoạt MFA
+    public void enableMfa() {
+        if (this.isMfaEnabled) {
+            throw new IllegalStateException("MFA đã được kích hoạt cho tài khoản này.");
         }
-
-        User user = User.builder()
-                .email(email.toLowerCase().trim())
-                .password(hashedPassword)
-                .role(role)
-                .status(UserStatus.ACTIVE)
-                .mfaEnabled(false)
-                .build();
-
-        user.onCreate();
-        return user;
-    }
-
-    // Khởi tạo thời gian ban đầu
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // Phương thức cập nhật thời gian mỗi khi thay đổi trạng thái
-    public void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void ban() {
-        this.status = UserStatus.BANNED;
-        this.onUpdate();
-    }
-
-    public void unban() {
-        this.status = UserStatus.ACTIVE;
-        this.onUpdate();
-    }
-
-    public void enableMultiFactorAuth() {
-        this.mfaEnabled = true;
-        this.onUpdate();
-    }
-
-    public void changePassword(String newEncryptedPassword) {
-        this.password = newEncryptedPassword;
-        this.onUpdate();
+        this.isMfaEnabled = true;
     }
 }
