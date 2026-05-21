@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
     List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
-    void deleteByCandidateIdAndSkillId(Long candidateId, Integer skillId);
+    void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
 }

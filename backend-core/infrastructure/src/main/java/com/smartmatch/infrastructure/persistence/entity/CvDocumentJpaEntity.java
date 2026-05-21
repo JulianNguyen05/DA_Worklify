@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class CvDocumentJpaEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,7 +27,7 @@ public class CvDocumentJpaEntity {
     private String rawText;
 
     @Column(name = "is_generated", nullable = false)
-    private boolean isGenerated;
+    private Boolean isGenerated;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

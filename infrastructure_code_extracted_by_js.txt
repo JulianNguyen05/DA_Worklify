@@ -329,7 +329,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CandidateSkillJpaEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -338,7 +337,7 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Integer skillId;
+    private Long skillId;
 }
 
 // ======================================================================
@@ -403,7 +402,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class CvDocumentJpaEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -418,7 +416,7 @@ public class CvDocumentJpaEntity {
     private String rawText;
 
     @Column(name = "is_generated", nullable = false)
-    private boolean isGenerated;
+    private Boolean isGenerated;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -534,10 +532,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillJpaEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(unique = true, nullable = false, length = 100)
     private String name;
@@ -684,8 +681,9 @@ import java.util.List;
 @Repository
 public interface ApplicationJpaRepository extends JpaRepository<ApplicationJpaEntity, Long> {
     boolean existsByJobIdAndCandidateId(Long jobId, Long candidateId);
-    List<ApplicationJpaEntity> findByJobId(Long jobId);
-    List<ApplicationJpaEntity> findByCandidateId(Long candidateId);
+
+    Page<ApplicationJpaEntity> findByJobId(Long jobId, Pageable pageable);
+    Page<ApplicationJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
 }
 
 
@@ -722,7 +720,7 @@ import java.util.List;
 @Repository
 public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
     List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
-    void deleteByCandidateIdAndSkillId(Long candidateId, Integer skillId);
+    void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
 }
 
 
@@ -769,16 +767,32 @@ package com.smartmatch.infrastructure.persistence.repository;
 
 import com.smartmatch.domain.job.model.JobStatus;
 import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEntity, Long> {
-    // [ĐÃ SỬA] Trả về List thay vì Page để khớp với Port của Domain
-    List<JobPostingJpaEntity> findByCompanyId(Long companyId);
+
+    // [ĐÃ SỬA] Dùng Page thay cho List đối với các truy vấn lớn để Mapper có thể chuyển thành DomainPage
+    Page<JobPostingJpaEntity> findByCompanyId(Long companyId, Pageable pageable);
+
     List<JobPostingJpaEntity> findByStatus(JobStatus status);
+
+    // [ĐÃ SỬA] Phục hồi phương thức searchJobs cực kỳ quan trọng
+    @Query("SELECT j FROM JobPostingJpaEntity j WHERE " +
+            "(:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+            "(:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+            "j.status = :status")
+    Page<JobPostingJpaEntity> searchJobs(@Param("keyword") String keyword,
+                                         @Param("location") String location,
+                                         @Param("status") JobStatus status,
+                                         Pageable pageable);
 }
 
 
@@ -789,6 +803,8 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
 package com.smartmatch.infrastructure.persistence.repository;
 
 import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -798,7 +814,8 @@ import java.util.Optional;
 @Repository
 public interface SavedJobJpaRepository extends JpaRepository<SavedJobJpaEntity, Long> {
     Optional<SavedJobJpaEntity> findByCandidateIdAndJobId(Long candidateId, Long jobId);
-    List<SavedJobJpaEntity> findByCandidateId(Long candidateId);
+
+    Page<SavedJobJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
 }
 
 
@@ -815,7 +832,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Integer> {
+public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Long> {
     Optional<SkillJpaEntity> findByName(String name);
 }
 

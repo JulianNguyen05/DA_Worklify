@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Integer> {
+public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Long> {
     Optional<SkillJpaEntity> findByName(String name);
 }

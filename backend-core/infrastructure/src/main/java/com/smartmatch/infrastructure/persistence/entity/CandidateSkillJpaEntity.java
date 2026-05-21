@@ -13,7 +13,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CandidateSkillJpaEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,5 +21,5 @@ public class CandidateSkillJpaEntity {
     private Long candidateId;
 
     @Column(name = "skill_id", nullable = false)
-    private Integer skillId;
+    private Long skillId;
 }
