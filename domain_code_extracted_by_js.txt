@@ -10,6 +10,7 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.smartmatch</groupId>
         <artifactId>backend-core</artifactId>
@@ -20,14 +21,11 @@
     <packaging>jar</packaging>
 
     <name>SmartMatch Domain</name>
-    <description>Entities, Value Objects, Repository Ports, Business Rules</description>
+    <description>
+        Entities, Value Objects, Repository Ports, Business Rules
+    </description>
 
     <dependencies>
-        <!-- JPA API (chỉ annotations) - quan trọng nhất để fix lỗi hiện tại -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
 
         <!-- Validation -->
         <dependency>
@@ -41,20 +39,21 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-commons</artifactId>
-        </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
+            <!-- Java Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+
                 <configuration>
                     <release>21</release>
+
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -63,7 +62,9 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+
             </plugin>
+
         </plugins>
     </build>
 
@@ -75,34 +76,30 @@
 
 package com.smartmatch.domain.admin.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "system_logs")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SystemLog {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id")
     private Long userId;
-
-    @Column(name = "action", nullable = false)
     private String action;
-
-    @Column(name = "details", columnDefinition = "TEXT")
     private String details;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static SystemLog recordAction(Long userId, String action, String details) {
+        return SystemLog.builder()
+                .userId(userId)
+                .action(action)
+                .details(details)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 }
 
 // ============================================================
@@ -126,34 +123,34 @@ public interface SystemLogRepository {
 
 package com.smartmatch.domain.application.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "ai_match_scores")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AiMatchScore {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "application_id", nullable = false, unique = true)
     private Long applicationId;
-
-    @Column(name = "confidence_score", nullable = false)
     private Float confidenceScore;
-
-    @Column(name = "analysis_details", columnDefinition = "TEXT")
     private String analysisDetails;
-
-    @Column(name = "evaluated_at", nullable = false)
     private LocalDateTime evaluatedAt;
+
+    public static AiMatchScore evaluate(Long applicationId, Float score, String details) {
+        return AiMatchScore.builder()
+                .applicationId(applicationId)
+                .confidenceScore(score)
+                .analysisDetails(details)
+                .evaluatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    public boolean isHighlyMatched(float threshold) {
+        return this.confidenceScore != null && this.confidenceScore >= threshold;
+    }
 }
 
 // ============================================================
@@ -162,41 +159,74 @@ public class AiMatchScore {
 
 package com.smartmatch.domain.application.model;
 
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-@Entity
-@Table(name = "applications")
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "job_id", nullable = false)
     private Long jobId;
-
-    @Column(name = "cv_id", nullable = false)
     private Long cvId;
-
-    @Column(name = "candidate_id", nullable = false)
     private Long candidateId;
-
-    @Column(name = "cover_letter", columnDefinition = "TEXT")
     private String coverLetter;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
     private ApplicationStatus status;
-
-    @Column(name = "applied_at", nullable = false, updatable = false)
     private LocalDateTime appliedAt;
+
+    // Thuộc tính phục vụ kiểm thử mù (Blind Testing)
+    private String blindTestUrl;
+
+    /**
+     * Factory method để khởi tạo một Đơn ứng tuyển mới.
+     * Đảm bảo trạng thái mặc định luôn đúng và dữ liệu hợp lệ.
+     */
+    public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
+        if (jobId == null || cvId == null || candidateId == null) {
+            throw new IllegalArgumentException("Thông tin ứng tuyển không được để trống");
+        }
+        return Application.builder()
+                .jobId(jobId)
+                .cvId(cvId)
+                .candidateId(candidateId)
+                .coverLetter(coverLetter)
+                .status(ApplicationStatus.PENDING)
+                .appliedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Nghiệp vụ: Chuyển trạng thái đơn sang Đang xem xét.
+     */
+    public void markAsReviewed() {
+        if (this.status != ApplicationStatus.PENDING) {
+            throw new IllegalStateException("Chỉ có thể review hồ sơ đang ở trạng thái PENDING.");
+        }
+        this.status = ApplicationStatus.REVIEWED;
+    }
+
+    /**
+     * Nghiệp vụ: Chấp nhận ứng viên.
+     */
+    public void accept() {
+        this.status = ApplicationStatus.ACCEPTED;
+    }
+
+    /**
+     * Nghiệp vụ: Sinh liên kết ẩn danh cho hội đồng đánh giá.
+     * Ẩn toàn bộ định danh ứng viên, điều hướng qua sub-domain trung lập.
+     */
+    public void enableBlindTesting() {
+        String uniqueMask = UUID.randomUUID().toString().substring(0, 12);
+        // Sử dụng sub-domain trung lập để che giấu nguồn gốc hệ thống đối với hội đồng
+        this.blindTestUrl = String.format("https://appa.ungdungnghiencuu.com/review/%s", uniqueMask);
+    }
 }
 
 // ============================================================
@@ -233,18 +263,18 @@ public interface AiMatchScoreRepository {
 package com.smartmatch.domain.application.repository;
 
 import com.smartmatch.domain.application.model.Application;
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 public interface ApplicationRepository {
     Application save(Application application);
     Optional<Application> findById(Long id);
     List<Application> findByJobId(Long jobId);
     List<Application> findByCvId(Long cvId);
-    Page<Application> findByJobId(Long jobId, Pageable pageable);
-    Page<Application> findByCandidateId(Long candidateId, Pageable pageable);
+    DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable);
+    DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable);
 }
 
 // ============================================================
@@ -266,42 +296,76 @@ public enum Role {
 
 package com.smartmatch.domain.auth.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "email", nullable = false, unique = true)
     private String email;
-
-    @Column(name = "password", nullable = false)
     private String password;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
     private Role role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
     private UserStatus status;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
+    private boolean mfaEnabled; // Cờ xác thực đa yếu tố
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /**
+     * Factory method để đăng ký tài khoản mới.
+     */
+    public static User registerNew(String email, String encryptedPassword, Role role) {
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("Định dạng email không hợp lệ.");
+        }
+        return User.builder()
+                .email(email)
+                .password(encryptedPassword)
+                .role(role)
+                .status(UserStatus.ACTIVE) // Hoặc PENDING nếu cần xác thực email
+                .mfaEnabled(false)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Nghiệp vụ: Admin khóa tài khoản vi phạm.
+     */
+    public void ban() {
+        this.status = UserStatus.BANNED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Nghiệp vụ: Mở khóa tài khoản.
+     */
+    public void unban() {
+        this.status = UserStatus.ACTIVE;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Nghiệp vụ: Bật xác thực đa yếu tố để tăng cường bảo mật.
+     */
+    public void enableMultiFactorAuth() {
+        this.mfaEnabled = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Nghiệp vụ: Đổi mật khẩu.
+     */
+    public void changePassword(String newEncryptedPassword) {
+        this.password = newEncryptedPassword;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 
 // ============================================================
@@ -342,40 +406,38 @@ public interface UserRepository {
 
 package com.smartmatch.domain.candidate.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "candidate_profiles")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CandidateProfile {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;
-
-    @Column(name = "full_name", nullable = false)
     private String fullName;
-
-    @Column(name = "phone")
     private String phone;
-
-    @Column(name = "gender")
     private String gender;
-
-    @Column(name = "dob")
     private LocalDate dob;
-
-    @Column(name = "address")
     private String address;
+
+    public static CandidateProfile create(Long userId, String fullName) {
+        if (userId == null || fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Thông tin bắt buộc không hợp lệ.");
+        }
+        return CandidateProfile.builder()
+                .userId(userId)
+                .fullName(fullName)
+                .build();
+    }
+
+    public void updateContactInfo(String phone, String address) {
+        this.phone = phone;
+        this.address = address;
+    }
 }
 
 // ============================================================
@@ -384,19 +446,14 @@ public class CandidateProfile {
 
 package com.smartmatch.domain.candidate.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@Entity
-@Table(name = "candidate_skills")
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CandidateSkill {
-    @EmbeddedId
-    private CandidateSkillId id;
+    private Long candidateId;
+    private Long skillId;
 }
 
 // ============================================================
@@ -405,23 +462,16 @@ public class CandidateSkill {
 
 package com.smartmatch.domain.candidate.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
-import lombok.*;
-import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-@Embeddable
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class CandidateSkillId implements Serializable {
-    @Column(name = "candidate_id")
-    private Long candidateId;
-
-    @Column(name = "skill_id")
-    private Long skillId;
+public class CandidateSkillId {
+    private final Long candidateId;
+    private final Long skillId;
 }
 
 // ============================================================
@@ -430,37 +480,42 @@ public class CandidateSkillId implements Serializable {
 
 package com.smartmatch.domain.candidate.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "cv_documents")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CvDocument {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "candidate_id", nullable = false)
     private Long candidateId;
-
-    @Column(name = "file_path", nullable = false)
     private String filePath;
-
-    @Column(name = "raw_text", columnDefinition = "LONGTEXT")
     private String rawText;
-
-    @Column(name = "is_generated", nullable = false)
     private Boolean isGenerated;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static CvDocument upload(Long candidateId, String filePath, String rawText) {
+        return CvDocument.builder()
+                .candidateId(candidateId)
+                .filePath(filePath)
+                .rawText(rawText)
+                .isGenerated(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
+    public static CvDocument generateFromTemplate(Long candidateId, String filePath, String rawText) {
+        return CvDocument.builder()
+                .candidateId(candidateId)
+                .filePath(filePath)
+                .rawText(rawText)
+                .isGenerated(true)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 }
 
 // ============================================================
@@ -469,24 +524,24 @@ public class CvDocument {
 
 package com.smartmatch.domain.candidate.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-@Entity
-@Table(name = "skills")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Skill {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "name", nullable = false, unique = true)
     private String name;
+
+    public static Skill createStandardSkill(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
+        }
+        return Skill.builder().name(name.trim().toLowerCase()).build();
+    }
 }
 
 // ============================================================
@@ -552,45 +607,114 @@ public interface SkillRepository {
 }
 
 // ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\DomainPage.java
+// ============================================================
+
+package com.smartmatch.domain.common;
+
+import java.util.List;
+
+public interface DomainPage<T> {
+    List<T> getContent();
+    long getTotalElements();
+    int getTotalPages();
+    int getNumber();
+    int getSize();
+}
+
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\DomainPageable.java
+// ============================================================
+
+package com.smartmatch.domain.common;
+
+public interface DomainPageable {
+    int getPageNumber();
+    int getPageSize();
+}
+
+
+// ============================================================
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\model\CompanyProfile.java
 // ============================================================
 
 package com.smartmatch.domain.employer.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
-@Entity
-@Table(name = "company_profiles")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CompanyProfile {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;
-
-    @Column(name = "company_name", nullable = false)
     private String companyName;
-
-    @Column(name = "logo_url")
     private String logoUrl;
-
-    @Column(name = "website")
     private String website;
-
-    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "verification_status", nullable = false)
     private VerificationStatus verificationStatus;
+
+    /**
+     * Factory method: Tạo hồ sơ lần đầu.
+     */
+    public static CompanyProfile createInitialProfile(Long userId, String companyName, String website, String description) {
+        if (userId == null || companyName == null || companyName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Thiếu thông tin bắt buộc để tạo hồ sơ công ty.");
+        }
+        return CompanyProfile.builder()
+                .userId(userId)
+                .companyName(companyName)
+                .website(website)
+                .description(description)
+                .verificationStatus(VerificationStatus.PENDING) // Luôn chờ duyệt lúc khởi tạo
+                .build();
+    }
+
+    /**
+     * Nghiệp vụ: Admin phê duyệt hồ sơ công ty.
+     */
+    public void approve() {
+        this.verificationStatus = VerificationStatus.APPROVED;
+    }
+
+    /**
+     * Nghiệp vụ: Admin từ chối hồ sơ công ty (kèm theo lý do xử lý ở tầng Application).
+     */
+    public void reject() {
+        this.verificationStatus = VerificationStatus.REJECTED;
+    }
+
+    /**
+     * Nghiệp vụ: Doanh nghiệp cập nhật hồ sơ.
+     * Rule: Đổi thông tin quan trọng sẽ đưa trạng thái về PENDING.
+     */
+    public void reviseProfile(String newCompanyName, String newWebsite, String newDescription) {
+        boolean requiresReverification = !this.companyName.equals(newCompanyName) ||
+                (this.website != null && !this.website.equals(newWebsite));
+
+        this.companyName = newCompanyName;
+        this.website = newWebsite;
+        this.description = newDescription;
+
+        if (requiresReverification) {
+            this.verificationStatus = VerificationStatus.PENDING;
+        }
+    }
+
+    /**
+     * Nghiệp vụ: Cập nhật logo. Thao tác này không cần kiểm duyệt lại toàn bộ.
+     */
+    public void updateLogo(String newLogoUrl) {
+        if (newLogoUrl == null || newLogoUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("URL Logo không hợp lệ.");
+        }
+        this.logoUrl = newLogoUrl;
+    }
 }
 
 // ============================================================
@@ -624,72 +748,55 @@ public interface CompanyProfileRepository {
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 // ============================================================
 
-// Sửa file: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 package com.smartmatch.domain.job.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
-/**
- * Thực thể (Entity) đại diện cho Tin tuyển dụng.
- * Thuộc Bounded Context: Job (Miền Tuyển dụng).
- * Map với Bảng 3-7: Bảng job_postings trong Data Dictionary.
- */
-@Entity
-@Table(name = "job_postings")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobPosting {
 
-    /**
-     * Khóa chính định danh tin tuyển dụng.
-     */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * Khóa ngoại tham chiếu đến company_profiles(id).
-     */
-    @Column(name = "company_id", nullable = false)
     private Long companyId;
-
-    /**
-     * Tiêu đề vị trí công việc.
-     */
-    @Column(name = "title", nullable = false)
     private String title;
-
-    /**
-     * Mô tả chi tiết nhiệm vụ công việc.
-     */
-    @Column(name = "description", columnDefinition = "TEXT", nullable = false)
     private String description;
-
-    // ... (Thêm comment tương tự cho các trường còn lại)
-
-    /**
-     * Trạng thái tin (PENDING, ACTIVE, CLOSED, REJECTED).
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
     private JobStatus status;
-
-    /**
-     * Ngày giờ đăng tải tin lên hệ thống (Không cho phép update sau khi tạo).
-     */
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    private LocalDateTime expiredAt;
 
     /**
-     * Ngày giờ hết hạn nhận đơn ứng tuyển.
+     * Hành vi: Công ty xuất bản tin tuyển dụng.
      */
-    @Column(name = "expired_at")
-    private LocalDateTime expiredAt;
+    public void publish() {
+        if (this.title == null || this.description == null) {
+            throw new IllegalStateException("Tin tuyển dụng thiếu thông tin bắt buộc.");
+        }
+        this.status = JobStatus.ACTIVE;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    /**
+     * Hành vi: Đóng tin tuyển dụng (có thể do đã đủ người hoặc hết hạn).
+     */
+    public void closeJob() {
+        if (this.status == JobStatus.CLOSED) {
+            throw new IllegalStateException("Tin tuyển dụng này đã được đóng trước đó.");
+        }
+        this.status = JobStatus.CLOSED;
+    }
+
+    /**
+     * Kiểm tra tin tuyển dụng còn hạn hay không.
+     */
+    public boolean isExpired() {
+        return this.expiredAt != null && LocalDateTime.now().isAfter(this.expiredAt);
+    }
 }
 
 // ============================================================
@@ -713,8 +820,8 @@ package com.smartmatch.domain.job.repository;
 
 import com.smartmatch.domain.job.model.JobPosting;
 import com.smartmatch.domain.job.model.JobStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -724,8 +831,8 @@ public interface JobPostingRepository {
     Optional<JobPosting> findById(Long id);
     List<JobPosting> findAll();
     void deleteById(Long id);
-    Page<JobPosting> findByCompanyId(Long companyId, Pageable pageable);
-    Page<JobPosting> findByStatus(JobStatus status, Pageable pageable);
-    Page<JobPosting> searchJobs(String keyword, String location, JobStatus status, Pageable pageable);
+    DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable);
+    DomainPage<JobPosting> findByStatus(JobStatus status, DomainPageable pageable);
+    DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable);
     long countByStatus(JobStatus status);
 }

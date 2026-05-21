@@ -5,6 +5,7 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.smartmatch</groupId>
         <artifactId>backend-core</artifactId>
@@ -15,14 +16,11 @@
     <packaging>jar</packaging>
 
     <name>SmartMatch Domain</name>
-    <description>Entities, Value Objects, Repository Ports, Business Rules</description>
+    <description>
+        Entities, Value Objects, Repository Ports, Business Rules
+    </description>
 
     <dependencies>
-        <!-- JPA API (chỉ annotations) - quan trọng nhất để fix lỗi hiện tại -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
 
         <!-- Validation -->
         <dependency>
@@ -36,20 +34,21 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-commons</artifactId>
-        </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
+            <!-- Java Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+
                 <configuration>
                     <release>21</release>
+
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -58,7 +57,9 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+
             </plugin>
+
         </plugins>
     </build>
 

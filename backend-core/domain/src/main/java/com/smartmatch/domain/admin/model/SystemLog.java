@@ -1,31 +1,27 @@
 package com.smartmatch.domain.admin.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "system_logs")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SystemLog {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id")
     private Long userId;
-
-    @Column(name = "action", nullable = false)
     private String action;
-
-    @Column(name = "details", columnDefinition = "TEXT")
     private String details;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static SystemLog recordAction(Long userId, String action, String details) {
+        return SystemLog.builder()
+                .userId(userId)
+                .action(action)
+                .details(details)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 }

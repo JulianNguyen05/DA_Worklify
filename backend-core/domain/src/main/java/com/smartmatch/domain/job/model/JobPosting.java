@@ -1,67 +1,50 @@
-// Sửa file: \backend-core\domain\src\main\java\com\smartmatch\domain\job\model\JobPosting.java
 package com.smartmatch.domain.job.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
-/**
- * Thực thể (Entity) đại diện cho Tin tuyển dụng.
- * Thuộc Bounded Context: Job (Miền Tuyển dụng).
- * Map với Bảng 3-7: Bảng job_postings trong Data Dictionary.
- */
-@Entity
-@Table(name = "job_postings")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobPosting {
 
-    /**
-     * Khóa chính định danh tin tuyển dụng.
-     */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * Khóa ngoại tham chiếu đến company_profiles(id).
-     */
-    @Column(name = "company_id", nullable = false)
     private Long companyId;
-
-    /**
-     * Tiêu đề vị trí công việc.
-     */
-    @Column(name = "title", nullable = false)
     private String title;
-
-    /**
-     * Mô tả chi tiết nhiệm vụ công việc.
-     */
-    @Column(name = "description", columnDefinition = "TEXT", nullable = false)
     private String description;
-
-    // ... (Thêm comment tương tự cho các trường còn lại)
-
-    /**
-     * Trạng thái tin (PENDING, ACTIVE, CLOSED, REJECTED).
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
     private JobStatus status;
-
-    /**
-     * Ngày giờ đăng tải tin lên hệ thống (Không cho phép update sau khi tạo).
-     */
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    private LocalDateTime expiredAt;
 
     /**
-     * Ngày giờ hết hạn nhận đơn ứng tuyển.
+     * Hành vi: Công ty xuất bản tin tuyển dụng.
      */
-    @Column(name = "expired_at")
-    private LocalDateTime expiredAt;
+    public void publish() {
+        if (this.title == null || this.description == null) {
+            throw new IllegalStateException("Tin tuyển dụng thiếu thông tin bắt buộc.");
+        }
+        this.status = JobStatus.ACTIVE;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    /**
+     * Hành vi: Đóng tin tuyển dụng (có thể do đã đủ người hoặc hết hạn).
+     */
+    public void closeJob() {
+        if (this.status == JobStatus.CLOSED) {
+            throw new IllegalStateException("Tin tuyển dụng này đã được đóng trước đó.");
+        }
+        this.status = JobStatus.CLOSED;
+    }
+
+    /**
+     * Kiểm tra tin tuyển dụng còn hạn hay không.
+     */
+    public boolean isExpired() {
+        return this.expiredAt != null && LocalDateTime.now().isAfter(this.expiredAt);
+    }
 }
