@@ -7,14 +7,11 @@ import com.smartmatch.domain.common.DomainPageable;
 import com.smartmatch.domain.job.model.JobStatus;
 
 public interface AdminService {
-    void logAction(Long userId, String action, String details);
-    PageResponse<SystemLogResponse> getSystemLogs(DomainPageable pageable);
-    PageResponse<SystemLogResponse> getLogsByUser(Long userId, DomainPageable pageable);
-    DashboardStatsResponse getDashboardStatistics();
-    void moderateJobPosting(Long adminId, Long jobId, JobStatus newStatus, String reason);
+    DashboardStatsResponse getDashboardStats();
+    void moderateJob(Long jobId, JobStatus status);
+    void moderateCompany(Long companyId, boolean approve);
 
-    // Master Data Management
-    void addSkillMasterData(MasterDataRequest request);
-    void updateSkillMasterData(Long skillId, MasterDataRequest request);
+    // Hệ thống Quản trị Danh mục chuẩn hóa tìm kiếm dữ liệu tĩnh (Master Data Management)
+    void createSkillMasterData(MasterDataRequest request);
     void deleteSkillMasterData(Long skillId);
 }

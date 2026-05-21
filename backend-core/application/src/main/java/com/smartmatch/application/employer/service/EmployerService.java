@@ -9,8 +9,5 @@ public interface EmployerService {
     CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
-    CompanyProfileResponse getProfileById(Long companyId);
     CompanyProfileResponse uploadLogo(Long userId, MultipartFile logo);
-    PageResponse<CompanyProfileResponse> getAllCompanies(VerificationStatus status, DomainPageable pageable);
-    void updateVerificationStatus(Long companyId, VerificationStatus verificationStatus);
 }

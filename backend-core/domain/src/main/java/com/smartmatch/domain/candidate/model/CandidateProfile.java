@@ -28,8 +28,14 @@ public class CandidateProfile {
                 .build();
     }
 
-    public void updateContactInfo(String phone, String address) {
+    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address) {
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ tên không được để trống.");
+        }
+        this.fullName = fullName;
         this.phone = phone;
+        this.gender = gender;
+        this.dob = dob;
         this.address = address;
     }
 }

@@ -1,10 +1,8 @@
 package com.smartmatch.domain.admin.repository;
-
 import com.smartmatch.domain.admin.model.SystemLog;
-import java.util.List;
-
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
 public interface SystemLogRepository {
     SystemLog save(SystemLog systemLog);
-    List<SystemLog> findAll();
-    List<SystemLog> findByUserId(Long userId);
+    DomainPage<SystemLog> findAll(DomainPageable pageable);
 }

@@ -10,9 +10,6 @@ public interface CandidateService {
     CvDocumentResponse uploadCv(Long userId, MultipartFile file);
     List<CvDocumentResponse> getCvsByUserId(Long userId);
     void deleteCv(Long userId, Long cvId);
-    List<SkillResponse> addSkill(Long userId, Long skillId);
-    void removeSkill(Long userId, Long skillId);
-    List<SkillResponse> getSkillsByUserId(Long userId);
-    List<SkillResponse> getAllSkills();
-    CvDocumentResponse generateCvFromTemplate(Long userId, String templateId, String jsonData);
+    void addSkillToCandidate(Long userId, Long skillId);
+    void removeSkillFromCandidate(Long userId, Long skillId);
 }

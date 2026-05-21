@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Builder
 public class AiMatchScoreResponse {
     private Long id;
+    private Long applicationId;
     private Float confidenceScore;
     private String analysisDetails;
     private LocalDateTime evaluatedAt;

@@ -8,4 +8,5 @@ public interface SkillRepository {
     Skill save(Skill skill);
     Optional<Skill> findByName(String name);
     List<Skill> findAll();
+    void deleteById(Long id);
 }

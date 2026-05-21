@@ -16,5 +16,4 @@ public class CandidateProfileResponse {
     private String gender;
     private LocalDate dob;
     private String address;
-    private List<SkillResponse> skills;
 }

@@ -4,14 +4,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobPosting {
-
     private Long id;
     private Long companyId;
     private String title;
@@ -20,31 +18,35 @@ public class JobPosting {
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 
-    /**
-     * Hành vi: Công ty xuất bản tin tuyển dụng.
-     */
-    public void publish() {
-        if (this.title == null || this.description == null) {
-            throw new IllegalStateException("Tin tuyển dụng thiếu thông tin bắt buộc.");
+    public static JobPosting createDraft(Long companyId, String title, String description, LocalDateTime expiredAt) {
+        if (companyId == null || title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Dữ liệu tin tuyển dụng không hợp lệ.");
         }
-        this.status = JobStatus.ACTIVE;
-        this.createdAt = LocalDateTime.now();
+        return JobPosting.builder()
+                .companyId(companyId)
+                .title(title)
+                .description(description)
+                .status(JobStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .expiredAt(expiredAt)
+                .build();
     }
 
-    /**
-     * Hành vi: Đóng tin tuyển dụng (có thể do đã đủ người hoặc hết hạn).
-     */
-    public void closeJob() {
-        if (this.status == JobStatus.CLOSED) {
-            throw new IllegalStateException("Tin tuyển dụng này đã được đóng trước đó.");
-        }
+    public void publish() {
+        this.status = JobStatus.ACTIVE;
+    }
+
+    public void close() {
         this.status = JobStatus.CLOSED;
     }
 
-    /**
-     * Kiểm tra tin tuyển dụng còn hạn hay không.
-     */
-    public boolean isExpired() {
-        return this.expiredAt != null && LocalDateTime.now().isAfter(this.expiredAt);
+    public void reject() {
+        this.status = JobStatus.REJECTED;
+    }
+
+    public void updateDetails(String title, String description, LocalDateTime expiredAt) {
+        this.title = title;
+        this.description = description;
+        this.expiredAt = expiredAt;
     }
 }

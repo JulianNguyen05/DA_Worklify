@@ -24,8 +24,4 @@ public class AiMatchScore {
                 .evaluatedAt(LocalDateTime.now())
                 .build();
     }
-
-    public boolean isHighlyMatched(float threshold) {
-        return this.confidenceScore != null && this.confidenceScore >= threshold;
-    }
 }

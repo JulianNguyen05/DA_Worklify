@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -12,7 +11,6 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
-
     private Long id;
     private Long jobId;
     private Long cvId;
@@ -20,14 +18,8 @@ public class Application {
     private String coverLetter;
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
+    private String blindTestUrl; // Tích hợp cơ chế kiểm thử mù (Blind Testing)
 
-    // Thuộc tính phục vụ kiểm thử mù (Blind Testing)
-    private String blindTestUrl;
-
-    /**
-     * Factory method để khởi tạo một Đơn ứng tuyển mới.
-     * Đảm bảo trạng thái mặc định luôn đúng và dữ liệu hợp lệ.
-     */
     public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
         if (jobId == null || cvId == null || candidateId == null) {
             throw new IllegalArgumentException("Thông tin ứng tuyển không được để trống");
@@ -42,30 +34,14 @@ public class Application {
                 .build();
     }
 
-    /**
-     * Nghiệp vụ: Chuyển trạng thái đơn sang Đang xem xét.
-     */
-    public void markAsReviewed() {
-        if (this.status != ApplicationStatus.PENDING) {
-            throw new IllegalStateException("Chỉ có thể review hồ sơ đang ở trạng thái PENDING.");
-        }
-        this.status = ApplicationStatus.REVIEWED;
+    public void updateStatus(ApplicationStatus newStatus) {
+        this.status = newStatus;
     }
 
-    /**
-     * Nghiệp vụ: Chấp nhận ứng viên.
-     */
-    public void accept() {
-        this.status = ApplicationStatus.ACCEPTED;
-    }
-
-    /**
-     * Nghiệp vụ: Sinh liên kết ẩn danh cho hội đồng đánh giá.
-     * Ẩn toàn bộ định danh ứng viên, điều hướng qua sub-domain trung lập.
-     */
     public void enableBlindTesting() {
+        // Sinh mã token ẩn danh hóa danh tính ứng viên
         String uniqueMask = UUID.randomUUID().toString().substring(0, 12);
-        // Sử dụng sub-domain trung lập để che giấu nguồn gốc hệ thống đối với hội đồng
+        // Điều hướng thông tin qua sub-domain trung lập bảo mật chống định kiến sơ tuyển
         this.blindTestUrl = String.format("https://appa.ungdungnghiencuu.com/review/%s", uniqueMask);
     }
 }

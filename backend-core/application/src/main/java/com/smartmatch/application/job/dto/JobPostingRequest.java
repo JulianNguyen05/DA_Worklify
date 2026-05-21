@@ -9,9 +9,7 @@ import java.time.LocalDateTime;
 public class JobPostingRequest {
     @NotBlank(message = "Tiêu đề công việc không được để trống")
     private String title;
-
     @NotBlank(message = "Mô tả công việc không được để trống")
     private String description;
-
     private LocalDateTime expiredAt;
 }

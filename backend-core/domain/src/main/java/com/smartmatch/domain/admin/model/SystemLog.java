@@ -16,7 +16,7 @@ public class SystemLog {
     private String details;
     private LocalDateTime createdAt;
 
-    public static SystemLog recordAction(Long userId, String action, String details) {
+    public static SystemLog record(Long userId, String action, String details) {
         return SystemLog.builder()
                 .userId(userId)
                 .action(action)

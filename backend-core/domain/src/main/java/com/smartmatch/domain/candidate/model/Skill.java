@@ -12,7 +12,7 @@ public class Skill {
     private Long id;
     private String name;
 
-    public static Skill createStandardSkill(String name) {
+    public static Skill createStandard(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
         }

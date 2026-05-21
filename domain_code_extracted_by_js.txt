@@ -92,7 +92,7 @@ public class SystemLog {
     private String details;
     private LocalDateTime createdAt;
 
-    public static SystemLog recordAction(Long userId, String action, String details) {
+    public static SystemLog record(Long userId, String action, String details) {
         return SystemLog.builder()
                 .userId(userId)
                 .action(action)
@@ -107,14 +107,12 @@ public class SystemLog {
 // ============================================================
 
 package com.smartmatch.domain.admin.repository;
-
 import com.smartmatch.domain.admin.model.SystemLog;
-import java.util.List;
-
+import com.smartmatch.domain.common.DomainPage;
+import com.smartmatch.domain.common.DomainPageable;
 public interface SystemLogRepository {
     SystemLog save(SystemLog systemLog);
-    List<SystemLog> findAll();
-    List<SystemLog> findByUserId(Long userId);
+    DomainPage<SystemLog> findAll(DomainPageable pageable);
 }
 
 // ============================================================
@@ -147,10 +145,6 @@ public class AiMatchScore {
                 .evaluatedAt(LocalDateTime.now())
                 .build();
     }
-
-    public boolean isHighlyMatched(float threshold) {
-        return this.confidenceScore != null && this.confidenceScore >= threshold;
-    }
 }
 
 // ============================================================
@@ -163,7 +157,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -171,7 +164,6 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Application {
-
     private Long id;
     private Long jobId;
     private Long cvId;
@@ -179,14 +171,8 @@ public class Application {
     private String coverLetter;
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
+    private String blindTestUrl; // Tích hợp cơ chế kiểm thử mù (Blind Testing)
 
-    // Thuộc tính phục vụ kiểm thử mù (Blind Testing)
-    private String blindTestUrl;
-
-    /**
-     * Factory method để khởi tạo một Đơn ứng tuyển mới.
-     * Đảm bảo trạng thái mặc định luôn đúng và dữ liệu hợp lệ.
-     */
     public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
         if (jobId == null || cvId == null || candidateId == null) {
             throw new IllegalArgumentException("Thông tin ứng tuyển không được để trống");
@@ -201,30 +187,14 @@ public class Application {
                 .build();
     }
 
-    /**
-     * Nghiệp vụ: Chuyển trạng thái đơn sang Đang xem xét.
-     */
-    public void markAsReviewed() {
-        if (this.status != ApplicationStatus.PENDING) {
-            throw new IllegalStateException("Chỉ có thể review hồ sơ đang ở trạng thái PENDING.");
-        }
-        this.status = ApplicationStatus.REVIEWED;
+    public void updateStatus(ApplicationStatus newStatus) {
+        this.status = newStatus;
     }
 
-    /**
-     * Nghiệp vụ: Chấp nhận ứng viên.
-     */
-    public void accept() {
-        this.status = ApplicationStatus.ACCEPTED;
-    }
-
-    /**
-     * Nghiệp vụ: Sinh liên kết ẩn danh cho hội đồng đánh giá.
-     * Ẩn toàn bộ định danh ứng viên, điều hướng qua sub-domain trung lập.
-     */
     public void enableBlindTesting() {
+        // Sinh mã token ẩn danh hóa danh tính ứng viên
         String uniqueMask = UUID.randomUUID().toString().substring(0, 12);
-        // Sử dụng sub-domain trung lập để che giấu nguồn gốc hệ thống đối với hội đồng
+        // Điều hướng thông tin qua sub-domain trung lập bảo mật chống định kiến sơ tuyển
         this.blindTestUrl = String.format("https://appa.ungdungnghiencuu.com/review/%s", uniqueMask);
     }
 }
@@ -252,7 +222,7 @@ import com.smartmatch.domain.application.model.AiMatchScore;
 import java.util.Optional;
 
 public interface AiMatchScoreRepository {
-    AiMatchScore save(AiMatchScore aiMatchScore);
+    AiMatchScore save(AiMatchScore score);
     Optional<AiMatchScore> findByApplicationId(Long applicationId);
 }
 
@@ -261,20 +231,16 @@ public interface AiMatchScoreRepository {
 // ============================================================
 
 package com.smartmatch.domain.application.repository;
-
-import com.smartmatch.domain.application.model.Application;
+import com.smartmatch.domain.application.model.*;
 import com.smartmatch.domain.common.DomainPage;
 import com.smartmatch.domain.common.DomainPageable;
-import java.util.List;
 import java.util.Optional;
-
 public interface ApplicationRepository {
     Application save(Application application);
     Optional<Application> findById(Long id);
-    List<Application> findByJobId(Long jobId);
-    List<Application> findByCvId(Long cvId);
     DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable);
     DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable);
+    long countAll();
 }
 
 // ============================================================
@@ -300,26 +266,21 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
-
     private Long id;
     private String email;
     private String password;
     private Role role;
     private UserStatus status;
-    private boolean mfaEnabled; // Cờ xác thực đa yếu tố
+    private boolean mfaEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /**
-     * Factory method để đăng ký tài khoản mới.
-     */
     public static User registerNew(String email, String encryptedPassword, Role role) {
         if (email == null || !email.contains("@")) {
             throw new IllegalArgumentException("Định dạng email không hợp lệ.");
@@ -328,40 +289,28 @@ public class User {
                 .email(email)
                 .password(encryptedPassword)
                 .role(role)
-                .status(UserStatus.ACTIVE) // Hoặc PENDING nếu cần xác thực email
+                .status(UserStatus.ACTIVE)
                 .mfaEnabled(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
 
-    /**
-     * Nghiệp vụ: Admin khóa tài khoản vi phạm.
-     */
     public void ban() {
         this.status = UserStatus.BANNED;
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * Nghiệp vụ: Mở khóa tài khoản.
-     */
     public void unban() {
         this.status = UserStatus.ACTIVE;
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * Nghiệp vụ: Bật xác thực đa yếu tố để tăng cường bảo mật.
-     */
     public void enableMultiFactorAuth() {
         this.mfaEnabled = true;
         this.updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * Nghiệp vụ: Đổi mật khẩu.
-     */
     public void changePassword(String newEncryptedPassword) {
         this.password = newEncryptedPassword;
         this.updatedAt = LocalDateTime.now();
@@ -386,18 +335,13 @@ public enum UserStatus {
 // ============================================================
 
 package com.smartmatch.domain.auth.repository;
-
 import com.smartmatch.domain.auth.model.User;
-import java.util.List;
 import java.util.Optional;
-
 public interface UserRepository {
     User save(User user);
     Optional<User> findById(Long id);
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
-    List<User> findAll();
-    void deleteById(Long id);
 }
 
 // ============================================================
@@ -434,8 +378,14 @@ public class CandidateProfile {
                 .build();
     }
 
-    public void updateContactInfo(String phone, String address) {
+    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address) {
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ tên không được để trống.");
+        }
+        this.fullName = fullName;
         this.phone = phone;
+        this.gender = gender;
+        this.dob = dob;
         this.address = address;
     }
 }
@@ -447,13 +397,15 @@ public class CandidateProfile {
 package com.smartmatch.domain.candidate.model;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
+@EqualsAndHashCode
 public class CandidateSkill {
-    private Long candidateId;
-    private Long skillId;
+    private final Long candidateId;
+    private final Long skillId;
 }
 
 // ============================================================
@@ -536,7 +488,7 @@ public class Skill {
     private Long id;
     private String name;
 
-    public static Skill createStandardSkill(String name) {
+    public static Skill createStandard(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
         }
@@ -549,10 +501,8 @@ public class Skill {
 // ============================================================
 
 package com.smartmatch.domain.candidate.repository;
-
-import com.smartmatch.domain.candidate.model.CandidateProfile;
+import com.smartmatch.domain.candidate.model.*;
 import java.util.Optional;
-
 public interface CandidateProfileRepository {
     CandidateProfile save(CandidateProfile profile);
     Optional<CandidateProfile> findByUserId(Long userId);
@@ -604,6 +554,7 @@ public interface SkillRepository {
     Skill save(Skill skill);
     Optional<Skill> findByName(String name);
     List<Skill> findAll();
+    void deleteById(Long id);
 }
 
 // ============================================================
@@ -650,7 +601,6 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CompanyProfile {
-
     private Long id;
     private Long userId;
     private String companyName;
@@ -659,10 +609,7 @@ public class CompanyProfile {
     private String description;
     private VerificationStatus verificationStatus;
 
-    /**
-     * Factory method: Tạo hồ sơ lần đầu.
-     */
-    public static CompanyProfile createInitialProfile(Long userId, String companyName, String website, String description) {
+    public static CompanyProfile createInitial(Long userId, String companyName, String website, String description) {
         if (userId == null || companyName == null || companyName.trim().isEmpty()) {
             throw new IllegalArgumentException("Thiếu thông tin bắt buộc để tạo hồ sơ công ty.");
         }
@@ -671,44 +618,24 @@ public class CompanyProfile {
                 .companyName(companyName)
                 .website(website)
                 .description(description)
-                .verificationStatus(VerificationStatus.PENDING) // Luôn chờ duyệt lúc khởi tạo
+                .verificationStatus(VerificationStatus.PENDING)
                 .build();
     }
 
-    /**
-     * Nghiệp vụ: Admin phê duyệt hồ sơ công ty.
-     */
-    public void approve() {
-        this.verificationStatus = VerificationStatus.APPROVED;
-    }
+    public void approve() { this.verificationStatus = VerificationStatus.APPROVED; }
+    public void reject() { this.verificationStatus = VerificationStatus.REJECTED; }
 
-    /**
-     * Nghiệp vụ: Admin từ chối hồ sơ công ty (kèm theo lý do xử lý ở tầng Application).
-     */
-    public void reject() {
-        this.verificationStatus = VerificationStatus.REJECTED;
-    }
-
-    /**
-     * Nghiệp vụ: Doanh nghiệp cập nhật hồ sơ.
-     * Rule: Đổi thông tin quan trọng sẽ đưa trạng thái về PENDING.
-     */
     public void reviseProfile(String newCompanyName, String newWebsite, String newDescription) {
         boolean requiresReverification = !this.companyName.equals(newCompanyName) ||
                 (this.website != null && !this.website.equals(newWebsite));
-
         this.companyName = newCompanyName;
         this.website = newWebsite;
         this.description = newDescription;
-
         if (requiresReverification) {
             this.verificationStatus = VerificationStatus.PENDING;
         }
     }
 
-    /**
-     * Nghiệp vụ: Cập nhật logo. Thao tác này không cần kiểm duyệt lại toàn bộ.
-     */
     public void updateLogo(String newLogoUrl) {
         if (newLogoUrl == null || newLogoUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("URL Logo không hợp lệ.");
@@ -734,10 +661,8 @@ public enum VerificationStatus {
 // ============================================================
 
 package com.smartmatch.domain.employer.repository;
-
 import com.smartmatch.domain.employer.model.CompanyProfile;
 import java.util.Optional;
-
 public interface CompanyProfileRepository {
     CompanyProfile save(CompanyProfile companyProfile);
     Optional<CompanyProfile> findByUserId(Long userId);
@@ -754,14 +679,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class JobPosting {
-
     private Long id;
     private Long companyId;
     private String title;
@@ -770,32 +693,36 @@ public class JobPosting {
     private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
 
-    /**
-     * Hành vi: Công ty xuất bản tin tuyển dụng.
-     */
-    public void publish() {
-        if (this.title == null || this.description == null) {
-            throw new IllegalStateException("Tin tuyển dụng thiếu thông tin bắt buộc.");
+    public static JobPosting createDraft(Long companyId, String title, String description, LocalDateTime expiredAt) {
+        if (companyId == null || title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Dữ liệu tin tuyển dụng không hợp lệ.");
         }
-        this.status = JobStatus.ACTIVE;
-        this.createdAt = LocalDateTime.now();
+        return JobPosting.builder()
+                .companyId(companyId)
+                .title(title)
+                .description(description)
+                .status(JobStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .expiredAt(expiredAt)
+                .build();
     }
 
-    /**
-     * Hành vi: Đóng tin tuyển dụng (có thể do đã đủ người hoặc hết hạn).
-     */
-    public void closeJob() {
-        if (this.status == JobStatus.CLOSED) {
-            throw new IllegalStateException("Tin tuyển dụng này đã được đóng trước đó.");
-        }
+    public void publish() {
+        this.status = JobStatus.ACTIVE;
+    }
+
+    public void close() {
         this.status = JobStatus.CLOSED;
     }
 
-    /**
-     * Kiểm tra tin tuyển dụng còn hạn hay không.
-     */
-    public boolean isExpired() {
-        return this.expiredAt != null && LocalDateTime.now().isAfter(this.expiredAt);
+    public void reject() {
+        this.status = JobStatus.REJECTED;
+    }
+
+    public void updateDetails(String title, String description, LocalDateTime expiredAt) {
+        this.title = title;
+        this.description = description;
+        this.expiredAt = expiredAt;
     }
 }
 
@@ -817,22 +744,14 @@ public enum JobStatus {
 // ============================================================
 
 package com.smartmatch.domain.job.repository;
-
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.smartmatch.domain.job.model.*;
 import com.smartmatch.domain.common.DomainPage;
 import com.smartmatch.domain.common.DomainPageable;
-
-import java.util.List;
 import java.util.Optional;
-
 public interface JobPostingRepository {
     JobPosting save(JobPosting jobPosting);
     Optional<JobPosting> findById(Long id);
-    List<JobPosting> findAll();
-    void deleteById(Long id);
     DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable);
-    DomainPage<JobPosting> findByStatus(JobStatus status, DomainPageable pageable);
     DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable);
     long countByStatus(JobStatus status);
 }

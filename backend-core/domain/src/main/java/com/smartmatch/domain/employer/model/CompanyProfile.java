@@ -9,7 +9,6 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CompanyProfile {
-
     private Long id;
     private Long userId;
     private String companyName;
@@ -18,10 +17,7 @@ public class CompanyProfile {
     private String description;
     private VerificationStatus verificationStatus;
 
-    /**
-     * Factory method: Tạo hồ sơ lần đầu.
-     */
-    public static CompanyProfile createInitialProfile(Long userId, String companyName, String website, String description) {
+    public static CompanyProfile createInitial(Long userId, String companyName, String website, String description) {
         if (userId == null || companyName == null || companyName.trim().isEmpty()) {
             throw new IllegalArgumentException("Thiếu thông tin bắt buộc để tạo hồ sơ công ty.");
         }
@@ -30,44 +26,24 @@ public class CompanyProfile {
                 .companyName(companyName)
                 .website(website)
                 .description(description)
-                .verificationStatus(VerificationStatus.PENDING) // Luôn chờ duyệt lúc khởi tạo
+                .verificationStatus(VerificationStatus.PENDING)
                 .build();
     }
 
-    /**
-     * Nghiệp vụ: Admin phê duyệt hồ sơ công ty.
-     */
-    public void approve() {
-        this.verificationStatus = VerificationStatus.APPROVED;
-    }
+    public void approve() { this.verificationStatus = VerificationStatus.APPROVED; }
+    public void reject() { this.verificationStatus = VerificationStatus.REJECTED; }
 
-    /**
-     * Nghiệp vụ: Admin từ chối hồ sơ công ty (kèm theo lý do xử lý ở tầng Application).
-     */
-    public void reject() {
-        this.verificationStatus = VerificationStatus.REJECTED;
-    }
-
-    /**
-     * Nghiệp vụ: Doanh nghiệp cập nhật hồ sơ.
-     * Rule: Đổi thông tin quan trọng sẽ đưa trạng thái về PENDING.
-     */
     public void reviseProfile(String newCompanyName, String newWebsite, String newDescription) {
         boolean requiresReverification = !this.companyName.equals(newCompanyName) ||
                 (this.website != null && !this.website.equals(newWebsite));
-
         this.companyName = newCompanyName;
         this.website = newWebsite;
         this.description = newDescription;
-
         if (requiresReverification) {
             this.verificationStatus = VerificationStatus.PENDING;
         }
     }
 
-    /**
-     * Nghiệp vụ: Cập nhật logo. Thao tác này không cần kiểm duyệt lại toàn bộ.
-     */
     public void updateLogo(String newLogoUrl) {
         if (newLogoUrl == null || newLogoUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("URL Logo không hợp lệ.");

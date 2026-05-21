@@ -10,5 +10,4 @@ public class DashboardStatsResponse {
     private long totalEmployers;
     private long activeJobs;
     private long totalApplications;
-    private double successfulMatchRate;
 }
