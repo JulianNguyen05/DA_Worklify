@@ -1,4 +1,4 @@
 package com.smartmatch.infrastructure.persistence.repository;
 
-public class UserJpaRepository {
+public class JobPostingJpaRepository {
 }

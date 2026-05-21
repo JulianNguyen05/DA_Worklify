@@ -1,4 +1,4 @@
 package com.smartmatch.infrastructure.config;
 
-public class WebConfig {
+public class RabbitMqConfig {
 }
