@@ -31,7 +31,7 @@ public class JobServiceImpl implements JobService {
                 request.getSalaryRange(),
                 request.getLocation(),
                 request.getWorkType(),
-                request.getExpiredAt()
+                request.getExpiresAt() // Đã sửa thành getExpiresAt()
         );
 
         JobPosting savedJob = jobPostingRepository.save(jobPosting);
@@ -54,7 +54,7 @@ public class JobServiceImpl implements JobService {
                 request.getSalaryRange(),
                 request.getLocation(),
                 request.getWorkType(),
-                request.getExpiredAt()
+                request.getExpiresAt() // Đã sửa thành getExpiresAt()
         );
 
         JobPosting updatedJob = jobPostingRepository.save(jobPosting);
@@ -79,7 +79,6 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<JobPostingResponse> searchJobs(String keyword, String location, DomainPageable pageable) {
-        // Đúng chuẩn: Truyền Enum JobStatus.ACTIVE trực tiếp vào Repository port
         DomainPage<JobPosting> page = jobPostingRepository.searchJobs(keyword, location, JobStatus.ACTIVE, pageable);
         return mapToPageResponse(page);
     }
@@ -89,7 +88,6 @@ public class JobServiceImpl implements JobService {
         JobPosting jobPosting = jobPostingRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
 
-        // SỬA TẠI ĐÂY: So sánh Enum trực tiếp bằng toán tử != vì cả hai bên đều là kiểu JobStatus
         if (jobPosting.getStatus() != JobStatus.ACTIVE) {
             throw new IllegalArgumentException("Không thể lưu tin tuyển dụng không còn hoạt động");
         }
@@ -118,7 +116,7 @@ public class JobServiceImpl implements JobService {
                 .workType(job.getWorkType())
                 .status(job.getStatus())
                 .createdAt(job.getCreatedAt())
-                .expiredAt(job.getExpiredAt())
+                .expiresAt(job.getExpiresAt()) // Đã sửa thành getExpiresAt() và expiresAt()
                 .build();
     }
 

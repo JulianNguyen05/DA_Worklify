@@ -23,5 +23,5 @@ public class JobPostingRequest {
 
     private String workType;
 
-    private LocalDateTime expiredAt;
+    private LocalDateTime expiresAt;
 }

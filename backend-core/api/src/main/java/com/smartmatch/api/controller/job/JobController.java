@@ -1,0 +1,58 @@
+package com.smartmatch.api.controller.job;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.dto.PageResponse;
+import com.smartmatch.application.job.dto.JobPostingRequest;
+import com.smartmatch.application.job.dto.JobPostingResponse;
+import com.smartmatch.application.job.service.JobService;
+import com.smartmatch.domain.common.DomainPageable;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/jobs")
+@RequiredArgsConstructor
+@Tag(name = "4. Job Postings", description = "Quản lý và Tìm kiếm Tin tuyển dụng")
+public class JobController {
+
+    private final JobService jobService;
+
+    @PostMapping("/employers/{companyId}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Nhà tuyển dụng đăng tin tuyển dụng mới")
+    public ApiResponse<JobPostingResponse> createJob(
+            @PathVariable Long companyId,
+            @Valid @RequestBody JobPostingRequest request) {
+        return ApiResponse.success(jobService.createJobPosting(companyId, request), "Đăng tin chờ duyệt thành công");
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Khách/Ứng viên tìm kiếm việc làm")
+    public ApiResponse<PageResponse<JobPostingResponse>> searchJobs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        DomainPageable pageable = createPageable(page, size);
+        return ApiResponse.success(jobService.searchJobs(keyword, location, pageable));
+    }
+
+    @GetMapping("/{jobId}")
+    @Operation(summary = "Xem chi tiết tin tuyển dụng")
+    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable Long jobId) {
+        return ApiResponse.success(jobService.getJobById(jobId));
+    }
+
+    // Tiện ích tạo Pageable inline
+    private DomainPageable createPageable(int page, int size) {
+        return new DomainPageable() {
+            @Override public int getPageNumber() { return page; }
+            @Override public int getPageSize() { return size; }
+        };
+    }
+}

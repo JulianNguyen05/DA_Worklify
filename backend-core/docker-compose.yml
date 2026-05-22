@@ -11,7 +11,7 @@ services:
       MYSQL_USER: smartmatch
       MYSQL_PASSWORD: smartmatch123
     ports:
-      - "3307:3306"
+      - "3307:3306" # Map ra ngoài máy host ở port 3307 để không trùng MySQL có sẵn
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -34,6 +34,20 @@ services:
     networks:
       - smartmatch-network
 
+  # [ĐÃ THÊM] Hệ thống Message Broker để xử lý chấm điểm AI bất đồng bộ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: smartmatch-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # Port giao tiếp mặc định
+      - "15672:15672" # Port trang quản trị RabbitMQ UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - smartmatch-network
+
   api:
     build:
       context: .
@@ -42,19 +56,15 @@ services:
     restart: unless-stopped
     depends_on:
       - mysql
+      - rabbitmq
     ports:
       - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    volumes:
-      - ./uploads:/app/uploads
     networks:
       - smartmatch-network
-
-volumes:
-  mysql_data:
 
 networks:
   smartmatch-network:
     driver: bridge
+
+volumes:
+  mysql_data:

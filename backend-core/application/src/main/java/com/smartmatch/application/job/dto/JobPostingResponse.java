@@ -21,5 +21,5 @@ public class JobPostingResponse {
 
     private JobStatus status;
     private LocalDateTime createdAt;
-    private LocalDateTime expiredAt;
+    private LocalDateTime expiresAt;
 }

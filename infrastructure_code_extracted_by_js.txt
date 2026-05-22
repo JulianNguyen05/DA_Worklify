@@ -89,6 +89,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
             <version>0.12.6</version>
@@ -148,44 +153,323 @@
 </project>
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\AuthConfig.java
+// ======================================================================
+
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\AuthConfig.java
+package com.smartmatch.infrastructure.config;
+
+import com.smartmatch.infrastructure.security.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+@RequiredArgsConstructor
+public class AuthConfig {
+
+    private final CustomUserDetailsService userDetailsService;
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\RabbitMqConfig.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\RabbitMqConfig.java
 package com.smartmatch.infrastructure.config;
 
-public class RabbitMqConfig {
-}
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
+public class RabbitMqConfig {
+
+    // Khai báo tên Exchange và Queue
+    public static final String EXCHANGE_NAME = "smartmatch.domain.exchange";
+    public static final String QUEUE_AI_MATCH = "smartmatch.ai.match.queue";
+    public static final String ROUTING_KEY_AI_MATCH = "ai.match.request.#";
+
+    // 1. Tạo Topic Exchange
+    @Bean
+    public TopicExchange domainExchange() {
+        return new TopicExchange(EXCHANGE_NAME);
+    }
+
+    // 2. Tạo Queue xử lý chấm điểm AI
+    @Bean
+    public Queue aiMatchQueue() {
+        // durable = true: Queue sẽ không bị mất khi RabbitMQ khởi động lại
+        return new Queue(QUEUE_AI_MATCH, true);
+    }
+
+    // 3. Binding Queue với Exchange thông qua Routing Key
+    @Bean
+    public Binding bindingAiMatchQueue(Queue aiMatchQueue, TopicExchange domainExchange) {
+        return BindingBuilder.bind(aiMatchQueue).to(domainExchange).with(ROUTING_KEY_AI_MATCH);
+    }
+
+    // 4. Cấu hình Converter để tự động chuyển đổi Object (Domain Event) sang JSON và ngược lại
+    @Bean
+    public MessageConverter jsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    // 5. Cấu hình RabbitTemplate để publish message
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter jsonMessageConverter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(jsonMessageConverter);
+        return template;
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
 package com.smartmatch.infrastructure.config;
 
-public class SecurityConfig {
-}
+import com.smartmatch.infrastructure.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity // Cho phép dùng @PreAuthorize ở tầng API/Controller
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // Tắt CSRF vì chúng ta sử dụng JWT (không dùng session cookies)
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // Phân quyền các endpoint
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/auth/**").permitAll() // Mở các API đăng ký, đăng nhập
+                        .requestMatchers("/api/v1/public/**").permitAll() // Các API công khai (vd: danh sách việc làm)
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // API Docs
+                        .anyRequest().authenticated() // Tất cả các request khác đều cần token hợp lệ
+                )
+
+                // Cấu hình Session thành Stateless (Không lưu trạng thái trên server)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Đăng ký Provider và Filter JWT
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\WebConfig.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\WebConfig.java
 package com.smartmatch.infrastructure.config;
 
-public class WebConfig {
-}
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Value("${application.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOrigins(frontendUrl) // Chỉ cho phép domain của frontend
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("Authorization", "Content-Type", "X-Requested-With", "Accept")
+                .allowCredentials(true) // Cho phép gửi cookie/token
+                .maxAge(3600); // Cache cấu hình CORS trong 1 giờ
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchEventPublisherImpl.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchEventPublisherImpl.java
 package com.smartmatch.infrastructure.messaging;
 
-public class AiMatchEventPublisherImpl {
+import com.smartmatch.infrastructure.config.RabbitMqConfig;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Component;
+
+/**
+ * Lớp này đóng vai trò là Outbound Adapter. 
+ * Implement interface AiMatchEventPublisher (Port) được định nghĩa ở tầng Application/Domain.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AiMatchEventPublisherImpl { // Implements AiMatchEventPublisher (Interface ở tầng Application)
+
+    private final RabbitTemplate rabbitTemplate;
+
+    /**
+     * Hàm này được gọi bởi Application Service khi một ứng viên vừa nộp CV thành công.
+     */
+    public void publishAiMatchRequest(Long applicationId, Long cvId, Long jobId) {
+        log.info("Đang gửi yêu cầu chấm điểm AI cho Application ID: {} vào RabbitMQ...", applicationId);
+
+        // 1. Đóng gói dữ liệu thành Payload nội bộ của Messaging
+        AiMatchRequestPayload payload = new AiMatchRequestPayload(applicationId, cvId, jobId);
+
+        // 2. Gửi Message qua RabbitTemplate sử dụng Exchange và Routing Key đã cấu hình
+        rabbitTemplate.convertAndSend(
+                RabbitMqConfig.EXCHANGE_NAME,
+                "ai.match.request.v1", // Định tuyến tới QUEUE_AI_MATCH
+                payload
+        );
+
+        log.info("Đã gửi thành công yêu cầu tới Message Broker.");
+    }
+
+    // DTO (Data Transfer Object) nội bộ chỉ dùng cho việc gửi Message
+    public record AiMatchRequestPayload(Long applicationId, Long cvId, Long jobId) {}
 }
 
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultConsumer.java
+// ======================================================================
+
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultConsumer.java
+package com.smartmatch.infrastructure.messaging;
+
+import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AiMatchResultConsumer {
+
+    // Inject Use Case interface từ tầng Application
+    private final JobApplicationService jobApplicationService;
+
+    /**
+     * Lắng nghe liên tục trên Queue chứa kết quả trả về từ AI Server.
+     */
+    @RabbitListener(queues = "smartmatch.ai.result.queue") // Cần bổ sung queue này vào RabbitMqConfig nếu chưa có
+    public void receiveAiMatchResult(AiMatchResultPayload payload) {
+        log.info("Nhận được kết quả phân tích AI cho Application ID: {}. Điểm số: {}%",
+                payload.applicationId(), payload.confidenceScore());
+
+        try {
+            // Gọi vào Core Domain (Application Service) để thực thi logic nghiệp vụ lưu trữ điểm số
+            // jobApplicationService.saveAiMatchScore(payload.applicationId(), payload.confidenceScore(), payload.analysisDetails());
+            log.info("Cập nhật điểm AI thành công.");
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật điểm AI cho Application ID: {}", payload.applicationId(), e);
+            // Có thể bổ sung logic gửi vào Dead Letter Queue (DLQ) tại đây nếu lỗi nghiêm trọng
+        }
+    }
+
+    // DTO nội bộ map với JSON cấu trúc trả về từ Server AI (Python)
+    public record AiMatchResultPayload(
+            Long applicationId,
+            Float confidenceScore,
+            String analysisDetails
+    ) {}
+}
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
+// ======================================================================
+
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
+package com.smartmatch.infrastructure.messaging;
+
+import com.smartmatch.domain.application.event.ApplicationSubmittedEvent;
+import com.smartmatch.infrastructure.config.RabbitMqConfig;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DomainEventRabbitMqDispatcher {
+
+    private final RabbitTemplate rabbitTemplate;
+
+    /**
+     * @Async giúp luồng API của User không bị chặn lại để chờ thao tác gửi Message.
+     * @EventListener tự động bắt các Event được publish từ Aggregate Root.
+     */
+    @Async
+    @EventListener
+    public void handleApplicationSubmittedEvent(ApplicationSubmittedEvent event) {
+        log.info("[Domain Event -> RabbitMQ] Bắt được sự kiện nộp CV cho JobId: {}. Đang điều phối sang AI Server...", event.jobId());
+
+        rabbitTemplate.convertAndSend(
+                RabbitMqConfig.EXCHANGE_NAME,
+                "ai.match.request.event",
+                event
+        );
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\AiMatchScoreRepositoryAdapter.java
@@ -1542,21 +1826,114 @@ public interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
 package com.smartmatch.infrastructure.security;
 
-public class CustomUserDetailsService {
-}
+import com.smartmatch.domain.auth.model.User;
+import com.smartmatch.domain.auth.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
+@Service
+@RequiredArgsConstructor
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        // Tìm User thông qua Port của Domain
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
+
+        // Ánh xạ sang Spring Security UserDetails
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail().value(),
+                user.getPasswordHash(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        );
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtAuthenticationFilter.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtAuthenticationFilter.java
 package com.smartmatch.infrastructure.security;
 
-public class JwtAuthenticationFilter {
-}
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
+
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String userEmail;
+
+        // Bỏ qua nếu không có header Authorization hoặc không bắt đầu bằng "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Cắt bỏ chữ "Bearer " (7 ký tự) để lấy token
+        jwt = authHeader.substring(7);
+        userEmail = jwtService.extractUsername(jwt);
+
+        // Nếu có email trong token và context hiện tại chưa được xác thực
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+            // Kiểm tra token có hợp lệ không
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Cập nhật SecurityContext
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+        }
+
+        // Tiếp tục chuỗi filter
+        filterChain.doFilter(request, response);
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtService.java
@@ -1564,16 +1941,194 @@ public class JwtAuthenticationFilter {
 
 package com.smartmatch.infrastructure.security;
 
-public class JwtService {
-}
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+@Service
+public class JwtService {
+
+    @Value("${application.security.jwt.secret-key}")
+    private String secretKey;
+
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        return Jwts.builder()
+                .claims(extraClaims) // Đổi từ setClaims -> claims
+                .subject(userDetails.getUsername()) // Đổi từ setSubject -> subject
+                .issuedAt(new Date(System.currentTimeMillis())) // Đổi từ setIssuedAt -> issuedAt
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Đổi từ setExpiration -> expiration
+                .signWith(getSignInKey()) // Mặc định thuật toán sẽ tự được nội suy từ SecretKey
+                .compact();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser() // Đổi từ parserBuilder() -> parser()
+                .verifyWith(getSignInKey()) // Đổi từ setSigningKey -> verifyWith
+                .build()
+                .parseSignedClaims(token) // Đổi từ parseClaimsJws -> parseSignedClaims
+                .getPayload(); // Đổi từ getBody() -> getPayload()
+    }
+
+    // Trả về SecretKey thay vì Key chung chung
+    private SecretKey getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
 // ======================================================================
 
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
 package com.smartmatch.infrastructure.storage;
 
-public class LocalFileStorageService {
-}
+import com.smartmatch.application.common.port.FileStoragePort;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.*;
+import java.util.Objects;
+import java.util.UUID;
+
+@Slf4j
+@Service
+public class LocalFileStorageService implements FileStoragePort {
+
+    @Value("${application.storage.local.upload-dir:./uploads}")
+    private String uploadDir;
+
+    private Path rootLocation;
+
+    @PostConstruct
+    public void init() {
+        this.rootLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(this.rootLocation);
+            log.info("Đã khởi tạo thư mục lưu trữ gốc tại: {}", this.rootLocation);
+        } catch (IOException e) {
+            throw new RuntimeException("Không thể khởi tạo thư mục lưu trữ. Lỗi: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public String storeFile(MultipartFile file, String subDirectory) {
+        // 1. Kiểm tra file hợp lệ
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Không thể lưu file rỗng.");
+        }
+
+        // 2. Chuẩn hóa tên file và xử lý bảo mật (Chống Path Traversal)
+        String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+        if (originalFilename.contains("..")) {
+            throw new IllegalArgumentException("Tên file chứa ký tự đường dẫn không hợp lệ: " + originalFilename);
+        }
+
+        // 3. Tạo tên file duy nhất (UUID) để tránh trùng lặp
+        String fileExtension = getFileExtension(originalFilename);
+        String uniqueFileName = UUID.randomUUID().toString() + (fileExtension.isEmpty() ? "" : "." + fileExtension);
+
+        try {
+            // 4. Xác định thư mục đích và tạo nếu chưa tồn tại
+            Path targetLocation = this.rootLocation.resolve(subDirectory);
+            Files.createDirectories(targetLocation);
+
+            // 5. Lưu file vào ổ cứng
+            Path targetFile = targetLocation.resolve(uniqueFileName);
+            Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+
+            log.info("Lưu file thành công: {}", targetFile);
+
+            // 6. Trả về đường dẫn tương đối (vd: cv/1234-5678.pdf) để lưu vào Database
+            return subDirectory + "/" + uniqueFileName;
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Không thể lưu trữ file " + originalFilename + ". Lỗi: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public byte[] readFile(String filePath) {
+        try {
+            Path file = this.rootLocation.resolve(filePath).normalize();
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                return Files.readAllBytes(file);
+            } else {
+                throw new RuntimeException("Không thể đọc file hoặc file không tồn tại: " + filePath);
+            }
+        } catch (IOException ex) { // Đã xóa bỏ MalformedURLException
+            throw new RuntimeException("Lỗi khi đọc file: " + filePath, ex);
+        }
+    }
+
+    @Override
+    public void deleteFile(String filePath) {
+        try {
+            Path file = this.rootLocation.resolve(filePath).normalize();
+            Files.deleteIfExists(file);
+            log.info("Đã xóa file: {}", filePath);
+        } catch (IOException ex) {
+            log.error("Không thể xóa file: {}", filePath, ex);
+            throw new RuntimeException("Lỗi khi xóa file: " + filePath, ex);
+        }
+    }
+
+    /**
+     * Hàm phụ trợ lấy đuôi file (extension)
+     */
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.lastIndexOf(".") == -1) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf(".") + 1);
+    }
+}

@@ -3,10 +3,10 @@ spring:
     name: smartmatch-api
 
   datasource:
-    # Đã đổi port từ 3307 sang 3306 (Port mặc định của MySQL local)
-    url: jdbc:mysql://localhost:3306/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    # Chạy trên IDE gọi vào MySQL Docker qua cổng 3307
+    url: jdbc:mysql://localhost:3307/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
     username: root
-    password: 1234 # <-- LƯU Ý: Sửa lại thành mật khẩu MySQL Workbench của bạn (ví dụ: 123456, hoặc để trống '')
+    password: root123 # Khớp với biến môi trường trong docker-compose
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -19,9 +19,17 @@ spring:
         format_sql: true
     open-in-view: false
 
+  # [ĐÃ THÊM] Cấu hình RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
   security:
     jwt:
-      secret: your-very-long-secret-key-at-least-512-bits-smartmatch-2026
+      # [ĐÃ SỬA] Chuỗi secret key đã được mã hóa chuẩn Base64 để tránh lỗi của jjwt library
+      secret: c21hcnRtYXRjaC1zdXBlci1zZWNyZXQta2V5LTIwMjYtbWluaW11bS0yNTYtYml0cyE=
       expiration: 86400000
       refresh-expiration: 604800000
 
@@ -37,4 +45,3 @@ logging:
   level:
     com.smartmatch: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -24,17 +24,13 @@ public class PaginationMapper {
                 .map(mapperFunction)
                 .collect(Collectors.toList());
 
-        return new DomainPage<T>() {
-            @Override
-            public List<T> getContent() { return content; }
-            @Override
-            public long getTotalElements() { return springPage.getTotalElements(); }
-            @Override
-            public int getTotalPages() { return springPage.getTotalPages(); }
-            @Override
-            public int getNumber() { return springPage.getNumber(); }
-            @Override
-            public int getSize() { return springPage.getSize(); }
-        };
+        // Sử dụng constructor 5 tham số của DomainPage đã được định nghĩa ở tầng Domain
+        return new DomainPage<>(
+                content,
+                springPage.getTotalElements(),
+                springPage.getTotalPages(),
+                springPage.getNumber(),
+                springPage.getSize()
+        );
     }
 }

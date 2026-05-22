@@ -1,4 +1,3 @@
-// File: \backend-core\domain\src\main\java\com\smartmatch\domain\application\model\Application.java
 package com.smartmatch.domain.application.model;
 
 import com.smartmatch.domain.application.event.ApplicationSubmittedEvent;
@@ -10,6 +9,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -19,6 +19,11 @@ public class Application {
     private Long candidateId;
     private Long jobId;
     private Long cvId;
+
+    // Các trường bổ sung để khớp với JobApplicationServiceImpl
+    private String coverLetter;
+    private String blindTestToken;
+
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
 
@@ -26,12 +31,13 @@ public class Application {
     @Builder.Default
     private final List<Object> domainEvents = new ArrayList<>();
 
-    // Business Behavior: Khởi tạo ứng tuyển
-    public static Application submit(Long candidateId, Long jobId, Long cvId) {
+    // Business Behavior: Khởi tạo ứng tuyển (Đã sửa thành createNew để khớp với Service)
+    public static Application createNew(Long jobId, Long cvId, Long candidateId, String coverLetter) {
         Application application = Application.builder()
-                .candidateId(candidateId)
                 .jobId(jobId)
                 .cvId(cvId)
+                .candidateId(candidateId)
+                .coverLetter(coverLetter)
                 .status(ApplicationStatus.PENDING)
                 .appliedAt(LocalDateTime.now())
                 .build();
@@ -40,6 +46,18 @@ public class Application {
                 application.getId(), candidateId, jobId, application.getAppliedAt()
         ));
         return application;
+    }
+
+    // Business Behavior: Cập nhật trạng thái tự do
+    public void updateStatus(ApplicationStatus status) {
+        this.status = status;
+    }
+
+    // Business Behavior: Kích hoạt Blind Testing (Tạo URL ẩn danh trung lập)
+    public void enableBlindTesting() {
+        String token = UUID.randomUUID().toString();
+        // Cấu hình URL sử dụng sub-domain trung lập để đánh giá khách quan
+        this.blindTestToken = "https://appa.ungdungnghiencuu.com/review/candidate/" + token;
     }
 
     // Business Behavior: Phê duyệt hồ sơ

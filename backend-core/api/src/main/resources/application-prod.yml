@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    # Ở môi trường Prod trong Docker, các service gọi nhau bằng tên container và port nội bộ (3306)
+    url: jdbc:mysql://mysql:3306/smartmatch_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  rabbitmq:
+    host: rabbitmq  # Gọi bằng tên service RabbitMQ
+    port: 5672
+    username: guest
+    password: guest
+
+  jpa:
+    hibernate:
+      # [ĐÃ SỬA LỖI NGHIÊM TRỌNG] Không bao giờ để "update" trên Production để tránh làm mất dữ liệu
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    com.smartmatch: INFO
+    org.hibernate.SQL: WARN

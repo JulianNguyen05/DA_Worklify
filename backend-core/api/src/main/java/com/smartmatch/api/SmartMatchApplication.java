@@ -3,19 +3,18 @@ package com.smartmatch.api;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication
-// Quét tất cả các thành phần (Controller, Service, Component, Security)
-@ComponentScan(basePackages = "com.smartmatch")
-// Quét các Entity JPA
-@EntityScan(basePackages = "com.smartmatch.infrastructure.persistence.jpa")
-// QUAN TRỌNG: Quét ĐÚNG nơi chứa các Interface JpaRepository
-@EnableJpaRepositories(basePackages = {
-        "com.smartmatch.infrastructure.persistence.jpa",
-        "com.smartmatch.infrastructure.persistence.repository"
-})
+/**
+ * Lớp khởi động (Entry point) của toàn bộ hệ thống Backend SmartMatch.
+ */
+@SpringBootApplication(scanBasePackages = {"com.smartmatch"}) // Quét toàn bộ Bean ở tất cả các module
+@EnableJpaRepositories(basePackages = {"com.smartmatch.infrastructure.persistence.repository"}) // Chỉ định nơi chứa JPA Repository
+@EntityScan(basePackages = {"com.smartmatch.infrastructure.persistence.entity"}) // Chỉ định nơi chứa JPA Entity
+@EnableTransactionManagement // Kích hoạt quản lý giao dịch (@Transactional)
+@EnableAsync // Kích hoạt xử lý bất đồng bộ (cần thiết cho RabbitMQ Dispatcher của AI)
 public class SmartMatchApplication {
 
     public static void main(String[] args) {
