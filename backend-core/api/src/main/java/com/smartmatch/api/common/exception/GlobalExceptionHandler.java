@@ -1,10 +1,11 @@
 package com.smartmatch.api.common.exception; // Giữ nguyên package cũ của bạn
 
+import com.smartmatch.api.common.response.ApiResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
@@ -14,38 +15,50 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     /**
-     * 1. Bắt lỗi vi phạm quy tắc nghiệp vụ (Ví dụ: Trùng Email khi đăng ký)
-     * Thường ném ra từ tầng Service bằng: throw new IllegalArgumentException("Email đã tồn tại");
+     * 1. Bắt lỗi vi phạm quy tắc nghiệp vụ (Fail-Fast từ tầng Service/Domain)
+     * Thường ném ra bằng: throw new IllegalArgumentException("Email đã tồn tại");
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Trả về HTTP Status 400 ra Network tab
+    public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException ex) {
+        // Đưa trực tiếp thông điệp nghiệp vụ cụ thể vào thuộc tính 'message'
+        return ApiResponse.error(400, ex.getMessage());
     }
 
     /**
-     * 2. Bắt lỗi ràng buộc dữ liệu đầu vào DTO (@NotBlank, @Email, @Size,...)
-     * Trích xuất thông báo thân thiện đầu tiên cho React hiển thị trực quan
+     * 2. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
+     * Tự động bóc tách lỗi đầu tiên làm thông điệp đại diện (Top-level message) cho React hiển thị nhanh
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Trả về HTTP Status 400 ra Network tab
+    public ApiResponse<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
 
-        FieldError fieldError = ex.getBindingResult().getFieldError();
-        String cleanMessage = (fieldError != null) ? fieldError.getDefaultMessage() : "Dữ liệu gửi lên không đúng định dạng.";
+        // Thu thập toàn bộ danh sách các trường bị nhập lỗi
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
 
-        errorResponse.put("message", cleanMessage);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        // Tìm kiếm lỗi đầu tiên xuất hiện để gán làm thông điệp chính ở lớp ngoài cùng
+        String topLevelMessage = errors.values().stream()
+                .findFirst()
+                .orElse("Dữ liệu đầu vào không hợp lệ, vui lòng kiểm tra lại.");
+
+        // Trả về cấu trúc ApiResponse chứa map chi tiết lỗi bên trong trường 'data'
+        return ApiResponse.error(errors, topLevelMessage);
     }
 
     /**
-     * 3. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointer, lỗi DB,...)
+     * 3. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", "Hệ thống SmartMatch gặp sự cố bất ngờ: " + ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Trả về HTTP Status 500 ra Network tab
+    public ApiResponse<Void> handleGeneralException(Exception ex) {
+        // Log log lỗi chi tiết ra console của IDE để Developer dễ dàng sửa lỗi (Debug)
+        ex.printStackTrace();
+
+        return ApiResponse.error(500, "Hệ thống SmartMatch gặp sự cố bất ngờ: " + ex.getMessage());
     }
 }
