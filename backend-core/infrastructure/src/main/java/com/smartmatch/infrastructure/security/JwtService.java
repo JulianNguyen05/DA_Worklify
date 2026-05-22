@@ -2,13 +2,12 @@ package com.smartmatch.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
-import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,12 +16,32 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // Sửa các dòng này
     @Value("${spring.security.jwt.secret}")
     private String secretKey;
 
-    @Value("${spring.security.jwt.expiration}")
+    @Value("${spring.security.jwt.expiration:86400000}")
     private long jwtExpiration;
+
+    public long getExpirationTimeTimeMs() {
+        return jwtExpiration;
+    }
+
+    public String generateToken(String email, String role, Long userId) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("role", "ROLE_" + role);
+        extraClaims.put("userId", userId);
+        return buildToken(extraClaims, email, jwtExpiration);
+    }
+
+    private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -33,23 +52,22 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return Jwts.builder()
-                .claims(extraClaims) // Đổi từ setClaims -> claims
-                .subject(userDetails.getUsername()) // Đổi từ setSubject -> subject
-                .issuedAt(new Date(System.currentTimeMillis())) // Đổi từ setIssuedAt -> issuedAt
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Đổi từ setExpiration -> expiration
-                .signWith(getSignInKey()) // Mặc định thuật toán sẽ tự được nội suy từ SecretKey
-                .compact();
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+    public boolean isTokenValid(String token, String userDetailsEmail) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetailsEmail)) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
@@ -58,19 +76,5 @@ public class JwtService {
 
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser() // Đổi từ parserBuilder() -> parser()
-                .verifyWith(getSignInKey()) // Đổi từ setSigningKey -> verifyWith
-                .build()
-                .parseSignedClaims(token) // Đổi từ parseClaimsJws -> parseSignedClaims
-                .getPayload(); // Đổi từ getBody() -> getPayload()
-    }
-
-    // Trả về SecretKey thay vì Key chung chung
-    private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

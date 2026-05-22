@@ -48,4 +48,8 @@ public class User {
         }
         this.status = UserStatus.ACTIVE;
     }
+
+    public boolean isValidEmail() {
+        return this.email != null && this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
 }

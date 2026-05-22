@@ -6,4 +6,8 @@ public record EmailAddress(String value) {
             throw new IllegalArgumentException("Địa chỉ email không hợp lệ");
         }
     }
+
+    public boolean matches(String regex) {
+        return value != null && value.matches(regex);
+    }
 }
