@@ -384,6 +384,10 @@ public class User {
         }
         this.status = UserStatus.ACTIVE;
     }
+
+    public boolean isValidEmail() {
+        return this.email != null && this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
 }
 
 // ============================================================
@@ -668,6 +672,10 @@ public record EmailAddress(String value) {
         if (value == null || !value.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new IllegalArgumentException("Địa chỉ email không hợp lệ");
         }
+    }
+
+    public boolean matches(String regex) {
+        return value != null && value.matches(regex);
     }
 }
 

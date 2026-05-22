@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
 package com.smartmatch.infrastructure.config;
 
 import com.smartmatch.infrastructure.security.JwtAuthenticationFilter;
@@ -13,10 +12,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Cho phép dùng @PreAuthorize ở tầng API/Controller
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -26,26 +30,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Tắt CSRF vì chúng ta sử dụng JWT (không dùng session cookies)
+                // 1. Kích hoạt cấu hình CORS toàn cục áp dụng cho cả luồng phản hồi Exception lỗi
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Phân quyền các endpoint
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll() // Mở các API đăng ký, đăng nhập
-                        .requestMatchers("/api/v1/public/**").permitAll() // Các API công khai (vd: danh sách việc làm)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // API Docs
-                        .anyRequest().authenticated() // Tất cả các request khác đều cần token hợp lệ
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-
-                // Cấu hình Session thành Stateless (Không lưu trạng thái trên server)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // Đăng ký Provider và Filter JWT
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // Định nghĩa chi tiết cấu hình CORS cho phép React Client truy cập đọc Body lỗi công khai
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("*")); // Định danh chính xác domain hoặc dùng "*" trong môi trường Dev
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
