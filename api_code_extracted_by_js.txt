@@ -1,0 +1,922 @@
+
+/* ============================================================
+   FILE: \backend-core\api\pom.xml
+   ============================================================ */
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.smartmatch</groupId>
+    <artifactId>backend-core</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>api</artifactId>
+  <packaging>jar</packaging>
+
+  <name>SmartMatch API</name>
+  <description>REST Controllers, Exception Handler, Main Application</description>
+
+  <dependencies>
+    <!-- Phụ thuộc các module khác -->
+    <dependency>
+      <groupId>com.smartmatch</groupId>
+      <artifactId>infrastructure</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.smartmatch</groupId>
+      <artifactId>application</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Spring Boot Web -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- @EntityScan và JPA support -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- OpenAPI / Swagger -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.6.0</version>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <!-- Thêm cấu hình mainClass để trỏ đến file chạy chính của bạn -->
+                <configuration>
+                    <mainClass>com.smartmatch.api.SmartMatchApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\exception\ErrorCode.java
+   ============================================================ */
+
+package com.smartmatch.api.common.exception;
+
+import lombok.Getter;
+
+@Getter
+public enum ErrorCode {
+    SUCCESS(200, "Thành công"),
+    BAD_REQUEST(400, "Dữ liệu đầu vào không hợp lệ"),
+    UNAUTHORIZED(401, "Chưa xác thực hoặc token hết hạn"),
+    FORBIDDEN(403, "Không có quyền truy cập tài nguyên này"),
+    NOT_FOUND(404, "Không tìm thấy tài nguyên"),
+    INTERNAL_SERVER_ERROR(500, "Lỗi hệ thống máy chủ");
+
+    private final int code;
+    private final String message;
+
+    ErrorCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\exception\ErrorResponse.java
+   ============================================================ */
+
+package com.smartmatch.api.common.exception;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@Data
+@Builder
+public class ErrorResponse {
+    private int code;
+    private String message;
+    private String error;
+
+    // Lưu trữ chi tiết lỗi (Ví dụ: map các field bị lỗi validation)
+    private Map<String, String> validationErrors;
+
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\exception\GlobalExceptionHandler.java
+   ============================================================ */
+
+package com.smartmatch.api.common.exception;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    /**
+     * Bắt lỗi Validation từ các Request DTO (VD: @NotBlank, @Email)
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        log.warn("Validation error: {}", errors);
+
+        return ErrorResponse.builder()
+                .code(ErrorCode.BAD_REQUEST.getCode())
+                .message(ErrorCode.BAD_REQUEST.getMessage())
+                .error("Validation Failed")
+                .validationErrors(errors)
+                .build();
+    }
+
+    /**
+     * Bắt lỗi Logic nghiệp vụ (Do chúng ta ném IllegalArgumentException ở tầng Domain/Application)
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("Business Logic error (IllegalArgument): {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .code(ErrorCode.BAD_REQUEST.getCode())
+                .message(ex.getMessage()) // Trả về câu thông báo được định nghĩa ở tầng Core
+                .error("Bad Request")
+                .build();
+    }
+
+    /**
+     * Bắt lỗi Trạng thái nghiệp vụ không hợp lệ (Do ném IllegalStateException)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT) // 409 Conflict thường hợp lý cho sai luồng trạng thái
+    public ErrorResponse handleIllegalStateException(IllegalStateException ex) {
+        log.warn("Business Logic error (IllegalState): {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .code(HttpStatus.CONFLICT.value())
+                .message(ex.getMessage())
+                .error("Conflict State")
+                .build();
+    }
+
+    /**
+     * Bắt các lỗi chưa được định nghĩa (Fall-back)
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleGlobalException(Exception ex) {
+        log.error("Internal Server Error: ", ex);
+        return ErrorResponse.builder()
+                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
+                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
+                .error(ex.getMessage())
+                .build();
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\response\ApiResponse.java
+   ============================================================ */
+
+package com.smartmatch.api.common.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApiResponse<T> {
+
+    @Builder.Default
+    private int code = 200;
+
+    @Builder.Default
+    private String message = "Thành công";
+
+    private T data;
+
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
+
+    // Helper method trả về dữ liệu thành công
+    public static <T> ApiResponse<T> success(T data) {
+        return ApiResponse.<T>builder()
+                .code(200)
+                .message("Thành công")
+                .data(data)
+                .build();
+    }
+
+    // Helper method trả về dữ liệu thành công kèm custom message
+    public static <T> ApiResponse<T> success(T data, String message) {
+        return ApiResponse.<T>builder()
+                .code(200)
+                .message(message)
+                .data(data)
+                .build();
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\response\PageResponseWrapper.java
+   ============================================================ */
+
+package com.smartmatch.api.common.response;
+
+import com.smartmatch.application.common.dto.PageResponse;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class PageResponseWrapper<T> {
+    @Builder.Default
+    private int code = 200;
+    @Builder.Default
+    private String message = "Thành công";
+
+    private PageResponse<T> data;
+
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
+
+    public static <T> PageResponseWrapper<T> success(PageResponse<T> pageData) {
+        return PageResponseWrapper.<T>builder()
+                .data(pageData)
+                .build();
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\config\OpenApiConfig.java
+   ============================================================ */
+
+package com.smartmatch.api.config;
+
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@OpenAPIDefinition(
+        info = @Info(
+                title = "SmartMatch API Documentation",
+                version = "1.0.0",
+                description = "Tài liệu đặc tả các Endpoint cho hệ thống tuyển dụng SmartMatch. Hỗ trợ Quản trị viên, Nhà tuyển dụng và Ứng viên.",
+                contact = @Contact(name = "SmartMatch Team")
+        ),
+        // Áp dụng bảo mật JWT mặc định cho tất cả các API (trừ những API được permitAll)
+        security = {@SecurityRequirement(name = "bearerAuth")}
+)
+@SecurityScheme(
+        name = "bearerAuth",
+        description = "Nhập JWT Token của bạn vào đây (Không cần thêm tiền tố 'Bearer ')",
+        type = SecuritySchemeType.HTTP,
+        scheme = "bearer",
+        bearerFormat = "JWT"
+)
+public class OpenApiConfig {
+    // SpringDoc tự động quét các Controller để tạo tài liệu
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\config\WebMvcConfig.java
+   ============================================================ */
+
+package com.smartmatch.api.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Lấy đường dẫn tuyệt đối của thư mục "uploads" ở root dự án
+        Path uploadDir = Paths.get("uploads");
+        String uploadPath = uploadDir.toFile().getAbsolutePath();
+
+        // Map đường dẫn URL "/uploads/**" tới thư mục vật lý trên server
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + uploadPath + "/");
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\admin\AdminController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.admin;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.service.AdminService;
+import com.smartmatch.domain.job.model.JobStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/admin")
+@RequiredArgsConstructor
+@Tag(name = "6. Admin Dashboard", description = "Quản trị hệ thống, Kiểm duyệt và Báo cáo")
+@PreAuthorize("hasRole('ADMIN')") // Cực kỳ quan trọng: Khóa toàn bộ class này bằng role ADMIN
+public class AdminController {
+
+    private final AdminService adminService;
+
+    @GetMapping("/dashboard")
+    @Operation(summary = "Lấy các chỉ số thống kê tổng quan (Dashboard)")
+    public ApiResponse<DashboardStatsResponse> getStats() {
+        return ApiResponse.success(adminService.getDashboardStats());
+    }
+
+    @PatchMapping("/jobs/{jobId}/moderate")
+    @Operation(summary = "Kiểm duyệt (Duyệt/Khóa) tin tuyển dụng")
+    public ApiResponse<Void> moderateJob(
+            @PathVariable Long jobId,
+            @RequestParam JobStatus status) {
+        adminService.moderateJob(jobId, status);
+        return ApiResponse.success(null, "Đã cập nhật trạng thái tin tuyển dụng");
+    }
+
+    @PatchMapping("/users/{userId}/ban")
+    @Operation(summary = "Khóa tài khoản người dùng vi phạm")
+    public ApiResponse<Void> banUser(@PathVariable Long userId) {
+        adminService.banUser(userId);
+        return ApiResponse.success(null, "Đã khóa tài khoản người dùng");
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\auth\AuthController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.auth;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.auth.dto.AuthResponse;
+import com.smartmatch.application.auth.dto.LoginRequest;
+import com.smartmatch.application.auth.dto.RegisterRequest;
+import com.smartmatch.application.auth.dto.UserResponse;
+import com.smartmatch.application.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+@Tag(name = "1. Authentication", description = "Các API Đăng nhập, Đăng ký và Quản lý bảo mật")
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/register")
+    @Operation(summary = "Đăng ký tài khoản mới (Ứng viên / Nhà tuyển dụng)")
+    public ApiResponse<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        UserResponse response = authService.register(request);
+        return ApiResponse.success(response, "Đăng ký tài khoản thành công");
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "Đăng nhập hệ thống cấp JWT Token")
+    public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ApiResponse.success(response, "Đăng nhập thành công");
+    }
+
+    @PostMapping("/{userId}/mfa/enable")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Kích hoạt xác thực đa yếu tố (MFA)")
+    public ApiResponse<Void> enableMfa(@PathVariable Long userId) {
+        authService.enableMfa(userId);
+        return ApiResponse.success(null, "Kích hoạt MFA thành công");
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\candidate\CandidateController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.candidate;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
+import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
+import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.service.CandidateService;
+import com.smartmatch.application.common.dto.FileData;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/candidates")
+@RequiredArgsConstructor
+@Tag(name = "2. Candidate", description = "Quản lý hồ sơ và CV của Ứng viên")
+@PreAuthorize("hasRole('CANDIDATE')") // Phân quyền: Chỉ ứng viên mới được truy cập
+public class CandidateController {
+
+    private final CandidateService candidateService;
+
+    @PostMapping("/{userId}/profile")
+    @Operation(summary = "Tạo mới hồ sơ năng lực ứng viên")
+    public ApiResponse<CandidateProfileResponse> createProfile(
+            @PathVariable Long userId,
+            @Valid @RequestBody CandidateProfileRequest request) {
+        return ApiResponse.success(candidateService.createProfile(userId, request));
+    }
+
+    @GetMapping("/{userId}/profile")
+    @Operation(summary = "Lấy thông tin hồ sơ ứng viên")
+    public ApiResponse<CandidateProfileResponse> getProfile(@PathVariable Long userId) {
+        return ApiResponse.success(candidateService.getProfileByUserId(userId));
+    }
+
+    @PostMapping(value = "/{userId}/cvs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Tải lên CV (PDF/Word)")
+    public ApiResponse<CvDocumentResponse> uploadCv(
+            @PathVariable Long userId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        // Chuyển đổi MultipartFile sang DTO FileData không phụ thuộc Framework cho tầng Application
+        FileData fileData = new FileData(
+                file.getOriginalFilename(),
+                file.getInputStream(),
+                file.getSize(),
+                file.getContentType()
+        );
+
+        return ApiResponse.success(candidateService.uploadCv(userId, fileData), "Tải CV lên thành công");
+    }
+
+    @GetMapping("/{userId}/cvs")
+    @Operation(summary = "Lấy danh sách CV đã lưu của ứng viên")
+    public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable Long userId) {
+        return ApiResponse.success(candidateService.getCvsByUserId(userId));
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\employer\EmployerController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.employer;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.employer.dto.CompanyProfileRequest;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.smartmatch.application.employer.service.EmployerService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/employers")
+@RequiredArgsConstructor
+@Tag(name = "3. Employer", description = "Quản lý hồ sơ Doanh nghiệp")
+public class EmployerController {
+
+    private final EmployerService employerService;
+
+    @PostMapping("/{userId}/profile")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Tạo hồ sơ doanh nghiệp")
+    public ApiResponse<CompanyProfileResponse> createProfile(
+            @PathVariable Long userId,
+            @Valid @RequestBody CompanyProfileRequest request) {
+        return ApiResponse.success(employerService.createProfile(userId, request));
+    }
+
+    @GetMapping("/{userId}/profile")
+    @Operation(summary = "Xem hồ sơ doanh nghiệp (Public/Private)")
+    public ApiResponse<CompanyProfileResponse> getProfile(@PathVariable Long userId) {
+        return ApiResponse.success(employerService.getProfileByUserId(userId));
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\job\JobController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.job;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.dto.PageResponse;
+import com.smartmatch.application.job.dto.JobPostingRequest;
+import com.smartmatch.application.job.dto.JobPostingResponse;
+import com.smartmatch.application.job.service.JobService;
+import com.smartmatch.domain.common.DomainPageable;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/jobs")
+@RequiredArgsConstructor
+@Tag(name = "4. Job Postings", description = "Quản lý và Tìm kiếm Tin tuyển dụng")
+public class JobController {
+
+    private final JobService jobService;
+
+    @PostMapping("/employers/{companyId}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Nhà tuyển dụng đăng tin tuyển dụng mới")
+    public ApiResponse<JobPostingResponse> createJob(
+            @PathVariable Long companyId,
+            @Valid @RequestBody JobPostingRequest request) {
+        return ApiResponse.success(jobService.createJobPosting(companyId, request), "Đăng tin chờ duyệt thành công");
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Khách/Ứng viên tìm kiếm việc làm")
+    public ApiResponse<PageResponse<JobPostingResponse>> searchJobs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        DomainPageable pageable = createPageable(page, size);
+        return ApiResponse.success(jobService.searchJobs(keyword, location, pageable));
+    }
+
+    @GetMapping("/{jobId}")
+    @Operation(summary = "Xem chi tiết tin tuyển dụng")
+    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable Long jobId) {
+        return ApiResponse.success(jobService.getJobById(jobId));
+    }
+
+    // Tiện ích tạo Pageable inline
+    private DomainPageable createPageable(int page, int size) {
+        return new DomainPageable() {
+            @Override public int getPageNumber() { return page; }
+            @Override public int getPageSize() { return size; }
+        };
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\controller\jobapplication\JobApplicationController.java
+   ============================================================ */
+
+package com.smartmatch.api.controller.jobapplication;
+
+import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.dto.PageResponse;
+import com.smartmatch.application.jobapplication.dto.AiMatchScoreResponse;
+import com.smartmatch.application.jobapplication.dto.ApplicationRequest;
+import com.smartmatch.application.jobapplication.dto.ApplicationResponse;
+import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.smartmatch.domain.common.DomainPageable;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/applications")
+@RequiredArgsConstructor
+@Tag(name = "5. Applications & AI", description = "Quản lý nộp hồ sơ và Chấm điểm AI")
+public class JobApplicationController {
+
+    private final JobApplicationService applicationService;
+
+    @PostMapping("/candidates/{candidateId}")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Nộp hồ sơ ứng tuyển (Tự động kích hoạt AI chấm điểm)")
+    public ApiResponse<ApplicationResponse> apply(
+            @PathVariable Long candidateId,
+            @Valid @RequestBody ApplicationRequest request) {
+        return ApiResponse.success(applicationService.applyJob(candidateId, request), "Nộp hồ sơ thành công");
+    }
+
+    @GetMapping("/jobs/{jobId}/review-board")
+    @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
+    @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
+    public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
+            @PathVariable Long jobId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.success(applicationService.getApplicationsForReviewBoard(jobId, createPageable(page, size)));
+    }
+
+    @GetMapping("/{applicationId}/ai-score")
+    @PreAuthorize("hasRole('EMPLOYER') or hasRole('CANDIDATE')")
+    @Operation(summary = "Xem kết quả chấm điểm độ phù hợp của AI")
+    public ApiResponse<AiMatchScoreResponse> getAiScore(@PathVariable Long applicationId) {
+        return ApiResponse.success(applicationService.getAiMatchResult(applicationId));
+    }
+
+    @PatchMapping("/employers/{companyId}/{applicationId}/status")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Cập nhật trạng thái hồ sơ (Duyệt/Loại)")
+    public ApiResponse<Void> updateStatus(
+            @PathVariable Long companyId,
+            @PathVariable Long applicationId,
+            @RequestParam ApplicationStatus status) {
+        applicationService.updateApplicationStatus(companyId, applicationId, status);
+        return ApiResponse.success(null, "Cập nhật trạng thái thành công");
+    }
+
+    private DomainPageable createPageable(int page, int size) {
+        return new DomainPageable() {
+            @Override public int getPageNumber() { return page; }
+            @Override public int getPageSize() { return size; }
+        };
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\filter\RequestLoggingFilter.java
+   ============================================================ */
+
+package com.smartmatch.api.filter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+@Slf4j
+@Component
+public class RequestLoggingFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        long startTime = System.currentTimeMillis();
+
+        // Ghi log đường dẫn incoming request
+        log.info("Incoming Request: [{}] {}", request.getMethod(), request.getRequestURI());
+
+        try {
+            // Cho phép request tiếp tục đi vào các filter khác và Controller
+            filterChain.doFilter(request, response);
+        } finally {
+            // Tính toán thời gian phản hồi sau khi Controller xử lý xong
+            long duration = System.currentTimeMillis() - startTime;
+
+            // Cảnh báo nếu API phản hồi chậm hơn 2000ms (2 giây) - Theo đặc tả hiệu năng
+            if (duration > 2000) {
+                log.warn("Slow API Detected! [{}] {} - Status: {} - Time: {}ms",
+                        request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
+            } else {
+                log.info("Completed Request: [{}] {} - Status: {} - Time: {}ms",
+                        request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
+            }
+        }
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\java\com\smartmatch\api\SmartMatchApplication.java
+   ============================================================ */
+
+package com.smartmatch.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+/**
+ * Lớp khởi động (Entry point) của toàn bộ hệ thống Backend SmartMatch.
+ */
+@SpringBootApplication(scanBasePackages = {"com.smartmatch"}) // Quét toàn bộ Bean ở tất cả các module
+@EnableJpaRepositories(basePackages = {"com.smartmatch.infrastructure.persistence.repository"}) // Chỉ định nơi chứa JPA Repository
+@EntityScan(basePackages = {"com.smartmatch.infrastructure.persistence.entity"}) // Chỉ định nơi chứa JPA Entity
+@EnableTransactionManagement // Kích hoạt quản lý giao dịch (@Transactional)
+@EnableAsync // Kích hoạt xử lý bất đồng bộ (cần thiết cho RabbitMQ Dispatcher của AI)
+public class SmartMatchApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SmartMatchApplication.class, args);
+    }
+}
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\resources\application-dev.yml
+   ============================================================ */
+
+spring:
+  datasource:
+    # Kết nối qua cổng 3306 của MySQL Local, tự tạo DB nếu chưa có
+    url: jdbc:mysql://localhost:3306/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password: 1234 # <-- LƯU Ý: Đảm bảo khớp với mật khẩu MySQL trên máy bạn
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.smartmatch: DEBUG
+    org.hibernate.SQL: DEBUG
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\resources\application-prod.yml
+   ============================================================ */
+
+spring:
+  datasource:
+    # Ở môi trường Prod trong Docker, các service gọi nhau bằng tên container và port nội bộ (3306)
+    url: jdbc:mysql://mysql:3306/smartmatch_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  rabbitmq:
+    host: rabbitmq  # Gọi bằng tên service RabbitMQ
+    port: 5672
+    username: guest
+    password: guest
+
+  jpa:
+    hibernate:
+      # [ĐÃ SỬA LỖI NGHIÊM TRỌNG] Không bao giờ để "update" trên Production để tránh làm mất dữ liệu
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    com.smartmatch: INFO
+    org.hibernate.SQL: WARN
+
+
+/* ============================================================
+   FILE: \backend-core\api\src\main\resources\application.yml
+   ============================================================ */
+
+spring:
+  application:
+    name: smartmatch-api
+
+  datasource:
+    # Chạy trên IDE gọi vào MySQL Docker qua cổng 3307
+    url: jdbc:mysql://localhost:3307/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: root
+    password: root123 # Khớp với biến môi trường trong docker-compose
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    open-in-view: false
+
+  # [ĐÃ THÊM] Cấu hình RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  security:
+    jwt:
+      # [ĐÃ SỬA] Chuỗi secret key đã được mã hóa chuẩn Base64 để tránh lỗi của jjwt library
+      secret: c21hcnRtYXRjaC1zdXBlci1zZWNyZXQta2V5LTIwMjYtbWluaW11bS0yNTYtYml0cyE=
+      expiration: 86400000
+      refresh-expiration: 604800000
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.smartmatch: DEBUG
+    org.hibernate.SQL: DEBUG
+

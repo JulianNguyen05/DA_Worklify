@@ -1,15 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const express = require('express');
-
-const app = express();
-const PORT = 3000;
 
 // ==========================
-// CẤU HÌNH PHÂN HỆ API
+// CẤU HÌNH
 // ==========================
 const sourceDir = path.join(__dirname, 'backend-core', 'api');
-const outputFile = path.join(__dirname, 'api_code_extracted_by_js.txt');
+
+const outputFile = path.join(
+    __dirname,
+    'api_code_extracted_by_js.txt'
+);
 
 const allowedExtensions = [
     '.java',
@@ -21,16 +21,25 @@ const allowedExtensions = [
 ];
 
 // ==========================
-// HÀM XÓA FILE CŨ
+// XÓA FILE CŨ
 // ==========================
 function clearOldFile() {
+
     try {
+
         if (fs.existsSync(outputFile)) {
+
             fs.unlinkSync(outputFile);
+
             console.log('[INFO] Đã xóa file kết quả cũ.');
         }
+
     } catch (err) {
-        console.error('[ERROR] Không thể xóa file cũ:', err.message);
+
+        console.error(
+            '[ERROR] Không thể xóa file cũ:',
+            err.message
+        );
     }
 }
 
@@ -38,18 +47,26 @@ function clearOldFile() {
 // HÀM GỘP SOURCE CODE
 // ==========================
 function extractApiCode(currentDir) {
+
     let items;
 
     try {
+
         items = fs.readdirSync(currentDir);
+
     } catch (err) {
-        console.error(`[ERROR] Không thể đọc thư mục ${currentDir}:`, err.message);
+
+        console.error(
+            `[ERROR] Không thể đọc thư mục ${currentDir}:`,
+            err.message
+        );
+
         return;
     }
 
     for (const item of items) {
 
-        // Bỏ qua các thư mục không cần thiết
+        // Bỏ qua thư mục không cần thiết
         if (
             item === 'target' ||
             item === '.git' ||
@@ -64,9 +81,16 @@ function extractApiCode(currentDir) {
         let stat;
 
         try {
+
             stat = fs.statSync(fullPath);
+
         } catch (err) {
-            console.error(`[ERROR] Không thể đọc thông tin file ${fullPath}:`, err.message);
+
+            console.error(
+                `[ERROR] Không thể đọc thông tin file ${fullPath}:`,
+                err.message
+            );
+
             continue;
         }
 
@@ -74,6 +98,7 @@ function extractApiCode(currentDir) {
         // ĐỆ QUY THƯ MỤC
         // ==========================
         if (stat.isDirectory()) {
+
             extractApiCode(fullPath);
         }
 
@@ -88,9 +113,15 @@ function extractApiCode(currentDir) {
 
                 try {
 
-                    const content = fs.readFileSync(fullPath, 'utf8');
+                    const content = fs.readFileSync(
+                        fullPath,
+                        'utf8'
+                    );
 
-                    const relativePath = fullPath.replace(__dirname, '');
+                    const relativePath = fullPath.replace(
+                        __dirname,
+                        ''
+                    );
 
                     const header = `
 /* ============================================================
@@ -103,10 +134,16 @@ function extractApiCode(currentDir) {
                         header + '\n' + content + '\n\n'
                     );
 
-                    console.log(`[SUCCESS] Đã gộp: ${relativePath}`);
+                    console.log(
+                        `[SUCCESS] Đã gộp: ${relativePath}`
+                    );
 
                 } catch (err) {
-                    console.error(`[ERROR] Không thể đọc file ${fullPath}:`, err.message);
+
+                    console.error(
+                        `[ERROR] Không thể đọc file ${fullPath}:`,
+                        err.message
+                    );
                 }
             }
         }
@@ -114,35 +151,16 @@ function extractApiCode(currentDir) {
 }
 
 // ==========================
-// API TRÍCH XUẤT SOURCE CODE
+// MAIN
 // ==========================
-app.get('/extract-api-code', (req, res) => {
+console.log('\n[START] Bắt đầu trích xuất mã nguồn API...');
 
-    console.log('\n[START] Bắt đầu trích xuất mã nguồn API...');
+clearOldFile();
 
-    clearOldFile();
+extractApiCode(sourceDir);
 
-    extractApiCode(sourceDir);
+console.log('\n[DONE] Hoàn tất trích xuất mã nguồn API.');
 
-    console.log('[DONE] Hoàn tất trích xuất mã nguồn API.\n');
-
-    res.json({
-        success: true,
-        message: 'Đã trích xuất toàn bộ mã nguồn API thành công.',
-        output: outputFile
-    });
-});
-
-// ==========================
-// API KIỂM TRA SERVER
-// ==========================
-app.get('/', (req, res) => {
-    res.send('API Extractor Server is running...');
-});
-
-// ==========================
-// KHỞI ĐỘNG SERVER
-// ==========================
-app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
-});
+console.log(
+    `📄 File kết quả: ${outputFile}\n`
+);
