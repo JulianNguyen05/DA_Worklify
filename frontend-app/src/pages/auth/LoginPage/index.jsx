@@ -2,30 +2,83 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
+import Toast from '../../../components/common/Toast'; // Import Toast Component
+import authService from '../../../features/auth/authService';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const closeToast = () => setToast({ show: false, message: '', type: 'info' });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    closeToast(); // Reset thông báo trước khi gửi request
 
     try {
+      // 1. Gọi API đăng nhập qua Service Layer
+      const response = await authService.login(formData);
+
+      // 2. Lấy dữ liệu token và role từ ApiResponse trả về
+      const { token, role } = response.data; 
+
+      // 3. Lưu Token và Role vào localStorage
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('userRole', role); // THÊM DÒNG NÀY
+
+      // 4. Hiển thị thông báo thành công
+      setToast({
+        show: true,
+        message: 'Đăng nhập thành công! Đang chuyển hướng...',
+        type: 'success'
+      });
+
+      // 5. Đợi 1.5 giây để người dùng đọc thông báo rồi mới điều hướng
       setTimeout(() => {
-        navigate('/');
-      }, 1000);
+        if (role === 'CANDIDATE') {
+          navigate('/candidate/dashboard');
+        } else if (role === 'EMPLOYER') {
+          navigate('/employer/dashboard');
+        } else if (role === 'ADMIN') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/'); // Fallback
+        }
+      }, 1500);
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu!');
-    } finally {
+      console.error("Lỗi đăng nhập:", err);
+      
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu!';
+      
+      // Bóc tách lỗi từ Backend
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        if (data.message) {
+          errorMessage = data.message;
+        } else if (typeof data === "string") {
+          errorMessage = data;
+        }
+      } else if (err.message === "Network Error") {
+        errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng hoặc Backend!";
+      }
+
+      // Hiển thị lỗi lên Toast
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: 'error'
+      });
+      
       setIsLoading(false);
     }
   };
@@ -42,9 +95,14 @@ const LoginPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-        {error && (
-          <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
-            {error}
+        
+        {toast.show && (
+          <div className={toast.type === 'error' ? 'animate-shake' : ''}>
+            <Toast 
+              type={toast.type} 
+              message={toast.message} 
+              onClose={closeToast} 
+            />
           </div>
         )}
         
@@ -71,7 +129,12 @@ const LoginPage = () => {
         
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+            <input 
+              id="remember-me" 
+              name="remember-me" 
+              type="checkbox" 
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+            />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
               Ghi nhớ đăng nhập
             </label>
@@ -83,8 +146,12 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md font-semibold">
-          {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md font-semibold transition-all"
+        >
+          {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
         </Button>
       </form>
 

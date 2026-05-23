@@ -1,49 +1,15 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Navbar from '../Navbar'; // Import Navbar từ thư mục bên cạnh
 
 export default function MainLayout() {
   return (
     <div className="flex flex-col min-h-screen font-sans">
       
-      {/* HEADER / NAVBAR */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            {/* Logo */}
-            <Link to="/" className="text-2xl font-extrabold text-blue-700 tracking-tight">
-              SmartMatch
-            </Link>
+      {/* HEADER / NAVBAR ĐÃ ĐƯỢC TÁCH RA COMPONENT */}
+      <Navbar />
 
-            {/* Navigation Links */}
-            <nav className="hidden md:flex gap-6 items-center">
-              <Link to="/jobs" className="text-gray-600 hover:text-blue-700 font-medium transition-colors">
-                Việc Làm
-              </Link>
-              <Link to="/companies" className="text-gray-600 hover:text-blue-700 font-medium transition-colors">
-                Công Ty
-              </Link>
-            </nav>
-
-            {/* Auth Buttons */}
-            <div className="flex gap-3">
-              <Link 
-                to="/auth/login" 
-                className="text-blue-700 font-medium px-4 py-2 hover:bg-blue-50 rounded-md transition-colors"
-              >
-                Đăng nhập
-              </Link>
-              <Link 
-                to="/auth/register" 
-                className="bg-blue-700 text-white px-5 py-2 rounded-md hover:bg-blue-800 font-medium transition-colors shadow-sm"
-              >
-                Đăng ký
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* PHẦN THÂN TRANG (Nội dung HomePage sẽ được chèn vào đây thông qua Outlet) */}
+      {/* PHẦN THÂN TRANG (Nội dung HomePage/Dashboard sẽ được chèn vào đây thông qua Outlet) */}
       <main className="flex-grow bg-gray-50">
         <Outlet />
       </main>

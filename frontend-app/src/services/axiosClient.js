@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Khởi tạo instance của axios
 const axiosClient = axios.create({
-  // [ĐÃ SỬA CHUẨN]: Thêm "/api/v1" vào cuối URL để khớp với @RequestMapping của Backend
+  // Đã có sẵn /api/v1 ở đây, nên các service bên dưới chỉ cần gọi /auth/...
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1', 
   headers: {
     'Content-Type': 'application/json',
@@ -28,21 +28,22 @@ axiosClient.interceptors.request.use(
 // Interceptor cho Response: Xử lý dữ liệu trả về và bắt lỗi
 axiosClient.interceptors.response.use(
   (response) => {
-    // Backend Spring Boot của bạn bọc dữ liệu trong ApiResponse (code, message, data, timestamp)
     return response;
   },
   (error) => {
     // Xử lý lỗi phổ biến (Token hết hạn, chưa xác thực)
     if (error.response && error.response.status === 401) {
       console.warn("Token hết hạn hoặc chưa xác thực (401). Đang chuyển hướng...");
-      // Xóa token cũ
+      // Xóa thông tin phiên làm việc
+      localStorage.removeItem('user');
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('userRole');
+      
       // Chuyển hướng về trang Login
       if (window.location.pathname !== '/auth/login') {
         window.location.href = '/auth/login';
       }
     }
-    
     return Promise.reject(error);
   }
 );

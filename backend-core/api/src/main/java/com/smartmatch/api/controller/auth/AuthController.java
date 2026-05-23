@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map; // THÊM IMPORT NÀY
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -41,5 +43,21 @@ public class AuthController {
     public ApiResponse<Void> enableMfa(@PathVariable Long userId) {
         authService.enableMfa(userId);
         return ApiResponse.success(null, "Kích hoạt MFA thành công");
+    }
+
+    // ========== BỔ SUNG API QUÊN MẬT KHẨU ==========
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Yêu cầu khôi phục mật khẩu")
+    public ApiResponse<Void> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email không được để trống.");
+        }
+
+        // Gọi xuống tầng Service để xử lý
+        authService.forgotPassword(email);
+
+        return ApiResponse.success(null, "Yêu cầu khôi phục mật khẩu đã được xử lý");
     }
 }

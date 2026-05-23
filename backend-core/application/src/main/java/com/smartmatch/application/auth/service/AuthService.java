@@ -5,4 +5,5 @@ public interface AuthService {
     UserResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);
     void enableMfa(Long userId);
+    void forgotPassword(String email);
 }

@@ -95,4 +95,25 @@ public class AuthServiceImpl implements AuthService {
         user.enableMfa();
         userRepository.save(user);
     }
+
+    @Override
+    @Transactional
+    public void forgotPassword(String email) {
+        EmailAddress emailAddress = new EmailAddress(email);
+
+        // 1. Kiểm tra xem user có tồn tại không
+        User user = userRepository.findByEmail(emailAddress.value())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
+
+        // 2. TẠO LOGIC GỬI EMAIL (Mô phỏng)
+        // Trong thực tế, bạn sẽ cần tạo một PasswordResetToken, lưu vào DB và dùng JavaMailSender để gửi link/OTP.
+        // Ở bước này, chúng ta mô phỏng việc sinh mã token tạm thời.
+        String resetToken = java.util.UUID.randomUUID().toString();
+
+        // In ra console để debug (Thay thế bằng code gửi Email thật sau này)
+        System.out.println("========== YÊU CẦU KHÔI PHỤC MẬT KHẨU ==========");
+        System.out.println("Email nhận: " + user.getEmail().value());
+        System.out.println("Token khôi phục: " + resetToken);
+        System.out.println("================================================");
+    }
 }

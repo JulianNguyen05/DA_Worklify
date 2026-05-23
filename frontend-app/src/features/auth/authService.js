@@ -2,25 +2,39 @@ import axiosClient from '../../services/axiosClient';
 
 const authService = {
   register: async (userData) => {
-    // userData bao gồm: fullName, email, password, role
+    // Gọi API: http://localhost:8080/api/v1/auth/register
     const response = await axiosClient.post('/auth/register', userData);
-    if (response.data && response.data.accessToken) {
-      localStorage.setItem('user', JSON.stringify(response.data));
-    }
-    return response.data;
+    return response.data; 
   },
 
   login: async (credentials) => {
-    // credentials bao gồm: email, password
+    // Gọi API: http://localhost:8080/api/v1/auth/login
     const response = await axiosClient.post('/auth/login', credentials);
-    if (response.data && response.data.accessToken) {
-      localStorage.setItem('user', JSON.stringify(response.data));
+    
+    // response.data là cục ApiResponse { code: 200, message: "...", data: { accessToken: "...", role: "..." } }
+    const apiResponse = response.data;
+    
+    // Bóc tách payload thực sự (AuthResponse) nằm bên trong field "data"
+    const authData = apiResponse.data; 
+
+    // Kiểm tra và lưu thông tin
+    if (authData && authData.accessToken) {
+      // Lưu dạng Object cho hàm getCurrentUser
+      localStorage.setItem('user', JSON.stringify(authData));
+      
+      // Lưu 2 biến này để AxiosClient và Navbar hoạt động bình thường
+      localStorage.setItem('accessToken', authData.accessToken);
+      localStorage.setItem('userRole', authData.role);
     }
-    return response.data;
+    
+    return apiResponse;
   },
 
   logout: () => {
+    // Xóa sạch thông tin phiên đăng nhập
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('userRole');
   },
 
   getCurrentUser: () => {
@@ -31,6 +45,18 @@ const authService = {
     } catch (e) {
       return null;
     }
+  },
+
+  forgotPassword: async (email) => {
+    // Gọi API: http://localhost:8080/api/v1/auth/forgot-password
+    const response = await axiosClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  enableMfa: async (userId) => {
+    // Gọi API: http://localhost:8080/api/v1/auth/{userId}/mfa/enable
+    const response = await axiosClient.post(`/auth/${userId}/mfa/enable`);
+    return response.data;
   }
 };
 
