@@ -65,12 +65,32 @@ const RegisterPage = () => {
       // 5. Điều hướng sang trang đăng nhập cùng dữ liệu thông báo trạng thái
       navigate("/auth/login", { state: { message: successMsg } });
     } catch (err) {
-      // 6. Bắt và hiển thị lỗi trả về từ Backend REST API (nếu trùng Email, lỗi hệ thống,...)
       console.error("Lỗi đăng ký:", err);
-      setError(
-        err.response?.data?.message ||
-          "Đăng ký thất bại. Vui lòng thử lại sau!",
-      );
+
+      // Khởi tạo chuỗi lỗi mặc định
+      let errorMessage = "Đăng ký thất bại. Vui lòng thử lại sau!";
+
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        // 1. Trích xuất nếu BE trả về ApiResponse custom có trường 'message'
+        if (data.message) {
+          errorMessage = data.message;
+        }
+        // 2. Trích xuất nếu BE trả về theo format mặc định của Spring Boot (trường 'error')
+        else if (data.error && typeof data.error === "string") {
+          errorMessage = data.error;
+        }
+        // 3. Trích xuất nếu BE trả về một chuỗi thẳng
+        else if (typeof data === "string") {
+          errorMessage = data;
+        }
+      } else if (err.message === "Network Error") {
+        // 4. Nếu mất kết nối hoặc Backend chưa bật
+        errorMessage =
+          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng!";
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

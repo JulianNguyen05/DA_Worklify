@@ -2,19 +2,20 @@ package com.smartmatch.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.security.Key;
+
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import com.smartmatch.application.common.port.TokenProviderPort;
 
 @Service
-public class JwtService {
+public class JwtService implements TokenProviderPort {
 
     @Value("${spring.security.jwt.secret}")
     private String secretKey;
@@ -26,6 +27,7 @@ public class JwtService {
         return jwtExpiration;
     }
 
+    @Override
     public String generateToken(String email, String role, Long userId) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", "ROLE_" + role);
@@ -35,11 +37,11 @@ public class JwtService {
 
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
         return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .claims(extraClaims) // Cú pháp chuẩn của 0.12.x
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey()) // Tự động nhận diện thuật toán HS256 từ độ dài Key
                 .compact();
     }
 
@@ -54,13 +56,13 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(getSignInKey())
+                .verifyWith(getSignInKey()) // Cú pháp chuẩn giải mã của 0.12.x
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    private Key getSignInKey() {
+    private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

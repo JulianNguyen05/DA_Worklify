@@ -34,7 +34,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Cho phép các đường dẫn auth đi qua để không bị chặn nhầm
+                        .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -45,14 +46,15 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Định nghĩa chi tiết cấu hình CORS cho phép React Client truy cập đọc Body lỗi công khai
+    // Định nghĩa chi tiết cấu hình CORS (ĐÃ FIX ĐỂ CHO PHÉP TẤT CẢ)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // Định danh chính xác domain hoặc dùng "*" trong môi trường Dev
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+
+        configuration.setAllowedOriginPatterns(List.of("*")); // Thay AllowedOrigins bằng OriginPatterns để tương thích tối đa
+        configuration.setAllowedMethods(List.of("*")); // Cho phép mọi phương thức (GET, POST, PUT, DELETE, PATCH, OPTIONS...)
+        configuration.setAllowedHeaders(List.of("*")); // Cho phép mọi Headers (tránh bị chặn khi lỗi)
+        configuration.setAllowCredentials(true);       // Cho phép gửi kèm cookie/thông tin xác thực nếu cần
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

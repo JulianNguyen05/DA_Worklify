@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Khởi tạo instance của axios
 const axiosClient = axios.create({
-  // Thay đổi URL này thành URL Backend thực tế của bạn hoặc dùng biến môi trường (.env)
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080', 
+  // [ĐÃ SỬA CHUẨN]: Thêm "/api/v1" vào cuối URL để khớp với @RequestMapping của Backend
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,7 +13,9 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
+    
+    // Kiểm tra chặn chuỗi "undefined" hoặc "null"
+    if (token && token !== 'undefined' && token !== 'null') {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -35,13 +37,12 @@ axiosClient.interceptors.response.use(
       console.warn("Token hết hạn hoặc chưa xác thực (401). Đang chuyển hướng...");
       // Xóa token cũ
       localStorage.removeItem('accessToken');
-      // Chuyển hướng về trang Login (sử dụng window.location để force redirect ngoài React Router Context)
+      // Chuyển hướng về trang Login
       if (window.location.pathname !== '/auth/login') {
         window.location.href = '/auth/login';
       }
     }
     
-    // Nếu có validationErrors (mã 400 Bad Request) từ GlobalExceptionHandler, bạn có thể custom ở đây
     return Promise.reject(error);
   }
 );

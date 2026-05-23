@@ -5,6 +5,10 @@ import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+// [ĐÃ THÊM] Import thư viện tự động tạo thời gian của Hibernate
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -37,9 +41,13 @@ public class UserJpaEntity {
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled;
 
+    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại khi Insert lần đầu
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại mỗi khi record bị Update
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
