@@ -18,4 +18,13 @@ public class Skill {
         }
         return Skill.builder().name(name.trim().toLowerCase()).build();
     }
+
+    public static Skill create(String cleanSkillName) {
+        if (cleanSkillName == null || cleanSkillName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
+        }
+        return Skill.builder()
+                .name(cleanSkillName.trim())
+                .build();
+    }
 }

@@ -16,4 +16,6 @@ public interface SkillRepository {
     List<Skill> findAll();
 
     void deleteById(Long id);
+
+    Optional<Skill> findByNameIgnoreCase(String name);
 }

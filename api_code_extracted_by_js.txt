@@ -142,9 +142,9 @@ public class ErrorResponse {
    FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\exception\GlobalExceptionHandler.java
    ============================================================ */
 
-package com.smartmatch.api.common.exception;
+package com.smartmatch.api.common.exception; // Giữ nguyên package cũ của bạn
 
-import lombok.extern.slf4j.Slf4j;
+import com.smartmatch.api.common.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -155,73 +155,55 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Bắt lỗi Validation từ các Request DTO (VD: @NotBlank, @Email)
+     * 1. Bắt lỗi vi phạm quy tắc nghiệp vụ (Fail-Fast từ tầng Service/Domain)
+     * Thường ném ra bằng: throw new IllegalArgumentException("Email đã tồn tại");
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Trả về HTTP Status 400 ra Network tab
+    public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException ex) {
+        // Đưa trực tiếp thông điệp nghiệp vụ cụ thể vào thuộc tính 'message'
+        return ApiResponse.error(400, ex.getMessage());
+    }
+
+    /**
+     * 2. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
+     * Tự động bóc tách lỗi đầu tiên làm thông điệp đại diện (Top-level message) cho React hiển thị nhanh
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST) // Trả về HTTP Status 400 ra Network tab
+    public ApiResponse<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
+
+        // Thu thập toàn bộ danh sách các trường bị nhập lỗi
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
 
-        log.warn("Validation error: {}", errors);
+        // Tìm kiếm lỗi đầu tiên xuất hiện để gán làm thông điệp chính ở lớp ngoài cùng
+        String topLevelMessage = errors.values().stream()
+                .findFirst()
+                .orElse("Dữ liệu đầu vào không hợp lệ, vui lòng kiểm tra lại.");
 
-        return ErrorResponse.builder()
-                .code(ErrorCode.BAD_REQUEST.getCode())
-                .message(ErrorCode.BAD_REQUEST.getMessage())
-                .error("Validation Failed")
-                .validationErrors(errors)
-                .build();
+        // Trả về cấu trúc ApiResponse chứa map chi tiết lỗi bên trong trường 'data'
+        return ApiResponse.error(errors, topLevelMessage);
     }
 
     /**
-     * Bắt lỗi Logic nghiệp vụ (Do chúng ta ném IllegalArgumentException ở tầng Domain/Application)
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException ex) {
-        log.warn("Business Logic error (IllegalArgument): {}", ex.getMessage());
-        return ErrorResponse.builder()
-                .code(ErrorCode.BAD_REQUEST.getCode())
-                .message(ex.getMessage()) // Trả về câu thông báo được định nghĩa ở tầng Core
-                .error("Bad Request")
-                .build();
-    }
-
-    /**
-     * Bắt lỗi Trạng thái nghiệp vụ không hợp lệ (Do ném IllegalStateException)
-     */
-    @ExceptionHandler(IllegalStateException.class)
-    @ResponseStatus(HttpStatus.CONFLICT) // 409 Conflict thường hợp lý cho sai luồng trạng thái
-    public ErrorResponse handleIllegalStateException(IllegalStateException ex) {
-        log.warn("Business Logic error (IllegalState): {}", ex.getMessage());
-        return ErrorResponse.builder()
-                .code(HttpStatus.CONFLICT.value())
-                .message(ex.getMessage())
-                .error("Conflict State")
-                .build();
-    }
-
-    /**
-     * Bắt các lỗi chưa được định nghĩa (Fall-back)
+     * 3. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleGlobalException(Exception ex) {
-        log.error("Internal Server Error: ", ex);
-        return ErrorResponse.builder()
-                .code(ErrorCode.INTERNAL_SERVER_ERROR.getCode())
-                .message(ErrorCode.INTERNAL_SERVER_ERROR.getMessage())
-                .error(ex.getMessage())
-                .build();
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Trả về HTTP Status 500 ra Network tab
+    public ApiResponse<Void> handleGeneralException(Exception ex) {
+        // Log log lỗi chi tiết ra console của IDE để Developer dễ dàng sửa lỗi (Debug)
+        ex.printStackTrace();
+
+        return ApiResponse.error(500, "Hệ thống SmartMatch gặp sự cố bất ngờ: " + ex.getMessage());
     }
 }
 
@@ -238,6 +220,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Builder
@@ -271,6 +254,24 @@ public class ApiResponse<T> {
                 .code(200)
                 .message(message)
                 .data(data)
+                .build();
+    }
+
+    // [ĐÃ SỬA] Định nghĩa chi tiết cho hàm xử lý lỗi Validation đầu vào (DTO)
+    public static ApiResponse<Map<String, String>> error(Map<String, String> errors, String topLevelMessage) {
+        return ApiResponse.<Map<String, String>>builder()
+                .code(400) // HTTP Status 400 Bad Request
+                .message(topLevelMessage)
+                .data(errors) // Trả về map chi tiết: {"email": "Định dạng không hợp lệ", ...}
+                .build();
+    }
+
+    // [BỔ SUNG] Helper method xử lý các lỗi chuỗi thông thường (Lỗi nghiệp vụ, Hệ thống)
+    public static <T> ApiResponse<T> error(int code, String message) {
+        return ApiResponse.<T>builder()
+                .code(code)
+                .message(message)
+                .data(null)
                 .build();
     }
 }
@@ -443,6 +444,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map; // THÊM IMPORT NÀY
+
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -472,6 +475,22 @@ public class AuthController {
         authService.enableMfa(userId);
         return ApiResponse.success(null, "Kích hoạt MFA thành công");
     }
+
+    // ========== BỔ SUNG API QUÊN MẬT KHẨU ==========
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Yêu cầu khôi phục mật khẩu")
+    public ApiResponse<Void> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email không được để trống.");
+        }
+
+        // Gọi xuống tầng Service để xử lý
+        authService.forgotPassword(email);
+
+        return ApiResponse.success(null, "Yêu cầu khôi phục mật khẩu đã được xử lý");
+    }
 }
 
 
@@ -485,6 +504,7 @@ import com.smartmatch.api.common.response.ApiResponse;
 import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
 import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
 import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.dto.GeneratedCvRequest;
 import com.smartmatch.application.candidate.service.CandidateService;
 import com.smartmatch.application.common.dto.FileData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -503,7 +523,7 @@ import java.util.List;
 @RequestMapping("/api/v1/candidates")
 @RequiredArgsConstructor
 @Tag(name = "2. Candidate", description = "Quản lý hồ sơ và CV của Ứng viên")
-@PreAuthorize("hasRole('CANDIDATE')") // Phân quyền: Chỉ ứng viên mới được truy cập
+@PreAuthorize("hasAuthority('CANDIDATE')")// Phân quyền: Chỉ ứng viên mới được truy cập
 public class CandidateController {
 
     private final CandidateService candidateService;
@@ -543,6 +563,16 @@ public class CandidateController {
     @Operation(summary = "Lấy danh sách CV đã lưu của ứng viên")
     public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable Long userId) {
         return ApiResponse.success(candidateService.getCvsByUserId(userId));
+    }
+    @PostMapping("/{userId}/cvs/generated")
+    @Operation(summary = "Lưu bản thảo CV tạo từ Sandbox (JSON)")
+    public ApiResponse<CvDocumentResponse> saveGeneratedCv(
+            @PathVariable Long userId,
+            @Valid @RequestBody GeneratedCvRequest request) {
+
+        // Bạn sẽ cần khai báo hàm saveGeneratedCv(userId, request.getRawText()) trong CandidateService
+        // Hàm này sẽ lưu vào bảng cv_documents với is_generated = true
+        return ApiResponse.success(candidateService.saveGeneratedCv(userId, request.getRawText()), "Lưu bản thảo CV thành công");
     }
 }
 
@@ -724,47 +754,6 @@ public class JobApplicationController {
             @Override public int getPageNumber() { return page; }
             @Override public int getPageSize() { return size; }
         };
-    }
-}
-
-
-/* ============================================================
-   FILE: \backend-core\api\src\main\java\com\smartmatch\api\exception\GlobalExceptionHandler.java
-   ============================================================ */
-
-package com.smartmatch.api.exception;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    // 1. Bắt các lỗi nghiệp vụ tự ta quăng ra (Ví dụ: Trùng email, sai quy tắc doanh nghiệp)
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", ex.getMessage()); // Lấy chính xác câu chữ bạn ghi ở Service
-        return ResponseEntity.badRequest().body(errorResponse);
-    }
-
-    // 2. Bắt các lỗi do Validate đầu vào bằng Annotation (@NotBlank, @Email, @Size...)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-
-        // Lấy lỗi đầu tiên tìm thấy để hiển thị cho gọn
-        FieldError firstError = ex.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
-        String errorMessage = (firstError != null) ? firstError.getDefaultMessage() : "Dữ liệu đầu vào không hợp lệ!";
-
-        errorResponse.put("message", errorMessage);
-        return ResponseEntity.badRequest().body(errorResponse);
     }
 }
 
@@ -955,6 +944,8 @@ spring:
 
 server:
   port: 8080
+  error:
+    include-message: always
 
 logging:
   level:

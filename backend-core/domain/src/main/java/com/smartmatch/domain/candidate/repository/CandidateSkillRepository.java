@@ -7,4 +7,5 @@ public interface CandidateSkillRepository {
     CandidateSkill save(CandidateSkill candidateSkill);
     List<CandidateSkill> findByCandidateId(Long candidateId);
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
+    void deleteByCandidateId(Long candidateId);
 }

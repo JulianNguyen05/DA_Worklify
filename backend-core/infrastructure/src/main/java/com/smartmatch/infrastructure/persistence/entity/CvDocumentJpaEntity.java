@@ -1,8 +1,11 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
+// File: \backend-core\infrastructure\src\main\\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,6 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class) // ĐÃ THÊM: Lắng nghe sự kiện để tự động hóa điền dữ liệu auditing
 public class CvDocumentJpaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +33,7 @@ public class CvDocumentJpaEntity {
     @Column(name = "is_generated", nullable = false)
     private Boolean isGenerated;
 
+    @CreatedDate // ĐÃ THÊM: Spring sẽ tự động lấy thời gian hiện tại gán vào đây khi insert bản ghi mới
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
-

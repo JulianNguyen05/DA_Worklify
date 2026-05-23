@@ -1,6 +1,7 @@
 package com.smartmatch.application.candidate.service;
 import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.common.dto.FileData;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
@@ -13,4 +14,6 @@ public interface CandidateService {
     void deleteCv(Long userId, Long cvId);
     void addSkillToCandidate(Long userId, Long skillId);
     void removeSkillFromCandidate(Long userId, Long skillId);
+
+    CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
 }

@@ -28,17 +28,45 @@
 
     <dependencies>
 
-        <!-- Dependency tới Domain -->
+        <!-- Domain -->
         <dependency>
             <groupId>com.smartmatch</groupId>
             <artifactId>domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Validation API -->
+        <!-- Validation -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!-- Spring -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- Security Crypto -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
 
         <!-- Lombok -->
@@ -55,31 +83,11 @@
             <version>1.6.0</version>
         </dependency>
 
-        <!-- Swagger Annotation -->
+        <!-- Swagger -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.22</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
         </dependency>
 
     </dependencies>
@@ -105,7 +113,7 @@
                             <version>1.18.30</version>
                         </path>
 
-                        <!-- MapStruct Processor -->
+                        <!-- MapStruct -->
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
@@ -113,6 +121,7 @@
                         </path>
 
                     </annotationProcessorPaths>
+
                 </configuration>
 
             </plugin>
@@ -377,19 +386,21 @@ import lombok.Data;
 
 @Data
 public class RegisterRequest {
-    @NotBlank(message = "Họ và tên không được để trống")
-    private String fullName;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Định dạng Email không hợp lệ")
+    @NotBlank(message = "Địa chỉ Email không được để trống")
+    @Email(message = "Định dạng Email không hợp lệ, vui lòng kiểm tra lại")
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải chứa ít nhất 6 ký tự")
+    @Size(min = 6, message = "Mật khẩu bảo mật phải chứa ít nhất 6 ký tự")
     private String password;
 
     @NotNull(message = "Vai trò người dùng bắt buộc phải chọn")
     private Role role;
+
+    // Các trường dữ liệu động, không dùng @NotBlank tĩnh ở đây
+    private String fullName;
+    private String companyName;
 }
 
 // ============================================================
@@ -427,6 +438,7 @@ public interface AuthService {
     UserResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);
     void enableMfa(Long userId);
+    void forgotPassword(String email);
 }
 
 // ============================================================
@@ -437,9 +449,12 @@ package com.smartmatch.application.auth.service.impl;
 
 import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
+import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.User;
+import com.smartmatch.domain.auth.model.UserStatus; // [ĐÃ THÊM] Import UserStatus
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.valueobject.EmailAddress;
+import com.smartmatch.application.common.port.TokenProviderPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -451,63 +466,70 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenProviderPort tokenProviderPort;
 
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
-        // 1. Khởi tạo Value Object: Nếu email sai định dạng, Exception sẽ bị ném ra ngay tại đây (Fail-fast)
+        validateRoleSpecificInvariants(request);
+
         EmailAddress emailAddress = new EmailAddress(request.getEmail());
 
-        // 2. Kiểm tra nghiệp vụ: Email đã tồn tại
         if (userRepository.existsByEmail(emailAddress.value())) {
-            throw new IllegalArgumentException("Email đã tồn tại trong hệ thống.");
+            throw new IllegalArgumentException("Địa chỉ email này đã tồn tại trên hệ thống.");
         }
 
-        // 3. Xử lý hạ tầng: Mã hóa mật khẩu (hashing)
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
-        // 4. Gọi Domain khởi tạo User (Rich Domain Model sử dụng Builder hoặc Factory method)
         User newUser = User.builder()
                 .email(emailAddress)
                 .passwordHash(hashedPassword)
                 .role(request.getRole())
-                .isMfaEnabled(false) // Trạng thái mặc định
+                .status(UserStatus.ACTIVE) // [ĐÃ THÊM] Gán trạng thái để không bị lỗi null status
+                .isMfaEnabled(false)
                 .build();
 
-        // 5. Persist qua Port (Repository Interface)
         User savedUser = userRepository.save(newUser);
 
-        // 6. Chuyển đổi sang Response DTO (Lấy raw string từ Value Object)
         return UserResponse.builder()
                 .id(savedUser.getId())
-                .email(savedUser.getEmail().value()) // Trích xuất String từ EmailAddress
+                .email(savedUser.getEmail().value())
                 .role(savedUser.getRole())
-                // .status(savedUser.getStatus()) // Tuỳ thuộc vào việc bạn có định nghĩa status không
                 .mfaEnabled(savedUser.isMfaEnabled())
-                // .createdAt(savedUser.getCreatedAt())
                 .build();
+    }
+
+    private void validateRoleSpecificInvariants(RegisterRequest request) {
+        if (request.getRole() == Role.CANDIDATE) {
+            if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Họ và tên không được để trống đối với vai trò Ứng viên.");
+            }
+        } else if (request.getRole() == Role.EMPLOYER) {
+            if (request.getCompanyName() == null || request.getCompanyName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Tên doanh nghiệp không được để trống đối với Nhà tuyển dụng.");
+            }
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        // 1. Khởi tạo Value Object để tận dụng logic validation
         EmailAddress emailAddress = new EmailAddress(request.getEmail());
 
-        // 2. Tìm user theo email
         User user = userRepository.findByEmail(emailAddress.value())
-                .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không chính xác"));
+                .orElseThrow(() -> new IllegalArgumentException("Email hoặc mật khẩu không chính xác."));
 
-        // 3. Kiểm tra mật khẩu (hashing) - Gọi đúng field passwordHash
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác");
+            throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
         }
 
-        // 4. Trả về thông tin đăng nhập
+        String token = tokenProviderPort.generateToken(user.getEmail().value(), user.getRole().name(), user.getId());
+
         return AuthResponse.builder()
+                .accessToken(token)
                 .userId(user.getId())
                 .role(user.getRole())
-                .expiresIn(3600) // Thời gian mặc định 1 giờ
+                .expiresIn(3600L)
                 .build();
     }
 
@@ -515,13 +537,31 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void enableMfa(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
 
-        // Gọi logic thay đổi trạng thái đóng gói trong Domain thay vì thao tác trực tiếp bằng setter
         user.enableMfa();
-
-        // Lưu lại trạng thái
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(String email) {
+        EmailAddress emailAddress = new EmailAddress(email);
+
+        // 1. Kiểm tra xem user có tồn tại không
+        User user = userRepository.findByEmail(emailAddress.value())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
+
+        // 2. TẠO LOGIC GỬI EMAIL (Mô phỏng)
+        // Trong thực tế, bạn sẽ cần tạo một PasswordResetToken, lưu vào DB và dùng JavaMailSender để gửi link/OTP.
+        // Ở bước này, chúng ta mô phỏng việc sinh mã token tạm thời.
+        String resetToken = java.util.UUID.randomUUID().toString();
+
+        // In ra console để debug (Thay thế bằng code gửi Email thật sau này)
+        System.out.println("========== YÊU CẦU KHÔI PHỤC MẬT KHẨU ==========");
+        System.out.println("Email nhận: " + user.getEmail().value());
+        System.out.println("Token khôi phục: " + resetToken);
+        System.out.println("================================================");
     }
 }
 
@@ -592,6 +632,21 @@ public class CvDocumentResponse {
 }
 
 // ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\GeneratedCvRequest.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class GeneratedCvRequest {
+    @NotBlank(message = "Nội dung bản thảo không được để trống")
+    private String rawText;
+}
+
+// ============================================================
 // File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\SkillResponse.java
 // ============================================================
 
@@ -614,6 +669,7 @@ public class SkillResponse {
 package com.smartmatch.application.candidate.service;
 import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.common.dto.FileData;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
@@ -626,6 +682,8 @@ public interface CandidateService {
     void deleteCv(Long userId, Long cvId);
     void addSkillToCandidate(Long userId, Long skillId);
     void removeSkillFromCandidate(Long userId, Long skillId);
+
+    CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
 }
 
 // ============================================================
@@ -658,6 +716,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -672,23 +731,25 @@ public class CandidateServiceImpl implements CandidateService {
     private final CandidateSkillRepository candidateSkillRepository;
     private final SkillRepository skillRepository;
 
-    // Giả định có một port/service để xử lý lưu trữ file thực tế (AWS S3, Local, v.v.)
-    // private final FileStoragePort fileStoragePort; 
-
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
         // 1. Kiểm tra user có tồn tại không
-        if (!userRepository.findById(userId).isPresent()) {
+        if (userRepository.findById(userId).isEmpty()) {
             throw new IllegalArgumentException("Người dùng không tồn tại trong hệ thống.");
         }
 
-        // 2. Kiểm tra profile đã tồn tại chưa
-        if (candidateProfileRepository.findByUserId(userId).isPresent()) {
-            throw new IllegalArgumentException("Hồ sơ ứng viên của người dùng này đã tồn tại.");
+        // 2. Chuyển đổi thành cơ chế UPSERT (Tạo mới hoặc Cập nhật)
+        // Điều này cho phép Sandbox ấn "Lưu" nhiều lần mà không bị lỗi
+        Optional<CandidateProfile> existingProfileOpt = candidateProfileRepository.findByUserId(userId);
+        CandidateProfile profile;
+
+        if (existingProfileOpt.isPresent()) {
+            profile = existingProfileOpt.get();
+        } else {
+            profile = CandidateProfile.create(userId, request.getFullName());
         }
 
-        // 3. Khởi tạo Domain Entity
-        CandidateProfile profile = CandidateProfile.create(userId, request.getFullName());
+        // 3. Cập nhật thông tin chi tiết
         profile.updateProfileDetails(
                 request.getFullName(),
                 request.getPhone(),
@@ -700,7 +761,6 @@ public class CandidateServiceImpl implements CandidateService {
         // 4. Lưu vào Database
         CandidateProfile savedProfile = candidateProfileRepository.save(profile);
 
-        // 5. Trả về DTO
         return mapToProfileResponse(savedProfile);
     }
 
@@ -709,7 +769,6 @@ public class CandidateServiceImpl implements CandidateService {
         CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
-        // Cập nhật thông qua phương thức của Domain Entity
         profile.updateProfileDetails(
                 request.getFullName(),
                 request.getPhone(),
@@ -732,18 +791,30 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CvDocumentResponse uploadCv(Long userId, FileData fileData) {
-        // Kiểm tra User/Profile có tồn tại không
         candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
 
-        // TODO: Gọi hạ tầng lưu file (VD: fileStoragePort.upload(fileData)) và lấy đường dẫn URL
+        // TODO: Gọi hạ tầng lưu file thật và lấy URL
         String uploadedFilePath = "/uploads/cv/" + System.currentTimeMillis() + "_" + fileData.fileName();
 
-        // TODO: Tích hợp module AI hoặc thư viện đọc PDF/Word để trích xuất text (rawText)
+        // TODO: Tích hợp module AI để đọc PDF/Word
         String extractedRawText = "Extracted text content from " + fileData.fileName();
 
-        // Khởi tạo CV theo quy tắc của Domain
         CvDocument cvDocument = CvDocument.upload(userId, uploadedFilePath, extractedRawText);
+        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
+        return mapToCvResponse(savedCv);
+    }
+
+    // ==========================================================
+    // BỔ SUNG: HÀM LƯU CV ĐƯỢC TẠO TỪ SANDBOX (JSON)
+    // ==========================================================
+    @Override
+    public CvDocumentResponse saveGeneratedCv(Long userId, String rawText) {
+        candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi lưu bản thảo CV."));
+
+        // Gọi hàm tĩnh generate (Sẽ cấu hình filePath là null và isGenerated là true)
+        CvDocument cvDocument = CvDocument.generate(userId, rawText);
 
         CvDocument savedCv = cvDocumentRepository.save(cvDocument);
         return mapToCvResponse(savedCv);
@@ -763,7 +834,6 @@ public class CandidateServiceImpl implements CandidateService {
         CvDocument cvDocument = cvDocumentRepository.findById(cvId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
 
-        // Xác thực CV này có thuộc về User đang request không
         if (!cvDocument.getCandidateId().equals(userId)) {
             throw new IllegalArgumentException("Bạn không có quyền xóa CV này.");
         }
@@ -773,7 +843,6 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public void addSkillToCandidate(Long userId, Long skillId) {
-        // Kiểm tra tính hợp lệ
         candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
@@ -877,6 +946,19 @@ public interface FileStoragePort {
      * Xóa file khỏi hệ thống
      */
     void deleteFile(String filePath);
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\common\port\TokenProviderPort.java
+// ============================================================
+
+package com.smartmatch.application.common.port;
+
+public interface TokenProviderPort {
+    /**
+     * Tạo chuỗi token mã hóa chứa thông tin định danh
+     */
+    String generateToken(String email, String role, Long userId);
 }
 
 // ============================================================

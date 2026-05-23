@@ -30,7 +30,7 @@ public class JwtService implements TokenProviderPort {
     @Override
     public String generateToken(String email, String role, Long userId) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("role", "ROLE_" + role);
+        extraClaims.put("role", role);
         extraClaims.put("userId", userId);
         return buildToken(extraClaims, email, jwtExpiration);
     }

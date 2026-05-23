@@ -36,4 +36,14 @@ public class CvDocument {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    // Thêm hàm này vào class CvDocument
+    public static CvDocument generate(Long candidateId, String rawText) {
+        return CvDocument.builder()
+                .candidateId(candidateId)
+                .filePath(null) // Không có file cứng
+                .rawText(rawText) // Lưu chuỗi JSON
+                .isGenerated(true) // Đánh dấu là CV tạo từ Sandbox
+                .build();
+    }
 }

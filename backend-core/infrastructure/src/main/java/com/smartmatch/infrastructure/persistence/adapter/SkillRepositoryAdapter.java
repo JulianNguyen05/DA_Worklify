@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class SkillRepositoryAdapter implements SkillRepository {
-    private final SkillJpaRepository jpaRepository;
+
+    private final SkillJpaRepository jpaRepository; // Giữ lại một trường duy nhất đại diện cho JPA Repository
     private final CandidateEntityMapper mapper;
 
     @Override
@@ -42,5 +43,12 @@ public class SkillRepositoryAdapter implements SkillRepository {
     @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Skill> findByNameIgnoreCase(String name) {
+        // ĐÃ SỬA: Sử dụng mapper::toDomain đồng bộ với kiến trúc thay vì dùng từ khóa new thủ công
+        return jpaRepository.findByNameIgnoreCase(name)
+                .map(mapper::toDomain);
     }
 }

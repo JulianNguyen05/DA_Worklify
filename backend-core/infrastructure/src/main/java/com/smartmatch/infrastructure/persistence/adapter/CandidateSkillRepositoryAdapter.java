@@ -32,4 +32,9 @@ public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository
     public void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId) {
         jpaRepository.deleteByCandidateIdAndSkillId(candidateId, skillId);
     }
+
+    @Override
+    public void deleteByCandidateId(Long candidateId) {
+        jpaRepository.deleteByCandidateId(candidateId);
+    }
 }

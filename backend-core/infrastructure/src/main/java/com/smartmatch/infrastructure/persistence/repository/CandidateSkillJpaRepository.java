@@ -10,4 +10,6 @@ import java.util.List;
 public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
     List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
+
+    void deleteByCandidateId(Long candidateId);
 }

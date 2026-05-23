@@ -4,6 +4,7 @@ import com.smartmatch.api.common.response.ApiResponse;
 import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
 import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
 import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.dto.GeneratedCvRequest;
 import com.smartmatch.application.candidate.service.CandidateService;
 import com.smartmatch.application.common.dto.FileData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +23,7 @@ import java.util.List;
 @RequestMapping("/api/v1/candidates")
 @RequiredArgsConstructor
 @Tag(name = "2. Candidate", description = "Quản lý hồ sơ và CV của Ứng viên")
-@PreAuthorize("hasRole('CANDIDATE')") // Phân quyền: Chỉ ứng viên mới được truy cập
+@PreAuthorize("hasRole('CANDIDATE')") // ĐÃ SỬA: Chuyển từ hasAuthority sang hasRole để khớp với cấu hình hệ thống
 public class CandidateController {
 
     private final CandidateService candidateService;
@@ -30,21 +31,21 @@ public class CandidateController {
     @PostMapping("/{userId}/profile")
     @Operation(summary = "Tạo mới hồ sơ năng lực ứng viên")
     public ApiResponse<CandidateProfileResponse> createProfile(
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody CandidateProfileRequest request) {
         return ApiResponse.success(candidateService.createProfile(userId, request));
     }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Lấy thông tin hồ sơ ứng viên")
-    public ApiResponse<CandidateProfileResponse> getProfile(@PathVariable Long userId) {
+    public ApiResponse<CandidateProfileResponse> getProfile(@PathVariable("userId") Long userId) {
         return ApiResponse.success(candidateService.getProfileByUserId(userId));
     }
 
     @PostMapping(value = "/{userId}/cvs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Tải lên CV (PDF/Word)")
     public ApiResponse<CvDocumentResponse> uploadCv(
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
         // Chuyển đổi MultipartFile sang DTO FileData không phụ thuộc Framework cho tầng Application
@@ -60,7 +61,16 @@ public class CandidateController {
 
     @GetMapping("/{userId}/cvs")
     @Operation(summary = "Lấy danh sách CV đã lưu của ứng viên")
-    public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable Long userId) {
+    public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable("userId") Long userId) {
         return ApiResponse.success(candidateService.getCvsByUserId(userId));
+    }
+
+    @PostMapping("/{userId}/cvs/generated")
+    @Operation(summary = "Lưu bản thảo CV tạo từ Sandbox (JSON)")
+    public ApiResponse<CvDocumentResponse> saveGeneratedCv(
+            @PathVariable("userId") Long userId,
+            @Valid @RequestBody GeneratedCvRequest request) {
+
+        return ApiResponse.success(candidateService.saveGeneratedCv(userId, request.getRawText()), "Lưu bản thảo CV thành công");
     }
 }
