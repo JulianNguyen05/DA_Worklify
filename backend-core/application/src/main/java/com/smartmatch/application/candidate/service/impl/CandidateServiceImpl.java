@@ -2,15 +2,14 @@ package com.smartmatch.application.candidate.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
-import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
-import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.candidate.service.CandidateService;
 import com.smartmatch.application.common.dto.FileData;
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.candidate.model.CandidateProfile;
 import com.smartmatch.domain.candidate.model.CandidateSkill;
 import com.smartmatch.domain.candidate.model.CvDocument;
+import com.smartmatch.domain.candidate.model.Skill;
 import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
 import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
 import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
@@ -316,6 +315,97 @@ public class CandidateServiceImpl implements CandidateService {
                 .filePath(cv.getFilePath())
                 .isGenerated(cv.getIsGenerated())
                 .createdAt(cv.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CandidateSkillResponse> getSkillsByUserId(Long userId) {
+        // 1. Tìm profile để lấy đúng candidateId (ID của bảng candidate_profiles)
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
+
+        // 2. Lấy danh sách CandidateSkill từ DB và map sang DTO
+        return candidateSkillRepository.findByCandidateId(profile.getId()).stream()
+                .map(cs -> {
+                    // Lấy thông tin kỹ năng gốc từ bảng skills
+                    var skill = skillRepository.findById(cs.getSkillId())
+                            .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại."));
+
+                    return CandidateSkillResponse.builder()
+                            .id(skill.getId())
+                            .skillName(skill.getName())
+                            .level(cs.getLevel())      // Lấy level từ bảng candidate_skills
+                            .description(cs.getNote()) // Lấy note từ bảng candidate_skills
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request) {
+        // 1. Tìm profile để lấy đúng candidateId
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        // 2. Tìm hoặc tạo mới Kỹ năng trong bảng danh mục tổng (skills)
+        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        // 3. Khởi tạo CandidateSkill bằng Builder (để khớp với Constructor 5 tham số của bạn)
+        CandidateSkill cs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(skill.getId())
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(0) // Giá trị mặc định cho cột mới
+                .build();
+
+        candidateSkillRepository.save(cs);
+
+        // 4. Trả về Response
+        return CandidateSkillResponse.builder()
+                .id(skill.getId())
+                .skillName(skill.getName())
+                .level(cs.getLevel())
+                .category(request.getCategory())
+                .description(cs.getNote())
+                .build();
+    }
+
+    @Override
+    public CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request) {
+        // 1. Tìm profile để lấy đúng candidateId
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        // 2. Tìm liên kết kỹ năng hiện tại
+        CandidateSkill cs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
+
+        // 3. Tìm kỹ năng gốc (nếu tên kỹ năng thay đổi)
+        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        // 4. Cập nhật các thông tin mới
+        // Lưu ý: Nếu muốn cập nhật cả skillId (trường hợp đổi tên kỹ năng), ta cập nhật lại cs.skillId
+        // Dùng Builder hoặc setter (đảm bảo CandidateSkill có các setter hoặc phương thức update)
+        CandidateSkill updatedCs = CandidateSkill.builder()
+                .candidateId(cs.getCandidateId())
+                .skillId(skill.getId())
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(cs.getYearsOfEx()) // Giữ nguyên giá trị cũ nếu không update
+                .build();
+
+        candidateSkillRepository.save(updatedCs);
+
+        return CandidateSkillResponse.builder()
+                .id(skill.getId())
+                .skillName(skill.getName())
+                .level(updatedCs.getLevel())
+                .category(request.getCategory())
+                .description(updatedCs.getNote())
                 .build();
     }
 }
