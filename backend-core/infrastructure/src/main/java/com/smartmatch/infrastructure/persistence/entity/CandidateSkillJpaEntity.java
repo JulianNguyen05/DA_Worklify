@@ -1,25 +1,23 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "candidate_skills",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"candidate_id", "skill_id"}))
+@Table(name = "candidate_skills")
+@IdClass(CandidateSkillId.class) // Sử dụng khóa chính kép
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CandidateSkillJpaEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
+    @Id
     @Column(name = "candidate_id", nullable = false)
     private Long candidateId;
 
+    @Id
     @Column(name = "skill_id", nullable = false)
     private Long skillId;
 

@@ -1,15 +1,8 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.model.CandidateSkill;
-import com.smartmatch.domain.candidate.model.CvDocument;
-import com.smartmatch.domain.candidate.model.Skill;
-import com.smartmatch.infrastructure.persistence.entity.CandidateProfileJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.CvDocumentJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.SkillJpaEntity;
+import com.smartmatch.domain.candidate.model.*;
+import com.smartmatch.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CandidateEntityMapper {
@@ -23,7 +16,7 @@ public interface CandidateEntityMapper {
     SkillJpaEntity toEntity(Skill skill);
     Skill toDomain(SkillJpaEntity entity);
 
-    @Mapping(target = "id", ignore = true)
+    // XÓA DÒNG @Mapping(target = "id", ignore = true) vì Entity không còn 'id'
     CandidateSkillJpaEntity toEntity(CandidateSkill candidateSkill);
     CandidateSkill toDomain(CandidateSkillJpaEntity entity);
 }

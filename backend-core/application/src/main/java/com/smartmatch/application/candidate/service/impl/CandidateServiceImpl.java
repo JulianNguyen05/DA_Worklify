@@ -375,37 +375,56 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request) {
-        // 1. Tìm profile để lấy đúng candidateId
         CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
-        // 2. Tìm liên kết kỹ năng hiện tại
-        CandidateSkill cs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
-                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
-
-        // 3. Tìm kỹ năng gốc (nếu tên kỹ năng thay đổi)
-        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+        // 1. Tìm hoặc tạo mới Skill mục tiêu
+        Skill targetSkill = skillRepository.findByNameIgnoreCase(request.getSkillName())
                 .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
 
-        // 4. Cập nhật các thông tin mới
-        // Lưu ý: Nếu muốn cập nhật cả skillId (trường hợp đổi tên kỹ năng), ta cập nhật lại cs.skillId
-        // Dùng Builder hoặc setter (đảm bảo CandidateSkill có các setter hoặc phương thức update)
-        CandidateSkill updatedCs = CandidateSkill.builder()
-                .candidateId(cs.getCandidateId())
-                .skillId(skill.getId())
+        // 2. Tìm bản ghi cũ trong candidate_skills
+        CandidateSkill oldCs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
+
+        // 3. Nếu tên kỹ năng thay đổi (skillId khác nhau), xóa bản ghi cũ đi
+        if (!oldCs.getSkillId().equals(targetSkill.getId())) {
+            candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
+        }
+
+        // 4. Tạo bản ghi mới với thông tin cập nhật
+        CandidateSkill newCs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(targetSkill.getId()) // ID của kỹ năng mới
                 .level(request.getLevel())
                 .note(request.getDescription())
-                .yearsOfEx(cs.getYearsOfEx()) // Giữ nguyên giá trị cũ nếu không update
+                .yearsOfEx(oldCs.getYearsOfEx())
                 .build();
 
-        candidateSkillRepository.save(updatedCs);
+        candidateSkillRepository.save(newCs);
 
         return CandidateSkillResponse.builder()
-                .id(skill.getId())
-                .skillName(skill.getName())
-                .level(updatedCs.getLevel())
+                .id(targetSkill.getId())
+                .skillName(targetSkill.getName())
+                .level(newCs.getLevel())
                 .category(request.getCategory())
-                .description(updatedCs.getNote())
+                .description(newCs.getNote())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CvDocumentResponse getLatestGeneratedCv(Long userId) {
+        // 1. Tìm profile để xác định ứng viên
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng chưa có hồ sơ ứng viên."));
+
+        // 2. Tìm tất cả CV, lọc các CV Sandbox (isGenerated = true) và lấy cái mới nhất
+        List<CvDocument> cvList = cvDocumentRepository.findByCandidateId(profile.getId());
+
+        return cvList.stream()
+                .filter(cv -> Boolean.TRUE.equals(cv.getIsGenerated()))
+                .max(java.util.Comparator.comparing(CvDocument::getCreatedAt))
+                .map(this::mapToCvResponse)
+                .orElse(null);
     }
 }
