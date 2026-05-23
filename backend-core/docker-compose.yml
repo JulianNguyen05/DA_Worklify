@@ -34,7 +34,7 @@ services:
     networks:
       - smartmatch-network
 
-  # [ĐÃ THÊM] Hệ thống Message Broker để xử lý chấm điểm AI bất đồng bộ
+  # Hệ thống Message Broker để xử lý chấm điểm AI bất đồng bộ
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: smartmatch-rabbitmq
@@ -45,20 +45,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - smartmatch-network
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: smartmatch-api
-    restart: unless-stopped
-    depends_on:
-      - mysql
-      - rabbitmq
-    ports:
-      - "8080:8080"
     networks:
       - smartmatch-network
 

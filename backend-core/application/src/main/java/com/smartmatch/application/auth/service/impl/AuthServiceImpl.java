@@ -4,9 +4,10 @@ import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
 import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.User;
+import com.smartmatch.domain.auth.model.UserStatus; // [ĐÃ THÊM] Import UserStatus
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.valueobject.EmailAddress;
-import com.smartmatch.application.common.port.TokenProviderPort; // Đã thêm import JwtService
+import com.smartmatch.application.common.port.TokenProviderPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final TokenProviderPort tokenProviderPort; // [SỬA]: Tiêm JwtService vào để tạo token
+    private final TokenProviderPort tokenProviderPort;
 
     @Override
     @Transactional
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(emailAddress)
                 .passwordHash(hashedPassword)
                 .role(request.getRole())
+                .status(UserStatus.ACTIVE) // [ĐÃ THÊM] Gán trạng thái để không bị lỗi null status
                 .isMfaEnabled(false)
                 .build();
 
@@ -74,11 +76,10 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
         }
 
-        // [SỬA QUAN TRỌNG]: TẠO TOKEN THỰC TẾ
         String token = tokenProviderPort.generateToken(user.getEmail().value(), user.getRole().name(), user.getId());
 
         return AuthResponse.builder()
-                .accessToken(token) // Đã đính kèm token vào response
+                .accessToken(token)
                 .userId(user.getId())
                 .role(user.getRole())
                 .expiresIn(3600L)

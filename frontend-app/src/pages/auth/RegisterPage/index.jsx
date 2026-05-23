@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Input from "../../../components/common/Input";
 import Button from "../../../components/common/Button";
-// Import authService để xử lý gọi API thực tế
+import Toast from "../../../components/common/Toast"; // Import Toast Component
 import authService from "../../../features/auth/authService";
 
 const RegisterPage = () => {
@@ -18,7 +18,7 @@ const RegisterPage = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "", type: "info" });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,24 +26,30 @@ const RegisterPage = () => {
   };
 
   const handleRoleChange = (role) => {
-    setError(null);
+    setToast({ show: false, message: "", type: "info" });
     setFormData({ ...formData, role, fullName: "", companyName: "" });
   };
+
+  const closeToast = () => setToast({ show: false, message: "", type: "info" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra khớp mật khẩu phía Client trước khi gửi API
+    // 1. Kiểm tra trùng khớp mật khẩu phía Client
     if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp!");
+      setToast({
+        show: true,
+        message: "Mật khẩu xác nhận không trùng khớp!",
+        type: "error"
+      });
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    closeToast();
 
     try {
-      // 2. Chuẩn hóa cấu trúc Payload động dựa theo vai trò (Role) bám sát yêu cầu nghiệp vụ
+      // 2. Chuẩn hóa cấu trúc Payload động dựa theo vai trò (Role)
       const payload = {
         email: formData.email,
         password: formData.password,
@@ -53,44 +59,50 @@ const RegisterPage = () => {
           : { companyName: formData.companyName }),
       };
 
-      // 3. Thực hiện gọi API thật qua Service Layer
+      // 3. Thực hiện gọi API đăng ký thông qua Service Layer
       await authService.register(payload);
 
-      // 4. Tạo thông báo thành công tương ứng với từng đối tượng
+      // 4. Thiết lập nội dung thông báo thành công tương ứng
       const successMsg =
         formData.role === "EMPLOYER"
-          ? "Đăng ký thành công! Vui lòng đăng nhập để cập nhật hồ sơ pháp lý."
-          : "Đăng ký thành công! Vui lòng đăng nhập.";
+          ? "Đăng ký thành công! Đang chuyển hướng sang trang đăng nhập để bạn bổ sung hồ sơ doanh nghiệp..."
+          : "Đăng ký thành công! Hệ thống đang chuyển hướng sang trang đăng nhập...";
 
-      // 5. Điều hướng sang trang đăng nhập cùng dữ liệu thông báo trạng thái
-      navigate("/auth/login", { state: { message: successMsg } });
+      setToast({
+        show: true,
+        message: successMsg,
+        type: "success"
+      });
+
+      // 5. Treo màn hình 2.5 giây cho người dùng đọc Toast rồi mới chuyển hướng
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 2500);
+
     } catch (err) {
       console.error("Lỗi đăng ký:", err);
 
-      // Khởi tạo chuỗi lỗi mặc định
+      // Trích xuất lỗi từ Backend trả về để đưa lên Toast
       let errorMessage = "Đăng ký thất bại. Vui lòng thử lại sau!";
 
       if (err.response && err.response.data) {
         const data = err.response.data;
-        // 1. Trích xuất nếu BE trả về ApiResponse custom có trường 'message'
         if (data.message) {
           errorMessage = data.message;
-        }
-        // 2. Trích xuất nếu BE trả về theo format mặc định của Spring Boot (trường 'error')
-        else if (data.error && typeof data.error === "string") {
+        } else if (data.error && typeof data.error === "string") {
           errorMessage = data.error;
-        }
-        // 3. Trích xuất nếu BE trả về một chuỗi thẳng
-        else if (typeof data === "string") {
+        } else if (typeof data === "string") {
           errorMessage = data;
         }
       } else if (err.message === "Network Error") {
-        // 4. Nếu mất kết nối hoặc Backend chưa bật
-        errorMessage =
-          "Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng!";
+        errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng hoặc Docker Backend!";
       }
 
-      setError(errorMessage);
+      setToast({
+        show: true,
+        message: errorMessage,
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -105,23 +117,14 @@ const RegisterPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-        {error && (
-          <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-md text-sm flex items-start space-x-2 animate-shake">
-            <svg
-              className="w-5 h-5 text-red-500 shrink-0 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div>
-              <span className="font-semibold">Đăng ký không thành công:</span>{" "}
-              {error}
-            </div>
+        {/* Tích hợp Toast dùng chung cho cả trạng thái lỗi lẫn thành công */}
+        {toast.show && (
+          <div className="animate-shake">
+            <Toast 
+              type={toast.type} 
+              message={toast.message} 
+              onClose={closeToast} 
+            />
           </div>
         )}
 
