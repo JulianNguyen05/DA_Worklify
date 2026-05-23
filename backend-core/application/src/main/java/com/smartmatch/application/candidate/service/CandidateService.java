@@ -16,4 +16,11 @@ public interface CandidateService {
     void removeSkillFromCandidate(Long userId, Long skillId);
 
     CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
+    // SKILLS
+    List<CandidateSkillResponse> getSkillsByUserId(Long userId);
+    CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request);
+    CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request);
+
+    // LATEST CV
+    CvDocumentResponse getLatestGeneratedCv(Long userId);
 }

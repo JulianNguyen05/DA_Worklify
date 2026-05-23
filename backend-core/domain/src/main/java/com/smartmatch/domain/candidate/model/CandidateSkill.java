@@ -10,4 +10,7 @@ import lombok.Getter;
 public class CandidateSkill {
     private final Long candidateId;
     private final Long skillId;
+    private String level;
+    private Integer yearsOfEx;
+    private String note;
 }

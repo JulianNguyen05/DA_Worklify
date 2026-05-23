@@ -17,6 +17,7 @@ public class CandidateProfile {
     private String gender;
     private LocalDate dob;
     private String address;
+    private String summary; // Đã có thuộc tính này
 
     public static CandidateProfile create(Long userId, String fullName) {
         if (userId == null || fullName == null || fullName.trim().isEmpty()) {
@@ -28,7 +29,8 @@ public class CandidateProfile {
                 .build();
     }
 
-    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address) {
+    // BỔ SUNG THAM SỐ summary VÀO ĐÂY
+    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address, String summary) {
         if (fullName == null || fullName.trim().isEmpty()) {
             throw new IllegalArgumentException("Họ tên không được để trống.");
         }
@@ -37,5 +39,6 @@ public class CandidateProfile {
         this.gender = gender;
         this.dob = dob;
         this.address = address;
+        this.summary = summary; // Gán giá trị summary
     }
 }

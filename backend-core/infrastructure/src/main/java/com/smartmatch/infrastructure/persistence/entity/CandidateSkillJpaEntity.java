@@ -22,4 +22,13 @@ public class CandidateSkillJpaEntity {
 
     @Column(name = "skill_id", nullable = false)
     private Long skillId;
+
+    @Column(name = "level")
+    private String level;
+
+    @Column(name = "years_of_ex")
+    private Integer yearsOfEx;
+
+    @Column(name = "note")
+    private String note;
 }

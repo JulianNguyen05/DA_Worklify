@@ -61,7 +61,8 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getPhone(),
                 request.getGender(),
                 request.getDob(),
-                request.getAddress()
+                request.getAddress(),
+                request.getSummary()
         );
 
         CandidateProfile savedProfile =
@@ -111,7 +112,8 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getPhone(),
                 request.getGender(),
                 request.getDob(),
-                request.getAddress()
+                request.getAddress(),
+                request.getSummary()
         );
 
         CandidateProfile updatedProfile =
@@ -302,6 +304,7 @@ public class CandidateServiceImpl implements CandidateService {
                 .gender(profile.getGender())
                 .dob(profile.getDob())
                 .address(profile.getAddress())
+                .summary(profile.getSummary())
                 .build();
     }
 

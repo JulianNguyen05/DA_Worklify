@@ -34,5 +34,8 @@ public class CandidateProfileJpaEntity {
 
     @Column(length = 255)
     private String address;
+
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
 }
 
