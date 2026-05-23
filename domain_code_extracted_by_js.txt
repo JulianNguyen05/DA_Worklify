@@ -523,6 +523,16 @@ public class CvDocument {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    // Thêm hàm này vào class CvDocument
+    public static CvDocument generate(Long candidateId, String rawText) {
+        return CvDocument.builder()
+                .candidateId(candidateId)
+                .filePath(null) // Không có file cứng
+                .rawText(rawText) // Lưu chuỗi JSON
+                .isGenerated(true) // Đánh dấu là CV tạo từ Sandbox
+                .build();
+    }
 }
 
 // ============================================================
@@ -548,6 +558,15 @@ public class Skill {
             throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
         }
         return Skill.builder().name(name.trim().toLowerCase()).build();
+    }
+
+    public static Skill create(String cleanSkillName) {
+        if (cleanSkillName == null || cleanSkillName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
+        }
+        return Skill.builder()
+                .name(cleanSkillName.trim())
+                .build();
     }
 }
 
@@ -576,6 +595,7 @@ public interface CandidateSkillRepository {
     CandidateSkill save(CandidateSkill candidateSkill);
     List<CandidateSkill> findByCandidateId(Long candidateId);
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
+    void deleteByCandidateId(Long candidateId);
 }
 
 // ============================================================
@@ -617,6 +637,8 @@ public interface SkillRepository {
     List<Skill> findAll();
 
     void deleteById(Long id);
+
+    Optional<Skill> findByNameIgnoreCase(String name);
 }
 
 // ============================================================

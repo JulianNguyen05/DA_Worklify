@@ -27,4 +27,11 @@ public class Skill {
                 .name(cleanSkillName.trim())
                 .build();
     }
+
+    public void setName(String trimmedName) {
+        if (trimmedName == null || trimmedName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
+        }
+        this.name = trimmedName.trim();
+    }
 }

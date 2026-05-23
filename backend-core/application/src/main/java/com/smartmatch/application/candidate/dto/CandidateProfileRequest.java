@@ -13,4 +13,5 @@ public class CandidateProfileRequest {
     private String gender;
     private LocalDate dob;
     private String address;
+    private String skills;
 }

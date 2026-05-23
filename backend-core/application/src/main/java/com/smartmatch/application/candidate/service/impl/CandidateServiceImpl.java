@@ -67,6 +67,28 @@ public class CandidateServiceImpl implements CandidateService {
         CandidateProfile savedProfile =
                 candidateProfileRepository.save(profile);
 
+        // ==================== ĐOẠN BỔ SUNG VÀO HÀM saveProfile ====================
+        if (request.getSkills() != null && !request.getSkills().trim().isEmpty()) {
+            // Xóa sạch các liên kết kỹ năng cũ để tránh ghi đè trùng lặp dữ liệu
+            candidateSkillRepository.deleteByCandidateId(savedProfile.getId());
+
+            // Tách chuỗi kỹ năng gửi từ Frontend (ví dụ: "Java, React, Docker")
+            String[] skillNames = request.getSkills().split(",");
+            for (String skillName : skillNames) {
+                String trimmedName = skillName.trim();
+                if (trimmedName.isEmpty()) continue;
+
+                // ĐÃ SỬA: Sử dụng phương thức tĩnh Skill.create(name) có sẵn thay vì dùng `new` bị lỗi private
+                com.smartmatch.domain.candidate.model.Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
+                        .orElseGet(() -> skillRepository.save(com.smartmatch.domain.candidate.model.Skill.create(trimmedName)));
+
+                // Lưu liên quan hệ vào bảng liên kết CandidateSkill theo profile ID chính xác
+                CandidateSkill candidateSkill = new CandidateSkill(savedProfile.getId(), skill.getId());
+                candidateSkillRepository.save(candidateSkill);
+            }
+        }
+        // =========================================================================
+
         return mapToProfileResponse(savedProfile);
     }
 
@@ -248,38 +270,24 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public void addSkillToCandidate(Long userId, Long skillId) {
-
-        candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Không tìm thấy hồ sơ ứng viên."
-                        )
-                );
+        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
 
         skillRepository.findById(skillId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Kỹ năng không tồn tại trong hệ thống."
-                        )
-                );
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại trong hệ thống."));
 
-        CandidateSkill candidateSkill =
-                new CandidateSkill(userId, skillId);
-
+        CandidateSkill candidateSkill = new CandidateSkill(profile.getId(), skillId);
         candidateSkillRepository.save(candidateSkill);
     }
 
     @Override
-    public void removeSkillFromCandidate(
-            Long userId,
-            Long skillId
-    ) {
+    public void removeSkillFromCandidate(Long userId, Long skillId) {
+        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
 
-        candidateSkillRepository
-                .deleteByCandidateIdAndSkillId(
-                        userId,
-                        skillId
-                );
+        candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
     }
 
     private CandidateProfileResponse mapToProfileResponse(

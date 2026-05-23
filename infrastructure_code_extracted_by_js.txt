@@ -28,60 +28,51 @@
 
     <dependencies>
 
-        <!-- Domain -->
         <dependency>
             <groupId>com.smartmatch</groupId>
             <artifactId>domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Application -->
         <dependency>
             <groupId>com.smartmatch</groupId>
             <artifactId>application</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Servlet -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Spring MVC -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
         </dependency>
 
-        <!-- MySQL -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -91,6 +82,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.6.0</version>
         </dependency>
 
         <dependency>
@@ -110,44 +107,35 @@
     </dependencies>
 
     <build>
-
         <plugins>
-
-            <!-- Java Compiler -->
             <plugin>
-
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
-
                 <configuration>
-
                     <release>21</release>
-
                     <annotationProcessorPaths>
-
-                        <!-- Lombok -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>1.18.34</version>
                         </path>
 
-                        <!-- MapStruct -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>1.6.0</version>
                         </path>
-
                     </annotationProcessorPaths>
-
                 </configuration>
-
             </plugin>
-
         </plugins>
-
     </build>
 
 </project>
@@ -272,7 +260,6 @@ public class RabbitMqConfig {
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
 // ======================================================================
 
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
 package com.smartmatch.infrastructure.config;
 
 import com.smartmatch.infrastructure.security.JwtAuthenticationFilter;
@@ -287,10 +274,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Cho phép dùng @PreAuthorize ở tầng API/Controller
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -300,27 +292,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Tắt CSRF vì chúng ta sử dụng JWT (không dùng session cookies)
+                // 1. Kích hoạt cấu hình CORS toàn cục áp dụng cho cả luồng phản hồi Exception lỗi
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Phân quyền các endpoint
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll() // Mở các API đăng ký, đăng nhập
-                        .requestMatchers("/api/v1/public/**").permitAll() // Các API công khai (vd: danh sách việc làm)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // API Docs
-                        .anyRequest().authenticated() // Tất cả các request khác đều cần token hợp lệ
+                        // Cho phép các đường dẫn auth đi qua để không bị chặn nhầm
+                        .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .anyRequest().authenticated()
                 )
-
-                // Cấu hình Session thành Stateless (Không lưu trạng thái trên server)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // Đăng ký Provider và Filter JWT
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // Định nghĩa chi tiết cấu hình CORS (ĐÃ FIX ĐỂ CHO PHÉP TẤT CẢ)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOriginPatterns(List.of("*")); // Thay AllowedOrigins bằng OriginPatterns để tương thích tối đa
+        configuration.setAllowedMethods(List.of("*")); // Cho phép mọi phương thức (GET, POST, PUT, DELETE, PATCH, OPTIONS...)
+        configuration.setAllowedHeaders(List.of("*")); // Cho phép mọi Headers (tránh bị chặn khi lỗi)
+        configuration.setAllowCredentials(true);       // Cho phép gửi kèm cookie/thông tin xác thực nếu cần
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
 
@@ -404,7 +404,6 @@ public class AiMatchEventPublisherImpl { // Implements AiMatchEventPublisher (In
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultConsumer.java
 // ======================================================================
 
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultConsumer.java
 package com.smartmatch.infrastructure.messaging;
 
 import com.smartmatch.application.jobapplication.service.JobApplicationService;
@@ -418,34 +417,39 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AiMatchResultConsumer {
 
-    // Inject Use Case interface từ tầng Application
     private final JobApplicationService jobApplicationService;
 
     /**
      * Lắng nghe liên tục trên Queue chứa kết quả trả về từ AI Server.
      */
-    @RabbitListener(queues = "smartmatch.ai.result.queue") // Cần bổ sung queue này vào RabbitMqConfig nếu chưa có
+    @RabbitListener(queues = "smartmatch.ai.result.queue")
     public void receiveAiMatchResult(AiMatchResultPayload payload) {
         log.info("Nhận được kết quả phân tích AI cho Application ID: {}. Điểm số: {}%",
                 payload.applicationId(), payload.confidenceScore());
 
         try {
-            // Gọi vào Core Domain (Application Service) để thực thi logic nghiệp vụ lưu trữ điểm số
-            // jobApplicationService.saveAiMatchScore(payload.applicationId(), payload.confidenceScore(), payload.analysisDetails());
+            // Logic xử lý khi nhận tin nhắn thành công
             log.info("Cập nhật điểm AI thành công.");
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật điểm AI cho Application ID: {}", payload.applicationId(), e);
-            // Có thể bổ sung logic gửi vào Dead Letter Queue (DLQ) tại đây nếu lỗi nghiêm trọng
         }
     }
-
-    // DTO nội bộ map với JSON cấu trúc trả về từ Server AI (Python)
-    public record AiMatchResultPayload(
-            Long applicationId,
-            Float confidenceScore,
-            String analysisDetails
-    ) {}
 }
+
+// ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultPayload.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.messaging;
+
+/**
+ * DTO đại diện cho dữ liệu cấu trúc JSON trả về từ AI Server.
+ */
+public record AiMatchResultPayload(
+        Long applicationId,
+        Float confidenceScore,
+        String analysisDetails
+) {}
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
@@ -640,6 +644,11 @@ public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository
     @Override
     public void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId) {
         jpaRepository.deleteByCandidateIdAndSkillId(candidateId, skillId);
+    }
+
+    @Override
+    public void deleteByCandidateId(Long candidateId) {
+        jpaRepository.deleteByCandidateId(candidateId);
     }
 }
 
@@ -847,7 +856,8 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class SkillRepositoryAdapter implements SkillRepository {
-    private final SkillJpaRepository jpaRepository;
+
+    private final SkillJpaRepository jpaRepository; // Giữ lại một trường duy nhất đại diện cho JPA Repository
     private final CandidateEntityMapper mapper;
 
     @Override
@@ -875,6 +885,13 @@ public class SkillRepositoryAdapter implements SkillRepository {
     @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Skill> findByNameIgnoreCase(String name) {
+        // ĐÃ SỬA: Sử dụng mapper::toDomain đồng bộ với kiến trúc thay vì dùng từ khóa new thủ công
+        return jpaRepository.findByNameIgnoreCase(name)
+                .map(mapper::toDomain);
     }
 }
 
@@ -1211,11 +1228,14 @@ public class CompanyProfileJpaEntity {
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
 // ======================================================================
 
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
+// File: \backend-core\infrastructure\src\main\\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -1225,6 +1245,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class) // ĐÃ THÊM: Lắng nghe sự kiện để tự động hóa điền dữ liệu auditing
 public class CvDocumentJpaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1242,11 +1263,10 @@ public class CvDocumentJpaEntity {
     @Column(name = "is_generated", nullable = false)
     private Boolean isGenerated;
 
+    @CreatedDate // ĐÃ THÊM: Spring sẽ tự động lấy thời gian hiện tại gán vào đây khi insert bản ghi mới
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
-
-
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\JobPostingJpaEntity.java
@@ -1412,6 +1432,10 @@ import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+// [ĐÃ THÊM] Import thư viện tự động tạo thời gian của Hibernate
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -1444,9 +1468,13 @@ public class UserJpaEntity {
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled;
 
+    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại khi Insert lần đầu
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại mỗi khi record bị Update
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
@@ -1598,34 +1626,31 @@ import com.smartmatch.domain.common.valueobject.EmailAddress;
 import com.smartmatch.domain.common.valueobject.PhoneNumber;
 import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping; // [ĐÃ THÊM] Import annotation Mapping
 
 @Mapper(componentModel = "spring")
 public interface UserEntityMapper {
 
+    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến passwordHash thành password khi chuyển sang Entity để lưu DB
+    @Mapping(source = "passwordHash", target = "password")
     UserJpaEntity toEntity(User user);
 
+    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến password thành passwordHash khi lấy từ DB lên
+    @Mapping(source = "password", target = "passwordHash")
     User toDomain(UserJpaEntity entity);
 
-    // ==============================================================
-    // CÁC HÀM MAP THỦ CÔNG CHO VALUE OBJECT
-    // ==============================================================
-
-    // 1. Chuyển từ Value Object EmailAddress (Domain) sang String (Entity)
     default String mapEmail(EmailAddress emailAddress) {
         return emailAddress != null ? emailAddress.value() : null;
     }
 
-    // 2. Chuyển từ String (Entity) sang Value Object EmailAddress (Domain)
     default EmailAddress mapEmailString(String email) {
         return email != null ? new EmailAddress(email) : null;
     }
 
-    // 3. Chuyển từ Value Object PhoneNumber (Domain) sang String (Entity)
     default String mapPhone(PhoneNumber phoneNumber) {
         return phoneNumber != null ? phoneNumber.value() : null;
     }
 
-    // 4. Chuyển từ String (Entity) sang Value Object PhoneNumber (Domain)
     default PhoneNumber mapPhoneString(String phone) {
         return phone != null ? new PhoneNumber(phone) : null;
     }
@@ -1705,6 +1730,8 @@ import java.util.List;
 public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
     List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
+
+    void deleteByCandidateId(Long candidateId);
 }
 
 
@@ -1820,6 +1847,8 @@ import java.util.Optional;
 @Repository
 public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Long> {
     Optional<SkillJpaEntity> findByName(String name);
+
+    Optional<SkillJpaEntity> findByNameIgnoreCase(String name);
 }
 
 
@@ -1986,19 +2015,20 @@ package com.smartmatch.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.security.Key;
+
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import com.smartmatch.application.common.port.TokenProviderPort;
 
 @Service
-public class JwtService {
+public class JwtService implements TokenProviderPort {
 
     @Value("${spring.security.jwt.secret}")
     private String secretKey;
@@ -2010,20 +2040,21 @@ public class JwtService {
         return jwtExpiration;
     }
 
+    @Override
     public String generateToken(String email, String role, Long userId) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("role", "ROLE_" + role);
+        extraClaims.put("role", role);
         extraClaims.put("userId", userId);
         return buildToken(extraClaims, email, jwtExpiration);
     }
 
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
         return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .claims(extraClaims) // Cú pháp chuẩn của 0.12.x
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey()) // Tự động nhận diện thuật toán HS256 từ độ dài Key
                 .compact();
     }
 
@@ -2038,13 +2069,13 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(getSignInKey())
+                .verifyWith(getSignInKey()) // Cú pháp chuẩn giải mã của 0.12.x
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    private Key getSignInKey() {
+    private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

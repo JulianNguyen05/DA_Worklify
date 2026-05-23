@@ -89,6 +89,14 @@
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.22</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
 
     </dependencies>
 
@@ -690,12 +698,10 @@ public interface CandidateService {
 // File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\service\impl\CandidateServiceImpl.java
 // ============================================================
 
-// ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\service\impl\CandidateServiceImpl.java
-// ============================================================
-
 package com.smartmatch.application.candidate.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
 import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
 import com.smartmatch.application.candidate.dto.CvDocumentResponse;
@@ -709,13 +715,13 @@ import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
 import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
 import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
 import com.smartmatch.domain.candidate.repository.SkillRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -730,17 +736,18 @@ public class CandidateServiceImpl implements CandidateService {
     private final CvDocumentRepository cvDocumentRepository;
     private final CandidateSkillRepository candidateSkillRepository;
     private final SkillRepository skillRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
-        // 1. Kiểm tra user có tồn tại không
+
         if (userRepository.findById(userId).isEmpty()) {
             throw new IllegalArgumentException("Người dùng không tồn tại trong hệ thống.");
         }
 
-        // 2. Chuyển đổi thành cơ chế UPSERT (Tạo mới hoặc Cập nhật)
-        // Điều này cho phép Sandbox ấn "Lưu" nhiều lần mà không bị lỗi
-        Optional<CandidateProfile> existingProfileOpt = candidateProfileRepository.findByUserId(userId);
+        Optional<CandidateProfile> existingProfileOpt =
+                candidateProfileRepository.findByUserId(userId);
+
         CandidateProfile profile;
 
         if (existingProfileOpt.isPresent()) {
@@ -749,7 +756,6 @@ public class CandidateServiceImpl implements CandidateService {
             profile = CandidateProfile.create(userId, request.getFullName());
         }
 
-        // 3. Cập nhật thông tin chi tiết
         profile.updateProfileDetails(
                 request.getFullName(),
                 request.getPhone(),
@@ -758,16 +764,25 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getAddress()
         );
 
-        // 4. Lưu vào Database
-        CandidateProfile savedProfile = candidateProfileRepository.save(profile);
+        CandidateProfile savedProfile =
+                candidateProfileRepository.save(profile);
 
         return mapToProfileResponse(savedProfile);
     }
 
     @Override
-    public CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request) {
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+    public CandidateProfileResponse updateProfile(
+            Long userId,
+            CandidateProfileRequest request
+    ) {
+
+        CandidateProfile profile =
+                candidateProfileRepository.findByUserId(userId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Không tìm thấy hồ sơ ứng viên."
+                                )
+                        );
 
         profile.updateProfileDetails(
                 request.getFullName(),
@@ -777,53 +792,135 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getAddress()
         );
 
-        CandidateProfile updatedProfile = candidateProfileRepository.save(profile);
+        CandidateProfile updatedProfile =
+                candidateProfileRepository.save(profile);
+
         return mapToProfileResponse(updatedProfile);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CandidateProfileResponse getProfileByUserId(Long userId) {
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        CandidateProfile profile =
+                candidateProfileRepository.findByUserId(userId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Không tìm thấy hồ sơ ứng viên."
+                                )
+                        );
+
         return mapToProfileResponse(profile);
     }
 
     @Override
     public CvDocumentResponse uploadCv(Long userId, FileData fileData) {
+
         candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."
+                        )
+                );
 
-        // TODO: Gọi hạ tầng lưu file thật và lấy URL
-        String uploadedFilePath = "/uploads/cv/" + System.currentTimeMillis() + "_" + fileData.fileName();
+        String uploadedFilePath =
+                "/uploads/cv/"
+                        + System.currentTimeMillis()
+                        + "_"
+                        + fileData.fileName();
 
-        // TODO: Tích hợp module AI để đọc PDF/Word
-        String extractedRawText = "Extracted text content from " + fileData.fileName();
+        String extractedRawText =
+                "Extracted text content from "
+                        + fileData.fileName();
 
-        CvDocument cvDocument = CvDocument.upload(userId, uploadedFilePath, extractedRawText);
-        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
+        CvDocument cvDocument =
+                CvDocument.upload(
+                        userId,
+                        uploadedFilePath,
+                        extractedRawText
+                );
+
+        CvDocument savedCv =
+                cvDocumentRepository.save(cvDocument);
+
         return mapToCvResponse(savedCv);
     }
 
-    // ==========================================================
-    // BỔ SUNG: HÀM LƯU CV ĐƯỢC TẠO TỪ SANDBOX (JSON)
-    // ==========================================================
     @Override
     public CvDocumentResponse saveGeneratedCv(Long userId, String rawText) {
-        candidateProfileRepository.findByUserId(userId)
+        // 1. Kiểm tra hồ sơ cá nhân và lấy chính xác candidateId (ID của bảng candidate_profiles)
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi lưu bản thảo CV."));
 
-        // Gọi hàm tĩnh generate (Sẽ cấu hình filePath là null và isGenerated là true)
-        CvDocument cvDocument = CvDocument.generate(userId, rawText);
+        Long candidateId = profile.getId();
 
+        // 2. Lưu bản dịch CV thô vào DB
+        CvDocument cvDocument = CvDocument.generate(userId, rawText);
         CvDocument savedCv = cvDocumentRepository.save(cvDocument);
+
+        // 3. Bóc tách JSON xử lý đồng bộ chuỗi kỹ năng
+        try {
+            List<Map<String, Object>> blocks = objectMapper.readValue(
+                    rawText,
+                    new TypeReference<List<Map<String, Object>>>() {}
+            );
+
+            for (Map<String, Object> block : blocks) {
+                String type = (String) block.get("type");
+
+                if ("SKILLS".equals(type)) {
+                    Map<String, Object> data = (Map<String, Object>) block.get("data");
+
+                    if (data != null && data.containsKey("skills")) {
+                        String rawSkills = (String) data.get("skills");
+
+                        if (rawSkills != null && !rawSkills.trim().isEmpty()) {
+
+                            // SỬA: Xóa theo candidateId thực tế của Profile, tránh xóa nhầm hoặc sai lệch
+                            candidateSkillRepository.deleteByCandidateId(candidateId);
+
+                            String[] skillArray = rawSkills.split(",");
+
+                            for (String skillName : skillArray) {
+                                String cleanSkillName = skillName.trim();
+                                if (!cleanSkillName.isEmpty()) {
+
+                                    // SỬA: Tìm kiếm ID thực tế từ bảng danh mục tổng 'skills'
+                                    // (Cần bổ sung hàm findByNameIgnoreCase trong SkillRepository tầng Domain)
+                                    Long validSkillId = skillRepository.findByNameIgnoreCase(cleanSkillName)
+                                            .map(com.smartmatch.domain.candidate.model.Skill::getId)
+                                            .orElseGet(() -> {
+                                                // Nếu hệ thống chưa có từ khóa này, tiến hành tự động tạo mới vào danh mục tổng
+                                                com.smartmatch.domain.candidate.model.Skill newSkill =
+                                                        com.smartmatch.domain.candidate.model.Skill.create(cleanSkillName);
+                                                return skillRepository.save(newSkill).getId();
+                                            });
+
+                                    // Khởi tạo đối tượng liên kết mapping chuẩn giữa Ứng viên và Kỹ năng
+                                    CandidateSkill candidateSkill = new CandidateSkill(candidateId, validSkillId);
+                                    candidateSkillRepository.save(candidateSkill);
+                                }
+                            }
+
+                            log.info("Đã bóc tách & đồng bộ hóa toàn bộ kỹ năng Sandbox thành công cho candidateId={}", candidateId);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Lỗi parse JSON Sandbox skills cho userId: " + userId, e);
+        }
+
         return mapToCvResponse(savedCv);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CvDocumentResponse> getCvsByUserId(Long userId) {
-        List<CvDocument> cvList = cvDocumentRepository.findByCandidateId(userId);
+
+        List<CvDocument> cvList =
+                cvDocumentRepository.findByCandidateId(userId);
+
         return cvList.stream()
                 .map(this::mapToCvResponse)
                 .collect(Collectors.toList());
@@ -831,11 +928,19 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public void deleteCv(Long userId, Long cvId) {
-        CvDocument cvDocument = cvDocumentRepository.findById(cvId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
+
+        CvDocument cvDocument =
+                cvDocumentRepository.findById(cvId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Không tìm thấy CV."
+                                )
+                        );
 
         if (!cvDocument.getCandidateId().equals(userId)) {
-            throw new IllegalArgumentException("Bạn không có quyền xóa CV này.");
+            throw new IllegalArgumentException(
+                    "Bạn không có quyền xóa CV này."
+            );
         }
 
         cvDocumentRepository.deleteById(cvId);
@@ -843,26 +948,44 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public void addSkillToCandidate(Long userId, Long skillId) {
+
         candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Không tìm thấy hồ sơ ứng viên."
+                        )
+                );
 
         skillRepository.findById(skillId)
-                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại trong hệ thống."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Kỹ năng không tồn tại trong hệ thống."
+                        )
+                );
 
-        CandidateSkill candidateSkill = new CandidateSkill(userId, skillId);
+        CandidateSkill candidateSkill =
+                new CandidateSkill(userId, skillId);
+
         candidateSkillRepository.save(candidateSkill);
     }
 
     @Override
-    public void removeSkillFromCandidate(Long userId, Long skillId) {
-        candidateSkillRepository.deleteByCandidateIdAndSkillId(userId, skillId);
+    public void removeSkillFromCandidate(
+            Long userId,
+            Long skillId
+    ) {
+
+        candidateSkillRepository
+                .deleteByCandidateIdAndSkillId(
+                        userId,
+                        skillId
+                );
     }
 
-    // ==========================================================
-    // PRIVATE HELPER METHODS (MAPPING)
-    // ==========================================================
+    private CandidateProfileResponse mapToProfileResponse(
+            CandidateProfile profile
+    ) {
 
-    private CandidateProfileResponse mapToProfileResponse(CandidateProfile profile) {
         return CandidateProfileResponse.builder()
                 .id(profile.getId())
                 .userId(profile.getUserId())
@@ -875,6 +998,7 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     private CvDocumentResponse mapToCvResponse(CvDocument cv) {
+
         return CvDocumentResponse.builder()
                 .id(cv.getId())
                 .candidateId(cv.getCandidateId())
