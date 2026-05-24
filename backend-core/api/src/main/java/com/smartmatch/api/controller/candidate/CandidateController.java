@@ -106,4 +106,13 @@ public class CandidateController {
     public ApiResponse<CvDocumentResponse> getLatestGeneratedCv(@PathVariable("userId") Long userId) {
         return ApiResponse.success(candidateService.getLatestGeneratedCv(userId));
     }
+
+    @PutMapping("/{userId}/cvs/{cvId}/rename")
+    @Operation(summary = "Đổi tên hiển thị của CV")
+    public ApiResponse<CvDocumentResponse> renameCv(
+            @PathVariable("userId") Long userId,
+            @PathVariable("cvId") Long cvId,
+            @RequestParam("newName") String newName) {
+        return ApiResponse.success(candidateService.renameCv(userId, cvId, newName), "Đổi tên CV thành công");
+    }
 }

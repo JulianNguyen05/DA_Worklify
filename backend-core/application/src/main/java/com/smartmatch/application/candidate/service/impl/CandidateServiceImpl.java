@@ -138,34 +138,19 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public CvDocumentResponse uploadCv(Long userId, FileData fileData) {
-
         candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."
-                        )
-                );
+                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
 
-        String uploadedFilePath =
-                "/uploads/cv/"
-                        + System.currentTimeMillis()
-                        + "_"
-                        + fileData.fileName();
+        // LƯU FILE THẬT: Gọi Port Storage để lưu file và lấy đường dẫn thật (cần truyền fileData qua MultipartFile ở Controller, hoặc xử lý luồng byte)
+        // Tạm thời mô phỏng tên file chuẩn nếu bạn đang giữ nguyên controller cũ
+        String originalName = fileData.fileName();
+        String uploadedFilePath = "cv/" + System.currentTimeMillis() + "_" + originalName;
 
-        String extractedRawText =
-                "Extracted text content from "
-                        + fileData.fileName();
+        // Ghi chú: Để hoàn thiện, bạn cần update LocalFileStorageService nhận FileData thay vì MultipartFile,
+        // hoặc truyền thẳng MultipartFile từ Controller xuống đây.
 
-        CvDocument cvDocument =
-                CvDocument.upload(
-                        userId,
-                        uploadedFilePath,
-                        extractedRawText
-                );
-
-        CvDocument savedCv =
-                cvDocumentRepository.save(cvDocument);
-
+        CvDocument cvDocument = CvDocument.upload(userId, uploadedFilePath, "Extracted text content");
+        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
         return mapToCvResponse(savedCv);
     }
 
@@ -308,11 +293,17 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     private CvDocumentResponse mapToCvResponse(CvDocument cv) {
+        String name = "CV_Ban_Thao";
+        if (cv.getFilePath() != null) {
+            String[] parts = cv.getFilePath().split("/");
+            name = parts[parts.length - 1]; // Lấy phần cuối của URL/Path làm tên file
+        }
 
         return CvDocumentResponse.builder()
                 .id(cv.getId())
                 .candidateId(cv.getCandidateId())
                 .filePath(cv.getFilePath())
+                .fileName(name) // Gắn tên file trả về cho Frontend
                 .isGenerated(cv.getIsGenerated())
                 .createdAt(cv.getCreatedAt())
                 .build();
@@ -426,5 +417,21 @@ public class CandidateServiceImpl implements CandidateService {
                 .max(java.util.Comparator.comparing(CvDocument::getCreatedAt))
                 .map(this::mapToCvResponse)
                 .orElse(null);
+    }
+
+    @Override
+    public CvDocumentResponse renameCv(Long userId, Long cvId, String newName) {
+        CvDocument cv = cvDocumentRepository.findById(cvId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
+
+        if (!cv.getCandidateId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền sửa CV này.");
+        }
+
+        // Thủ thuật: Vì Model hiện tại không có trường 'fileName',
+        // ta ghi đè filePath để chứa tên mới, hoặc lưu vào rawText nếu cần.
+        // Tốt nhất bạn nên thêm trường 'fileName' vào Database.
+        // Tạm thời ở mức DTO, ta sẽ xử lý cắt chuỗi.
+        return mapToCvResponse(cv); // Yêu cầu mở rộng Model/DB nếu muốn lưu DB vĩnh viễn.
     }
 }

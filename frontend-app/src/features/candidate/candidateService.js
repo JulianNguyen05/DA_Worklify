@@ -69,7 +69,15 @@ const candidateService = {
   getMyApplications: async (userId, page = 0, size = 10) => {
     const response = await axiosClient.get(`/applications/candidates/${userId}?page=${page}&size=${size}`);
     return response.data;
-  }
+  },
+
+  // Thêm vào cuối phần QUẢN LÝ CV (trước QUẢN LÝ ĐƠN ỨNG TUYỂN)
+  renameCv: async (userId, cvId, newName) => {
+    const response = await axiosClient.put(`/candidates/${userId}/cvs/${cvId}/rename`, null, {
+      params: { newName }
+    });
+    return response.data;
+  },
 };
 
 export default candidateService;
