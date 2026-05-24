@@ -38,7 +38,7 @@ public class LocalFileStorageService implements FileStoragePort {
     }
 
     @Override
-    public String storeFile(MultipartFile file, String subDirectory) {
+    public String storeFile(MultipartFile file, String subDirectory, String prefix) {
         // 1. Kiểm tra file hợp lệ
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Không thể lưu file rỗng.");
@@ -50,23 +50,24 @@ public class LocalFileStorageService implements FileStoragePort {
             throw new IllegalArgumentException("Tên file chứa ký tự đường dẫn không hợp lệ: " + originalFilename);
         }
 
-        // 3. Tạo tên file duy nhất (UUID) để tránh trùng lặp
-        String fileExtension = getFileExtension(originalFilename);
-        String uniqueFileName = UUID.randomUUID().toString() + (fileExtension.isEmpty() ? "" : "." + fileExtension);
+        // 3. ĐỔI TÊN FILE: [prefix]_[tên_gốc]
+        // Loại bỏ khoảng trắng trong tên file gốc để URL web không bị lỗi
+        String safeOriginalName = originalFilename.replaceAll("\\s+", "_");
+        String finalFileName = prefix + "_" + safeOriginalName;
 
         try {
             // 4. Xác định thư mục đích và tạo nếu chưa tồn tại
             Path targetLocation = this.rootLocation.resolve(subDirectory);
             Files.createDirectories(targetLocation);
 
-            // 5. Lưu file vào ổ cứng
-            Path targetFile = targetLocation.resolve(uniqueFileName);
+            // 5. Lưu file vào ổ cứng (Nếu file trùng tên sẽ ghi đè bản cũ)
+            Path targetFile = targetLocation.resolve(finalFileName);
             Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
 
             log.info("Lưu file thành công: {}", targetFile);
 
-            // 6. Trả về đường dẫn tương đối (vd: cv/1234-5678.pdf) để lưu vào Database
-            return subDirectory + "/" + uniqueFileName;
+            // 6. Trả về đường dẫn tương đối (vd: cv/5_CV_Dev.pdf) để lưu vào Database
+            return subDirectory + "/" + finalFileName;
 
         } catch (IOException ex) {
             throw new RuntimeException("Không thể lưu trữ file " + originalFilename + ". Lỗi: " + ex.getMessage(), ex);

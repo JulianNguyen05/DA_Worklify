@@ -77,14 +77,8 @@ public class CandidateController {
             @PathVariable("userId") Long userId,
             @RequestParam("file") MultipartFile file) throws IOException {
 
-        FileData fileData = new FileData(
-                file.getOriginalFilename(),
-                file.getInputStream(),
-                file.getSize(),
-                file.getContentType()
-        );
-
-        return ApiResponse.success(candidateService.uploadCv(userId, fileData), "Tải CV lên thành công");
+        // Truyền thẳng file nhận được xuống tầng service xử lý vật lý
+        return ApiResponse.success(candidateService.uploadCv(userId, file), "Tải CV lên thành công");
     }
 
     @GetMapping("/{userId}/cvs")
@@ -114,5 +108,16 @@ public class CandidateController {
             @PathVariable("cvId") Long cvId,
             @RequestParam("newName") String newName) {
         return ApiResponse.success(candidateService.renameCv(userId, cvId, newName), "Đổi tên CV thành công");
+    }
+
+    // [ĐÃ BỔ SUNG] Endpoint xóa CV để xử lý lỗi 500 khi bấm nút Xóa trên Frontend
+    @DeleteMapping("/{userId}/cvs/{cvId}")
+    @Operation(summary = "Xóa CV của ứng viên")
+    public ApiResponse<Void> deleteCv(
+            @PathVariable("userId") Long userId,
+            @PathVariable("cvId") Long cvId) {
+
+        candidateService.deleteCv(userId, cvId);
+        return ApiResponse.success(null, "Xóa CV thành công");
     }
 }

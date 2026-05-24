@@ -10,7 +10,7 @@ public interface FileStoragePort {
      * @param subDirectory Thư mục con (vd: "cv", "avatars", "logos")
      * @return Đường dẫn tương đối hoặc URL để truy cập file
      */
-    String storeFile(MultipartFile file, String subDirectory);
+    String storeFile(MultipartFile file, String subDirectory, String prefix);
 
     /**
      * Lấy dữ liệu file dưới dạng mảng byte

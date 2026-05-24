@@ -9,7 +9,8 @@ public interface CandidateService {
     CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse getProfileByUserId(Long userId);
-    CvDocumentResponse uploadCv(Long userId, FileData fileData);
+    // Thay đổi FileData thành MultipartFile
+    CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file);
     List<CvDocumentResponse> getCvsByUserId(Long userId);
     void deleteCv(Long userId, Long cvId);
     void addSkillToCandidate(Long userId, Long skillId);

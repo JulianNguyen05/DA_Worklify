@@ -36,6 +36,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final CandidateSkillRepository candidateSkillRepository;
     private final SkillRepository skillRepository;
     private final ObjectMapper objectMapper;
+    private final com.smartmatch.application.common.port.FileStoragePort fileStoragePort;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
@@ -137,19 +138,26 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
-    public CvDocumentResponse uploadCv(Long userId, FileData fileData) {
+    public CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file) {
+
         candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
 
-        // LƯU FILE THẬT: Gọi Port Storage để lưu file và lấy đường dẫn thật (cần truyền fileData qua MultipartFile ở Controller, hoặc xử lý luồng byte)
-        // Tạm thời mô phỏng tên file chuẩn nếu bạn đang giữ nguyên controller cũ
-        String originalName = fileData.fileName();
-        String uploadedFilePath = "cv/" + System.currentTimeMillis() + "_" + originalName;
+        // Truyền String.valueOf(userId) làm prefix (tiền tố) cho tên file
+        String prefixId = String.valueOf(userId);
 
-        // Ghi chú: Để hoàn thiện, bạn cần update LocalFileStorageService nhận FileData thay vì MultipartFile,
-        // hoặc truyền thẳng MultipartFile từ Controller xuống đây.
+        // Gọi hàm lưu file với 3 tham số
+        String savedRelativePath = fileStoragePort.storeFile(file, "cv", prefixId);
 
-        CvDocument cvDocument = CvDocument.upload(userId, uploadedFilePath, "Extracted text content");
+        String uploadedFilePath = "/uploads/" + savedRelativePath;
+        String extractedRawText = "Extracted text content from " + file.getOriginalFilename();
+
+        CvDocument cvDocument = CvDocument.upload(
+                userId,
+                uploadedFilePath,
+                extractedRawText
+        );
+
         CvDocument savedCv = cvDocumentRepository.save(cvDocument);
         return mapToCvResponse(savedCv);
     }
