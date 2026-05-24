@@ -37,7 +37,7 @@ public class AuthController {
     @PostMapping("/{userId}/mfa/enable")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Kích hoạt xác thực đa yếu tố (MFA)")
-    public ApiResponse<Void> enableMfa(@PathVariable Long userId) {
+    public ApiResponse<Void> enableMfa(@PathVariable("userId") Long userId) { // <--- THÊM "userId" VÀO ĐÂY
         authService.enableMfa(userId);
         return ApiResponse.success(null, "Kích hoạt MFA thành công");
     }
@@ -57,11 +57,13 @@ public class AuthController {
 
         return ApiResponse.success(null, "Yêu cầu khôi phục mật khẩu đã được xử lý");
     }
+
+    // ========== BỔ SUNG API ĐỔI MẬT KHẨU ==========
     @PutMapping("/{userId}/password")
-    @PreAuthorize("isAuthenticated()") // Yêu cầu phải có token JWT
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Đổi mật khẩu người dùng")
     public ApiResponse<Void> changePassword(
-            @PathVariable Long userId,
+            @PathVariable("userId") Long userId, // <--- THÊM "userId" VÀO ĐÂY
             @Valid @RequestBody ChangePasswordRequest request) {
 
         authService.changePassword(userId, request);

@@ -2,14 +2,6 @@ import axiosClient from '../../services/axiosClient';
 
 const employerService = {
   // --- Hồ sơ Doanh nghiệp ---
-  getCompanyProfile: async (userId) => {
-    const response = await axiosClient.get(`/api/v1/employers/${userId}/profile`);
-    return response.data;
-  },
-  createProfile: async (userId, profileData) => {
-    const response = await axiosClient.post(`/api/v1/employers/${userId}/profile`, profileData);
-    return response.data;
-  },
 
   // --- Tin tuyển dụng ---
   createJobPosting: async (companyId, jobData) => {
@@ -34,7 +26,53 @@ const employerService = {
   updateApplicationStatus: async (companyId, applicationId, status) => {
     const response = await axiosClient.patch(`/api/v1/applications/employers/${companyId}/${applicationId}/status?status=${status}`);
     return response.data;
-  }
+  },
+
+  getCompanyProfile: async (userId) => {
+    const response = await axiosClient.get(`/employers/${userId}/profile`);
+    return response.data;
+  },
+  createProfile: async (userId, profileData) => {
+    const response = await axiosClient.post(`/employers/${userId}/profile`, profileData);
+    return response.data;
+  },
+  updateProfile: async (userId, profileData) => {
+    const response = await axiosClient.put(`/employers/${userId}/profile`, profileData);
+    return response.data;
+  },
+  uploadLogo: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    // Lưu ý: Thêm header multipart/form-data để axios hiểu đây là file
+    const response = await axiosClient.post(`/employers/${userId}/logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // --- Thống kê Dashboard ---
+  getDashboardStats: async (companyId) => {
+    try {
+      // Khi Backend hoàn thiện, mở comment dòng dưới và xóa phần Mock Data
+      // const response = await axiosClient.get(`/api/v1/employers/${companyId}/dashboard`);
+      // return response.data;
+
+      // Mock Data tạm thời để render UI
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            data: {
+              activeJobs: 15,
+              pendingApplications: 52,
+              interviewed: 18
+            }
+          });
+        }, 500); // Giả lập độ trễ mạng 0.5s
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default employerService;

@@ -10,5 +10,5 @@ public interface EmployerService {
     CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
-    CompanyProfileResponse uploadLogo(Long userId, FileData logoData);
+    CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
 }

@@ -101,7 +101,7 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">Cài đặt tài khoản</h3>
-            <p className="text-sm text-gray-500 mt-2">Quản lý bảo mật MFA, đổi mật khẩu và thông báo.</p>
+            <p className="text-sm text-gray-500 mt-2">Đổi mật khẩu</p>
           </div>
           <Link to="/candidate/settings" className="mt-4 inline-block text-blue-600 hover:underline text-sm font-medium">
             Tùy chỉnh &rarr;

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // ==========================================
 // 1. IMPORT LAYOUTS
@@ -99,7 +99,8 @@ export const router = createBrowserRouter([
     path: '/employer',
     element: <EmployerLayout />,
     children: [
-      { index: true, element: <EmployerDashboard /> },
+      { index: true, element: <Navigate to="/employer/dashboard" replace /> },
+      { path: 'dashboard', element: <EmployerDashboard /> },
       { path: 'profile', element: <CompanyProfilePage /> },
       { path: 'jobs', element: <JobManagementPage /> },
       { path: 'jobs/create', element: <JobCreatePage /> },
