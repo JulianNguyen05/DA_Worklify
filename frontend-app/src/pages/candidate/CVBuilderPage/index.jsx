@@ -33,12 +33,13 @@ const SectionCard = ({ title, children }) => (
 
 const UploadTab = ({ userId }) => {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [customCvName, setCustomCvName] = useState(''); // State lưu tên CV nhập tay
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [status, setStatus] = useState({ type: null, message: '' });
   const [cvList, setCvList] = useState([]);
-  const [actionId, setActionId] = useState(null); // Dùng chung cho Xóa/Sửa
-  const [editingCv, setEditingCv] = useState(null); // Chứa thông tin CV đang sửa tên
+  const [actionId, setActionId] = useState(null); 
+  const [editingCv, setEditingCv] = useState(null); 
   const fileInputRef = useRef(null);
 
   const loadCvs = async () => {
@@ -63,6 +64,9 @@ const UploadTab = ({ userId }) => {
       return;
     }
     setSelectedFile(file);
+    // Gợi ý tên mặc định là tên file gốc (bỏ đuôi mở rộng)
+    const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+    setCustomCvName(fileNameWithoutExt);
     setStatus({ type: null, message: '' });
   };
 
@@ -70,12 +74,24 @@ const UploadTab = ({ userId }) => {
     if (!selectedFile) return;
     setIsLoading(true);
     try {
-      await candidateService.uploadCv(userId, selectedFile);
+      // 1. Gọi API upload file cứng
+      const res = await candidateService.uploadCv(userId, selectedFile);
+      
+      // Axios response có thể trả thẳng về data hoặc bọc trong thuộc tính data
+      const newCvId = res?.data?.id || res?.id;
+
+      // 2. Nếu người dùng có nhập tên Custom, lập tức gọi API Rename
+      if (newCvId && customCvName.trim() && customCvName.trim() !== selectedFile.name) {
+        await candidateService.renameCv(userId, newCvId, customCvName.trim());
+      }
+
       setStatus({ type: 'success', message: 'Tải CV lên thành công!' });
       setSelectedFile(null);
+      setCustomCvName('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       await loadCvs();
-    } catch {
+    } catch (error) {
+      console.error(error);
       setStatus({ type: 'error', message: 'Lỗi tải lên. Vui lòng thử lại.' });
     } finally {
       setIsLoading(false);
@@ -111,6 +127,18 @@ const UploadTab = ({ userId }) => {
     }
   };
 
+  // Hàm hỗ trợ mở file CV
+  const handleViewCv = (filePath) => {
+    if (!filePath) {
+      alert("Đường dẫn file không tồn tại.");
+      return;
+    }
+    // Gắn cứng domain API backend tạm thời. 
+    // Nếu bạn có dùng biến môi trường (vd: import.meta.env.VITE_API_URL) thì nên thay thế vào đây.
+    const fileUrl = filePath.startsWith('http') ? filePath : `http://localhost:8080${filePath}`;
+    window.open(fileUrl, '_blank');
+  };
+
   return (
     <div>
       <SectionCard title="📤 Tải CV lên hệ thống">
@@ -119,17 +147,36 @@ const UploadTab = ({ userId }) => {
             <Toast type={status.type} message={status.message} />
           </div>
         )}
+        
         <div
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !selectedFile && fileInputRef.current?.click()}
           style={{
             border: `2px dashed ${selectedFile ? '#2563eb' : '#d1d5db'}`, borderRadius: '10px',
-            padding: '28px', textAlign: 'center', cursor: 'pointer',
+            padding: '28px', textAlign: 'center', cursor: selectedFile ? 'default' : 'pointer',
             background: selectedFile ? '#eff6ff' : '#f9fafb', marginBottom: '14px',
           }}
         >
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>{selectedFile ? '📄' : '📁'}</div>
           {selectedFile ? (
-            <p style={{ fontWeight: 600, color: '#1d4ed8' }}>{selectedFile.name}</p>
+            <div>
+              <p style={{ fontWeight: 600, color: '#1d4ed8', marginBottom: '12px' }}>{selectedFile.name}</p>
+              {/* Vùng nhập Tên CV */}
+              <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+                  Tên hiển thị CV:
+                </label>
+                <input 
+                  type="text" 
+                  value={customCvName}
+                  onChange={(e) => setCustomCvName(e.target.value)}
+                  placeholder="Nhập tên cho CV của bạn..."
+                  style={{
+                    width: '100%', padding: '8px 12px', border: '1px solid #bfdbfe', 
+                    borderRadius: '6px', fontSize: '14px', outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
           ) : (
             <>
               <p style={{ fontWeight: 500, color: '#374151' }}>Kéo thả hoặc click để chọn file</p>
@@ -138,12 +185,13 @@ const UploadTab = ({ userId }) => {
           )}
         </div>
         <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
+        
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button onClick={handleUpload} isLoading={isLoading} disabled={!selectedFile || isLoading}>
             {isLoading ? 'Đang tải lên...' : 'Tải lên'}
           </Button>
           {selectedFile && (
-            <button onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+            <button onClick={() => { setSelectedFile(null); setCustomCvName(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
               style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer' }}>
               Hủy
             </button>
@@ -161,7 +209,7 @@ const UploadTab = ({ userId }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                   <span style={{ fontSize: '22px' }}>{cv.fileName?.toLowerCase().endsWith('.pdf') ? '🔴' : '📘'}</span>
                   
-                  {/* Edit Name UI */}
+                  {/* Giao diện Đổi Tên CV (khi bấm nút Sửa) */}
                   {editingCv?.id === cv.id ? (
                     <div style={{ display: 'flex', gap: '8px', flex: 1, marginRight: '20px' }}>
                       <input 
@@ -177,7 +225,6 @@ const UploadTab = ({ userId }) => {
                   ) : (
                     <div>
                       <p style={{ fontWeight: 500, fontSize: '14px', color: '#1f2937', margin: 0 }}>{cv.fileName || 'CV Không tên'}</p>
-                      {/* Đã sửa thành cv.createdAt để khớp BE */}
                       <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
                         {cv.createdAt ? new Date(cv.createdAt).toLocaleDateString('vi-VN') : ''}
                       </p>
@@ -185,8 +232,13 @@ const UploadTab = ({ userId }) => {
                   )}
                 </div>
 
+                {/* Các Nút Hành Động */}
                 {!editingCv && (
                   <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => handleViewCv(cv.filePath)} disabled={actionId === cv.id}
+                      style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', color: '#1d4ed8', padding: '5px 12px', fontSize: '13px', cursor: 'pointer' }}>
+                      👁️ Xem
+                    </button>
                     <button onClick={() => setEditingCv({ id: cv.id, newName: cv.fileName })} disabled={actionId === cv.id}
                       style={{ background: 'transparent', border: '1px solid #d1d5db', borderRadius: '6px', color: '#4b5563', padding: '5px 12px', fontSize: '13px', cursor: 'pointer' }}>
                       ✏️ Sửa tên
