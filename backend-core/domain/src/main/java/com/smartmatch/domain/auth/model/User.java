@@ -52,4 +52,6 @@ public class User {
     public boolean isValidEmail() {
         return this.email != null && this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
     }
+
+    public void updatePassword(String newPasswordHash) { this.passwordHash = newPasswordHash;}
 }

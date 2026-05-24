@@ -6,4 +6,5 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
     void enableMfa(Long userId);
     void forgotPassword(String email);
+    void changePassword(Long userId, ChangePasswordRequest request);
 }

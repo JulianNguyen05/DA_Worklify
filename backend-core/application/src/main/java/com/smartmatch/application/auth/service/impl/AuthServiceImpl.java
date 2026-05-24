@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.smartmatch.application.auth.dto.ChangePasswordRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -115,5 +116,27 @@ public class AuthServiceImpl implements AuthService {
         System.out.println("Email nhận: " + user.getEmail().value());
         System.out.println("Token khôi phục: " + resetToken);
         System.out.println("================================================");
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        // 1. Tìm người dùng
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
+
+        // 2. Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác.");
+        }
+
+        // 3. Mã hóa mật khẩu mới
+        String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
+
+        // 4. Cập nhật mật khẩu (Lưu ý: Đảm bảo class User ở tầng Domain có phương thức updatePassword)
+        user.updatePassword(newHashedPassword);
+
+        // 5. Lưu xuống DB
+        userRepository.save(user);
     }
 }

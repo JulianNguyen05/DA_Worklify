@@ -53,6 +53,12 @@ const authService = {
     return response.data;
   },
 
+  changePassword: async (userId, passwordData) => {
+    // Gọi API: PUT http://localhost:8080/api/v1/auth/{userId}/password
+    const response = await axiosClient.put(`/auth/${userId}/password`, passwordData);
+    return response.data;
+  },
+
   enableMfa: async (userId) => {
     // Gọi API: http://localhost:8080/api/v1/auth/{userId}/mfa/enable
     const response = await axiosClient.post(`/auth/${userId}/mfa/enable`);

@@ -1,10 +1,7 @@
 package com.smartmatch.api.controller.auth;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.auth.dto.AuthResponse;
-import com.smartmatch.application.auth.dto.LoginRequest;
-import com.smartmatch.application.auth.dto.RegisterRequest;
-import com.smartmatch.application.auth.dto.UserResponse;
+import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,5 +56,15 @@ public class AuthController {
         authService.forgotPassword(email);
 
         return ApiResponse.success(null, "Yêu cầu khôi phục mật khẩu đã được xử lý");
+    }
+    @PutMapping("/{userId}/password")
+    @PreAuthorize("isAuthenticated()") // Yêu cầu phải có token JWT
+    @Operation(summary = "Đổi mật khẩu người dùng")
+    public ApiResponse<Void> changePassword(
+            @PathVariable Long userId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        authService.changePassword(userId, request);
+        return ApiResponse.success(null, "Đổi mật khẩu thành công");
     }
 }
