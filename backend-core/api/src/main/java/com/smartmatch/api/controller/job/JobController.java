@@ -25,7 +25,7 @@ public class JobController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Nhà tuyển dụng đăng tin tuyển dụng mới")
     public ApiResponse<JobPostingResponse> createJob(
-            @PathVariable Long companyId,
+            @PathVariable("companyId") Long companyId, // <-- Đã sửa lỗi tại đây
             @Valid @RequestBody JobPostingRequest request) {
         return ApiResponse.success(jobService.createJobPosting(companyId, request), "Đăng tin chờ duyệt thành công");
     }
@@ -44,11 +44,10 @@ public class JobController {
 
     @GetMapping("/{jobId}")
     @Operation(summary = "Xem chi tiết tin tuyển dụng")
-    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable Long jobId) {
+    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable("jobId") Long jobId) { // <-- Đã sửa lỗi tại đây
         return ApiResponse.success(jobService.getJobById(jobId));
     }
 
-    // Tiện ích tạo Pageable inline
     private DomainPageable createPageable(int page, int size) {
         return new DomainPageable() {
             @Override public int getPageNumber() { return page; }

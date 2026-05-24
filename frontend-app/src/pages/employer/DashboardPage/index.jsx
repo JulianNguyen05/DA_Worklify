@@ -6,6 +6,11 @@ export default function DashboardPage() {
   const dummyJobId = 123;
   const dummyApplicationId = 456;
 
+  const handleBetaClick = (e) => {
+    e.preventDefault(); // Chặn hành vi chuyển trang
+    alert('Tính năng "Cài đặt bảo mật" hiện đang được phát triển. Vui lòng thử lại sau!');
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* 1. Header & Call to Action */}
@@ -109,7 +114,14 @@ export default function DashboardPage() {
                 <Link to="/employer/profile" className="text-sm text-blue-600 hover:underline">1. Hồ sơ Công ty (CompanyProfile)</Link>
               </li>
               <li>
-                <Link to="/employer/settings" className="text-sm text-blue-600 hover:underline">2. Cài đặt bảo mật (Settings)</Link>
+                <Link 
+                  to="#" 
+                  onClick={handleBetaClick}
+                  className="text-sm text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <span>2. Cài đặt bảo mật (Settings)</span>
+                  <span className="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200">BETA</span>
+                </Link>
               </li>
             </ul>
           </div>

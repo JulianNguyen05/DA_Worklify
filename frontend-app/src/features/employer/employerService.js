@@ -2,32 +2,7 @@ import axiosClient from '../../services/axiosClient';
 
 const employerService = {
   // --- Hồ sơ Doanh nghiệp ---
-
-  // --- Tin tuyển dụng ---
-  createJobPosting: async (companyId, jobData) => {
-    const response = await axiosClient.post(`/api/v1/jobs/employers/${companyId}`, jobData);
-    return response.data;
-  },
-  // Giả định API lấy danh sách tin của công ty
-  getMyJobs: async (companyId, page = 0, size = 10) => {
-    const response = await axiosClient.get(`/api/v1/jobs/employers/${companyId}/list?page=${page}&size=${size}`);
-    return response.data;
-  },
-
-  // --- Quản lý Ứng viên & AI ---
-  getApplicationsForJob: async (jobId, page = 0, size = 10) => {
-    const response = await axiosClient.get(`/api/v1/applications/jobs/${jobId}/review-board?page=${page}&size=${size}`);
-    return response.data;
-  },
-  getAiScore: async (applicationId) => {
-    const response = await axiosClient.get(`/api/v1/applications/${applicationId}/ai-score`);
-    return response.data;
-  },
-  updateApplicationStatus: async (companyId, applicationId, status) => {
-    const response = await axiosClient.patch(`/api/v1/applications/employers/${companyId}/${applicationId}/status?status=${status}`);
-    return response.data;
-  },
-
+  // Sử dụng đường dẫn tương đối so với baseURL (/api/v1)
   getCompanyProfile: async (userId) => {
     const response = await axiosClient.get(`/employers/${userId}/profile`);
     return response.data;
@@ -43,21 +18,48 @@ const employerService = {
   uploadLogo: async (userId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    // Lưu ý: Thêm header multipart/form-data để axios hiểu đây là file
     const response = await axiosClient.post(`/employers/${userId}/logo`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
+  // --- Tin tuyển dụng ---
+  createJobPosting: async (companyId, jobData) => {
+    // Sửa: loại bỏ /api/v1/ dư thừa
+    const response = await axiosClient.post(`/jobs/employers/${companyId}`, jobData);
+    return response.data;
+  },
+  getMyJobs: async (companyId, page = 0, size = 10) => {
+    // Sửa: loại bỏ /api/v1/ dư thừa
+    const response = await axiosClient.get(`/jobs/employers/${companyId}/list?page=${page}&size=${size}`);
+    return response.data;
+  },
+
+  // --- Quản lý Ứng viên & AI ---
+  getApplicationsForJob: async (jobId, page = 0, size = 10) => {
+    // Sửa: loại bỏ /api/v1/ dư thừa
+    const response = await axiosClient.get(`/applications/jobs/${jobId}/review-board?page=${page}&size=${size}`);
+    return response.data;
+  },
+  getAiScore: async (applicationId) => {
+    // Sửa: loại bỏ /api/v1/ dư thừa
+    const response = await axiosClient.get(`/applications/${applicationId}/ai-score`);
+    return response.data;
+  },
+  updateApplicationStatus: async (companyId, applicationId, status) => {
+    // Sửa: loại bỏ /api/v1/ dư thừa
+    const response = await axiosClient.patch(`/applications/employers/${companyId}/${applicationId}/status?status=${status}`);
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {
-      // Khi Backend hoàn thiện, mở comment dòng dưới và xóa phần Mock Data
-      // const response = await axiosClient.get(`/api/v1/employers/${companyId}/dashboard`);
+      // Backend hoàn thiện xong, bạn chỉ cần bỏ comment dòng dưới:
+      // const response = await axiosClient.get(`/employers/${companyId}/dashboard`);
       // return response.data;
 
-      // Mock Data tạm thời để render UI
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve({
@@ -67,7 +69,7 @@ const employerService = {
               interviewed: 18
             }
           });
-        }, 500); // Giả lập độ trễ mạng 0.5s
+        }, 500);
       });
     } catch (error) {
       throw error;

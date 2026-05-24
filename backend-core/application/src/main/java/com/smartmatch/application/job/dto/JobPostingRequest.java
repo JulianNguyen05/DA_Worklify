@@ -1,7 +1,9 @@
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
 package com.smartmatch.application.job.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -23,5 +25,7 @@ public class JobPostingRequest {
 
     private String workType;
 
+    @NotNull(message = "Hạn nộp hồ sơ không được để trống")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime expiresAt;
 }

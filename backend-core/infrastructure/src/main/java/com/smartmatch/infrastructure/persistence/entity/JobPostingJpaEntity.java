@@ -44,6 +44,7 @@ public class JobPostingJpaEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "expired_at", nullable = false)
-    private LocalDateTime expiredAt;
+    // Sửa @Column name và tên biến
+    @Column(name = "expired_at", nullable = false) // Tên cột DB vẫn giữ nguyên để không phải sửa lại bảng
+    private LocalDateTime expiresAt; // Đổi từ expiredAt -> expiresAt
 }
