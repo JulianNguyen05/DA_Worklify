@@ -53,13 +53,13 @@ const candidateService = {
     return response.data;
   },
 
-  // (ĐÃ ĐIỀU CHỈNH) Tách riêng hàm Tạo CV mới để truyền payload
+  // Tạo CV Sandbox mới (payload chứa { title, rawText })
   createCv: async (userId, payload) => {
     const response = await axiosClient.post(`/candidates/${userId}/cvs/generated`, payload);
     return response.data;
   },
 
-  // (ĐÃ ĐIỀU CHỈNH) Tách riêng hàm Cập nhật CV đã có
+  // Cập nhật CV Sandbox đã có (payload chứa { title, rawText })
   updateCv: async (userId, cvId, payload) => {
     const response = await axiosClient.put(`/candidates/${userId}/cvs/generated/${cvId}`, payload);
     return response.data;
