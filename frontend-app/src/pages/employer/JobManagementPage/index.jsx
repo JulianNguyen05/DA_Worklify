@@ -1,47 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import employerService from '../../../features/employer/employerService';
+import authService from '../../../features/auth/authService'; // Đảm bảo đã import authService
 import Button from '../../../components/common/Button';
-import Badge from '../../../components/common/Badge'; // Đảm bảo đường dẫn import đúng
+import Badge from '../../../components/common/Badge';
 
 export default function JobManagementPage() {
-  const companyId = 10; // TODO: Lấy từ Context/Redux sau khi có Auth thực tế
   const navigate = useNavigate();
   
+  // 1. Lấy userId từ tài khoản đang đăng nhập (ví dụ lúc này là số 4)
+  const currentUser = authService.getCurrentUser();
+  const userId = currentUser?.userId || currentUser?.id; 
+  
+  // Tạo thêm một State để lưu Company ID thực tế (ví dụ lúc này là số 1)
+  const [companyId, setCompanyId] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState('');
 
+  // LUỒNG 1: Sử dụng userId (4) để đi tìm companyId (1) từ Backend
   useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      navigate('/auth/login');
+      return;
+    }
+    
+    const fetchCompanyId = async () => {
+      try {
+        setLoading(true);
+        // Gọi API công khai: GET /api/v1/employers/4/profile
+        const profileResult = await employerService.getCompanyProfile(userId);
+        
+        // Bóc tách lấy ID thật của doanh nghiệp (sẽ lấy ra số 1)
+        const realCompanyId = profileResult.data?.id; 
+
+        if (realCompanyId) {
+          setCompanyId(realCompanyId); // Cập nhật vào state
+        } else {
+          console.warn("Tài khoản này chưa được khởi tạo hồ sơ doanh nghiệp!");
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy thông tin doanh nghiệp:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchCompanyId();
+  }, [userId, navigate]);
+
+  // LUỒNG 2: Khi đã có companyId thật (số 1), tiến hành load danh sách Tin tuyển dụng
+  useEffect(() => {
+    if (!companyId) return;
     loadJobs();
   }, [companyId]);
 
   const loadJobs = async () => {
     try {
       setLoading(true);
+      // Gọi API: GET /api/v1/jobs/employers/1?page=0&size=10
       const result = await employerService.getMyJobs(companyId, 0, 10);
-      // Giả định backend trả về format: { code: 200, data: { content: [...] } }
       setJobs(result.data?.content || []);
     } catch (error) {
-console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.message);
+      console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.message);
+      setToastMessage('Không thể tải danh sách tin tuyển dụng từ hệ thống.');
+      setTimeout(() => setToastMessage(''), 3000);
     } finally {
       setLoading(false);
     }
   };
 
-  // Tính năng Ẩn danh (Blind Testing)
+  // Tính năng Sao chép Link Ứng tuyển Ẩn danh
   const handleCopyBlindTestLink = (jobId) => {
-    // Tạo URL qua sub-domain trung lập để loại bỏ thiên kiến thương hiệu
     const blindUrl = `https://appa.ungdungnghiencuu.com/apply/blind-test/${jobId}`;
     navigator.clipboard.writeText(blindUrl);
-    
     setToastMessage('Đã sao chép Link Ứng tuyển Ẩn danh!');
     setTimeout(() => setToastMessage(''), 3000);
   };
 
+  // Tính năng Cập nhật trạng thái tin tuyển dụng
   const handleStatusChange = async (jobId, newStatus) => {
-    // TODO: Tích hợp API chuyển trạng thái (Close/Renew)
-    setToastMessage(`Đã chuyển trạng thái tin #${jobId} sang ${newStatus}`);
+    if (!companyId) return;
+    try {
+      await employerService.updateApplicationStatus(companyId, jobId, newStatus);
+      setToastMessage(`Đã chuyển trạng thái tin #${jobId} sang ${newStatus}`);
+      loadJobs(); // Tải lại danh sách sau khi cập nhật thành công
+    } catch (error) {
+      console.error('Lỗi khi đổi trạng thái:', error);
+      setToastMessage('Có lỗi xảy ra khi cập nhật trạng thái.');
+    }
     setTimeout(() => setToastMessage(''), 3000);
   };
 
@@ -56,9 +104,8 @@ console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.m
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-screen relative">
-      {/* Thông báo Toast Mini */}
       {toastMessage && (
-        <div className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity animate-fade-in-down z-50">
+        <div className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity z-50">
           {toastMessage}
         </div>
       )}
@@ -109,16 +156,14 @@ console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.m
                     {renderStatusBadge(job.status)}
                   </td>
                   <td className="p-4 text-gray-600">
-                    {new Date(job.expiresAt).toLocaleDateString('vi-VN')}
+                    {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                   </td>
                   <td className="p-4 text-center">
-                    {/* Mock số lượng ứng viên chờ duyệt - Cần backend bổ sung field này vào DTO sau */}
                     <Link 
                       to={`/employer/applications?jobId=${job.id}`} 
                       className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold hover:bg-blue-200 transition-colors"
-                      title="Xem danh sách ứng viên"
                     >
-                      {Math.floor(Math.random() * 10) + 1}
+                      {job.applicationCount || 0} 
                     </Link>
                   </td>
                   <td className="p-4 text-right">
@@ -126,7 +171,6 @@ console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.m
                       <button 
                         onClick={() => handleCopyBlindTestLink(job.id)}
                         className="text-gray-500 hover:text-indigo-600 text-xs font-medium bg-gray-100 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
-                        title="Copy Link Blind Test (Ẩn danh thương hiệu)"
                       >
                         🔗 Blind Link
                       </button>

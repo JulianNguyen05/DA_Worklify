@@ -104,7 +104,7 @@ export const router = createBrowserRouter([
       { path: 'profile', element: <CompanyProfilePage /> },
       { path: 'jobs', element: <JobManagementPage /> },
       { path: 'jobs/create', element: <JobCreatePage /> },
-      { path: 'jobs/:id/edit', element: <JobEditPage /> },
+      { path: 'jobs/edit/:id', element: <JobEditPage /> },
       { path: 'applications', element: <ApplicationListPage /> },
       { path: 'applications/:id', element: <ApplicationDetailPage /> },
       { path: 'candidates/search', element: <CandidateSearchPage /> },

@@ -54,6 +54,18 @@ const employerService = {
     return response.data;
   },
 
+  // 1. Lấy chi tiết tin tuyển dụng đổ lên form sửa (Khớp với GET /api/v1/jobs/{jobId})
+  getJobDetail: async (jobId) => {
+    const response = await axiosClient.get(`/jobs/${jobId}`);
+    return response.data;
+  },
+
+  // 2. Gửi dữ liệu cập nhật lên Backend (Khớp với PUT /api/v1/jobs/{jobId})
+  updateJobPosting: async (companyId, jobId, jobData) => {
+    const response = await axiosClient.put(`/jobs/employers/${companyId}/${jobId}`, jobData);
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {

@@ -1,25 +1,15 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom'; // 1. Import thêm Link
+import { Outlet } from 'react-router-dom';
+import Navbar from '../Navbar'; // 1. Import component Navbar
 
 export default function EmployerLayout() {
   return (
     <div className="flex flex-col min-h-screen">
       
-      {/* 2. Căn chỉnh header */}
-      <header className="bg-blue-900 text-white p-4 shadow-md">
-        <div className="max-w-7xl mx-auto flex items-center">
-          
-          {/* 3. Bọc text (hoặc thẻ <img> logo) bằng Link để chuyển hướng */}
-          <Link 
-            to="/employer/dashboard" 
-            className="text-2xl font-bold tracking-wide hover:text-blue-200 transition-colors cursor-pointer"
-          >
-            SmartMatch
-          </Link>
-          
-        </div>
-      </header>
+      {/* 2. Sử dụng Navbar chung thay cho phần header tự code tay */}
+      <Navbar />
       
+      {/* Phần nội dung chính (Dashboard, Quản lý tin,...) sẽ hiển thị ở đây */}
       <main className="flex-grow p-6 bg-gray-50">
         <Outlet />
       </main>

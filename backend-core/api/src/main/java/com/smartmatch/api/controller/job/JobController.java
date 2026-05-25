@@ -66,4 +66,15 @@ public class JobController {
         DomainPageable pageable = createPageable(page, size);
         return ApiResponse.success(jobService.getJobsByCompany(companyId, pageable));
     }
+
+    @PutMapping("/employers/{companyId}/{jobId}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Nhà tuyển dụng chỉnh sửa tin tuyển dụng")
+    public ApiResponse<JobPostingResponse> updateJob(
+            @PathVariable("companyId") Long companyId,
+            @PathVariable("jobId") Long jobId,
+            @Valid @RequestBody JobPostingRequest request) {
+        // Truyền đủ 3 tham số theo đúng thiết kế của JobService nhà bạn
+        return ApiResponse.success(jobService.updateJobPosting(companyId, jobId, request), "Cập nhật tin thành công");
+    }
 }
