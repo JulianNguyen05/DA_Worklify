@@ -3,8 +3,11 @@ package com.smartmatch.infrastructure.persistence.mapper;
 import com.smartmatch.domain.candidate.model.*;
 import com.smartmatch.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Component
 public interface CandidateEntityMapper {
 
     CandidateProfileJpaEntity toEntity(CandidateProfile profile);

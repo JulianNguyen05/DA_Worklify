@@ -30,11 +30,6 @@ const employerService = {
     const response = await axiosClient.post(`/jobs/employers/${companyId}`, jobData);
     return response.data;
   },
-  getMyJobs: async (companyId, page = 0, size = 10) => {
-    // Sửa: loại bỏ /api/v1/ dư thừa
-    const response = await axiosClient.get(`/jobs/employers/${companyId}/list?page=${page}&size=${size}`);
-    return response.data;
-  },
 
   // --- Quản lý Ứng viên & AI ---
   getApplicationsForJob: async (jobId, page = 0, size = 10) => {
@@ -50,6 +45,12 @@ const employerService = {
   updateApplicationStatus: async (companyId, applicationId, status) => {
     // Sửa: loại bỏ /api/v1/ dư thừa
     const response = await axiosClient.patch(`/applications/employers/${companyId}/${applicationId}/status?status=${status}`);
+    return response.data;
+  },
+
+  getMyJobs: async (companyId, page = 0, size = 10) => {
+    // URL đã được đồng bộ với JobController
+    const response = await axiosClient.get(`/jobs/employers/${companyId}?page=${page}&size=${size}`);
     return response.data;
   },
 

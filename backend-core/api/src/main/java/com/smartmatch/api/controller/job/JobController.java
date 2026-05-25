@@ -33,10 +33,10 @@ public class JobController {
     @GetMapping("/search")
     @Operation(summary = "Khách/Ứng viên tìm kiếm việc làm")
     public ApiResponse<PageResponse<JobPostingResponse>> searchJobs(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String location,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "location", required = false) String location,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
 
         DomainPageable pageable = createPageable(page, size);
         return ApiResponse.success(jobService.searchJobs(keyword, location, pageable));
@@ -53,5 +53,17 @@ public class JobController {
             @Override public int getPageNumber() { return page; }
             @Override public int getPageSize() { return size; }
         };
+    }
+
+    @GetMapping("/employers/{companyId}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Lấy danh sách tin tuyển dụng của doanh nghiệp")
+    public ApiResponse<PageResponse<JobPostingResponse>> getMyJobs(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+
+        DomainPageable pageable = createPageable(page, size);
+        return ApiResponse.success(jobService.getJobsByCompany(companyId, pageable));
     }
 }
