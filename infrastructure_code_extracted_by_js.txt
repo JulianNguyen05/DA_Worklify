@@ -299,6 +299,7 @@ public class SecurityConfig {
                         // Cho phép các đường dẫn auth đi qua để không bị chặn nhầm
                         .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -334,7 +335,11 @@ package com.smartmatch.infrastructure.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -350,6 +355,16 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("Authorization", "Content-Type", "X-Requested-With", "Accept")
                 .allowCredentials(true) // Cho phép gửi cookie/token
                 .maxAge(3600); // Cache cấu hình CORS trong 1 giờ
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Ánh xạ mọi request bắt đầu bằng /uploads/** vào thư mục vật lý ./uploads ngoài đời thực
+        Path uploadDir = Paths.get("./uploads");
+        String uploadPath = uploadDir.toFile().getAbsolutePath();
+
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + uploadPath + "/");
     }
 }
 
@@ -1163,31 +1178,45 @@ public class CandidateProfileJpaEntity {
 
 
 // ======================================================================
+// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillId.java
+// ======================================================================
+
+package com.smartmatch.infrastructure.persistence.entity;
+import java.io.Serializable;
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CandidateSkillId implements Serializable {
+    private Long candidateId;
+    private Long skillId;
+}
+
+// ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillJpaEntity.java
 // ======================================================================
 
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "candidate_skills",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"candidate_id", "skill_id"}))
+@Table(name = "candidate_skills")
+@IdClass(CandidateSkillId.class) // Sử dụng khóa chính kép
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CandidateSkillJpaEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
+    @Id
     @Column(name = "candidate_id", nullable = false)
     private Long candidateId;
 
+    @Id
     @Column(name = "skill_id", nullable = false)
     private Long skillId;
 
@@ -1338,8 +1367,9 @@ public class JobPostingJpaEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "expired_at", nullable = false)
-    private LocalDateTime expiredAt;
+    // Sửa @Column name và tên biến
+    @Column(name = "expired_at", nullable = false) // Tên cột DB vẫn giữ nguyên để không phải sửa lại bảng
+    private LocalDateTime expiresAt; // Đổi từ expiredAt -> expiresAt
 }
 
 
@@ -1505,14 +1535,17 @@ public class UserJpaEntity {
 
 package com.smartmatch.infrastructure.persistence.mapper;
 
-
 import com.smartmatch.domain.application.model.AiMatchScore;
 import com.smartmatch.domain.application.model.Application;
 import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
 import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
+// Ép Spring nhận diện Bean và bỏ qua các warning mapping thiếu trường
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Component
 public interface ApplicationEntityMapper {
 
     ApplicationJpaEntity toEntity(Application application);
@@ -1522,23 +1555,15 @@ public interface ApplicationEntityMapper {
     AiMatchScore toDomain(AiMatchScoreJpaEntity entity);
 }
 
-
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CandidateEntityMapper.java
 // ======================================================================
 
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.model.CandidateSkill;
-import com.smartmatch.domain.candidate.model.CvDocument;
-import com.smartmatch.domain.candidate.model.Skill;
-import com.smartmatch.infrastructure.persistence.entity.CandidateProfileJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.CvDocumentJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.SkillJpaEntity;
+import com.smartmatch.domain.candidate.model.*;
+import com.smartmatch.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CandidateEntityMapper {
@@ -1552,11 +1577,10 @@ public interface CandidateEntityMapper {
     SkillJpaEntity toEntity(Skill skill);
     Skill toDomain(SkillJpaEntity entity);
 
-    @Mapping(target = "id", ignore = true)
+    // XÓA DÒNG @Mapping(target = "id", ignore = true) vì Entity không còn 'id'
     CandidateSkillJpaEntity toEntity(CandidateSkill candidateSkill);
     CandidateSkill toDomain(CandidateSkillJpaEntity entity);
 }
-
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CompanyProfileEntityMapper.java
@@ -1588,17 +1612,17 @@ import com.smartmatch.domain.job.model.SavedJob;
 import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
 import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface JobPostingEntityMapper {
-
+    // MapStruct sẽ tự hiểu khi tên trường và kiểu dữ liệu khớp nhau
     JobPostingJpaEntity toEntity(JobPosting jobPosting);
     JobPosting toDomain(JobPostingJpaEntity entity);
 
     SavedJobJpaEntity toEntity(SavedJob savedJob);
     SavedJob toDomain(SavedJobJpaEntity entity);
 }
-
 
 // ======================================================================
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SavedJobEntityMapper.java
@@ -1741,25 +1765,23 @@ public interface CandidateProfileJpaRepository extends JpaRepository<CandidatePr
 package com.smartmatch.infrastructure.persistence.repository;
 
 import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
+import com.smartmatch.infrastructure.persistence.entity.CandidateSkillId; // Import class IdClass
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional; // Bổ sung import này
+import java.util.Optional;
 
 @Repository
-public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, Long> {
+// SỬA: Thay Long bằng CandidateSkillId
+public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkillJpaEntity, CandidateSkillId> {
 
-    // Tìm danh sách kỹ năng theo ứng viên
     List<CandidateSkillJpaEntity> findByCandidateId(Long candidateId);
 
-    // Tìm chính xác 1 bản ghi kỹ năng của ứng viên (để phục vụ chức năng Update)
     Optional<CandidateSkillJpaEntity> findByCandidateIdAndSkillId(Long candidateId, Long skillId);
 
-    // Xóa cụ thể 1 kỹ năng của ứng viên
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
 
-    // Xóa toàn bộ kỹ năng của ứng viên (dùng khi lưu CV Sandbox)
     void deleteByCandidateId(Long candidateId);
 }
 
@@ -2166,7 +2188,7 @@ public class LocalFileStorageService implements FileStoragePort {
     }
 
     @Override
-    public String storeFile(MultipartFile file, String subDirectory) {
+    public String storeFile(MultipartFile file, String subDirectory, String prefix) {
         // 1. Kiểm tra file hợp lệ
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Không thể lưu file rỗng.");
@@ -2178,23 +2200,24 @@ public class LocalFileStorageService implements FileStoragePort {
             throw new IllegalArgumentException("Tên file chứa ký tự đường dẫn không hợp lệ: " + originalFilename);
         }
 
-        // 3. Tạo tên file duy nhất (UUID) để tránh trùng lặp
-        String fileExtension = getFileExtension(originalFilename);
-        String uniqueFileName = UUID.randomUUID().toString() + (fileExtension.isEmpty() ? "" : "." + fileExtension);
+        // 3. ĐỔI TÊN FILE: [prefix]_[tên_gốc]
+        // Loại bỏ khoảng trắng trong tên file gốc để URL web không bị lỗi
+        String safeOriginalName = originalFilename.replaceAll("\\s+", "_");
+        String finalFileName = prefix + "_" + safeOriginalName;
 
         try {
             // 4. Xác định thư mục đích và tạo nếu chưa tồn tại
             Path targetLocation = this.rootLocation.resolve(subDirectory);
             Files.createDirectories(targetLocation);
 
-            // 5. Lưu file vào ổ cứng
-            Path targetFile = targetLocation.resolve(uniqueFileName);
+            // 5. Lưu file vào ổ cứng (Nếu file trùng tên sẽ ghi đè bản cũ)
+            Path targetFile = targetLocation.resolve(finalFileName);
             Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
 
             log.info("Lưu file thành công: {}", targetFile);
 
-            // 6. Trả về đường dẫn tương đối (vd: cv/1234-5678.pdf) để lưu vào Database
-            return subDirectory + "/" + uniqueFileName;
+            // 6. Trả về đường dẫn tương đối (vd: cv/5_CV_Dev.pdf) để lưu vào Database
+            return subDirectory + "/" + finalFileName;
 
         } catch (IOException ex) {
             throw new RuntimeException("Không thể lưu trữ file " + originalFilename + ". Lỗi: " + ex.getMessage(), ex);
