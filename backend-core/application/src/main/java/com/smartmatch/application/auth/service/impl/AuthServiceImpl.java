@@ -4,15 +4,23 @@ import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
 import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.model.UserStatus; // [ĐÃ THÊM] Import UserStatus
+import com.smartmatch.domain.auth.model.UserStatus;
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.valueobject.EmailAddress;
 import com.smartmatch.application.common.port.TokenProviderPort;
+
+// [ĐÃ THÊM] Import các Repository và Model của Candidate và Employer
+import com.smartmatch.domain.candidate.model.CandidateProfile;
+import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
+import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.smartmatch.application.auth.dto.ChangePasswordRequest;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +29,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProviderPort tokenProviderPort;
+
+    // [ĐÃ THÊM] Inject Repository để truy xuất thông tin Tên
+    private final CandidateProfileRepository candidateProfileRepository;
+    private final CompanyProfileRepository companyProfileRepository;
 
     @Override
     @Transactional
@@ -39,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(emailAddress)
                 .passwordHash(hashedPassword)
                 .role(request.getRole())
-                .status(UserStatus.ACTIVE) // [ĐÃ THÊM] Gán trạng thái để không bị lỗi null status
+                .status(UserStatus.ACTIVE)
                 .isMfaEnabled(false)
                 .build();
 
@@ -77,12 +89,32 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
         }
 
+        // [ĐÃ THÊM] LOGIC TRÍCH XUẤT TÊN HIỂN THỊ DỰA TRÊN ROLE
+        String displayName = user.getEmail().value().split("@")[0]; // Mặc định nếu không tìm thấy profile
+
+        if (user.getRole() == Role.CANDIDATE) {
+            Optional<CandidateProfile> candidateOpt = candidateProfileRepository.findByUserId(user.getId());
+            if (candidateOpt.isPresent() && candidateOpt.get().getFullName() != null) {
+                displayName = candidateOpt.get().getFullName();
+            }
+        } else if (user.getRole() == Role.EMPLOYER) {
+            Optional<CompanyProfile> companyOpt = companyProfileRepository.findByUserId(user.getId());
+            if (companyOpt.isPresent() && companyOpt.get().getCompanyName() != null) {
+                displayName = companyOpt.get().getCompanyName();
+            }
+        } else if (user.getRole() == Role.ADMIN) {
+            displayName = "Ban Quản Trị";
+        }
+
         String token = tokenProviderPort.generateToken(user.getEmail().value(), user.getRole().name(), user.getId());
 
+        // [ĐÃ CẬP NHẬT] Thêm thuộc tính email và fullName vào Builder
         return AuthResponse.builder()
                 .accessToken(token)
                 .userId(user.getId())
                 .role(user.getRole())
+                .email(user.getEmail().value()) // Gửi email về FE
+                .fullName(displayName)          // Gửi tên hiển thị về FE
                 .expiresIn(3600L)
                 .build();
     }
@@ -102,16 +134,11 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(String email) {
         EmailAddress emailAddress = new EmailAddress(email);
 
-        // 1. Kiểm tra xem user có tồn tại không
         User user = userRepository.findByEmail(emailAddress.value())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
 
-        // 2. TẠO LOGIC GỬI EMAIL (Mô phỏng)
-        // Trong thực tế, bạn sẽ cần tạo một PasswordResetToken, lưu vào DB và dùng JavaMailSender để gửi link/OTP.
-        // Ở bước này, chúng ta mô phỏng việc sinh mã token tạm thời.
         String resetToken = java.util.UUID.randomUUID().toString();
 
-        // In ra console để debug (Thay thế bằng code gửi Email thật sau này)
         System.out.println("========== YÊU CẦU KHÔI PHỤC MẬT KHẨU ==========");
         System.out.println("Email nhận: " + user.getEmail().value());
         System.out.println("Token khôi phục: " + resetToken);
@@ -121,22 +148,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
-        // 1. Tìm người dùng
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
 
-        // 2. Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác.");
         }
 
-        // 3. Mã hóa mật khẩu mới
         String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
-
-        // 4. Cập nhật mật khẩu (Lưu ý: Đảm bảo class User ở tầng Domain có phương thức updatePassword)
         user.updatePassword(newHashedPassword);
 
-        // 5. Lưu xuống DB
         userRepository.save(user);
     }
 }

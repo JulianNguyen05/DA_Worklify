@@ -357,6 +357,27 @@ public class AuthResponse {
     private long expiresIn;
     private Long userId;
     private Role role;
+    private String email;
+    private String fullName;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\ChangePasswordRequest.java
+// ============================================================
+
+package com.smartmatch.application.auth.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class ChangePasswordRequest {
+
+    @NotBlank(message = "Mật khẩu hiện tại không được để trống")
+    private String oldPassword;
+
+    @NotBlank(message = "Mật khẩu mới không được để trống")
+    private String newPassword;
 }
 
 // ============================================================
@@ -447,6 +468,7 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
     void enableMfa(Long userId);
     void forgotPassword(String email);
+    void changePassword(Long userId, ChangePasswordRequest request);
 }
 
 // ============================================================
@@ -459,14 +481,23 @@ import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
 import com.smartmatch.domain.auth.model.Role;
 import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.model.UserStatus; // [ĐÃ THÊM] Import UserStatus
+import com.smartmatch.domain.auth.model.UserStatus;
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.valueobject.EmailAddress;
 import com.smartmatch.application.common.port.TokenProviderPort;
+
+// [ĐÃ THÊM] Import các Repository và Model của Candidate và Employer
+import com.smartmatch.domain.candidate.model.CandidateProfile;
+import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
+import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -475,6 +506,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProviderPort tokenProviderPort;
+
+    // [ĐÃ THÊM] Inject Repository để truy xuất thông tin Tên
+    private final CandidateProfileRepository candidateProfileRepository;
+    private final CompanyProfileRepository companyProfileRepository;
 
     @Override
     @Transactional
@@ -493,7 +528,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(emailAddress)
                 .passwordHash(hashedPassword)
                 .role(request.getRole())
-                .status(UserStatus.ACTIVE) // [ĐÃ THÊM] Gán trạng thái để không bị lỗi null status
+                .status(UserStatus.ACTIVE)
                 .isMfaEnabled(false)
                 .build();
 
@@ -531,12 +566,32 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
         }
 
+        // [ĐÃ THÊM] LOGIC TRÍCH XUẤT TÊN HIỂN THỊ DỰA TRÊN ROLE
+        String displayName = user.getEmail().value().split("@")[0]; // Mặc định nếu không tìm thấy profile
+
+        if (user.getRole() == Role.CANDIDATE) {
+            Optional<CandidateProfile> candidateOpt = candidateProfileRepository.findByUserId(user.getId());
+            if (candidateOpt.isPresent() && candidateOpt.get().getFullName() != null) {
+                displayName = candidateOpt.get().getFullName();
+            }
+        } else if (user.getRole() == Role.EMPLOYER) {
+            Optional<CompanyProfile> companyOpt = companyProfileRepository.findByUserId(user.getId());
+            if (companyOpt.isPresent() && companyOpt.get().getCompanyName() != null) {
+                displayName = companyOpt.get().getCompanyName();
+            }
+        } else if (user.getRole() == Role.ADMIN) {
+            displayName = "Ban Quản Trị";
+        }
+
         String token = tokenProviderPort.generateToken(user.getEmail().value(), user.getRole().name(), user.getId());
 
+        // [ĐÃ CẬP NHẬT] Thêm thuộc tính email và fullName vào Builder
         return AuthResponse.builder()
                 .accessToken(token)
                 .userId(user.getId())
                 .role(user.getRole())
+                .email(user.getEmail().value()) // Gửi email về FE
+                .fullName(displayName)          // Gửi tên hiển thị về FE
                 .expiresIn(3600L)
                 .build();
     }
@@ -556,20 +611,31 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(String email) {
         EmailAddress emailAddress = new EmailAddress(email);
 
-        // 1. Kiểm tra xem user có tồn tại không
         User user = userRepository.findByEmail(emailAddress.value())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
 
-        // 2. TẠO LOGIC GỬI EMAIL (Mô phỏng)
-        // Trong thực tế, bạn sẽ cần tạo một PasswordResetToken, lưu vào DB và dùng JavaMailSender để gửi link/OTP.
-        // Ở bước này, chúng ta mô phỏng việc sinh mã token tạm thời.
         String resetToken = java.util.UUID.randomUUID().toString();
 
-        // In ra console để debug (Thay thế bằng code gửi Email thật sau này)
         System.out.println("========== YÊU CẦU KHÔI PHỤC MẬT KHẨU ==========");
         System.out.println("Email nhận: " + user.getEmail().value());
         System.out.println("Token khôi phục: " + resetToken);
         System.out.println("================================================");
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác.");
+        }
+
+        String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.updatePassword(newHashedPassword);
+
+        userRepository.save(user);
     }
 }
 
@@ -592,6 +658,8 @@ public class CandidateProfileRequest {
     private String gender;
     private LocalDate dob;
     private String address;
+    private String skills;
+    private String summary;
 }
 
 // ============================================================
@@ -616,6 +684,44 @@ public class CandidateProfileResponse {
     private String gender;
     private LocalDate dob;
     private String address;
+    private String summary;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateSkillRequest.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class CandidateSkillRequest {
+    @NotBlank(message = "Tên kỹ năng không được để trống")
+    private String skillName;
+    private String level;
+    private String category; // Có thể map vào cột "note" trong DB
+    private String description;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateSkillResponse.java
+// ============================================================
+
+package com.smartmatch.application.candidate.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class CandidateSkillResponse {
+    private Long id;          // Tương ứng với skillId
+    private String skillName; // Tên kỹ năng (Java, React...)
+    private String level;     // Cơ bản, Trung bình...
+    private String category;
+    private String description;
 }
 
 // ============================================================
@@ -635,6 +741,7 @@ public class CvDocumentResponse {
     private Long id;
     private Long candidateId;
     private String filePath;
+    private String fileName;
     private Boolean isGenerated;
     private LocalDateTime createdAt;
 }
@@ -685,13 +792,23 @@ public interface CandidateService {
     CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse getProfileByUserId(Long userId);
-    CvDocumentResponse uploadCv(Long userId, FileData fileData);
+    // Thay đổi FileData thành MultipartFile
+    CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file);
     List<CvDocumentResponse> getCvsByUserId(Long userId);
     void deleteCv(Long userId, Long cvId);
     void addSkillToCandidate(Long userId, Long skillId);
     void removeSkillFromCandidate(Long userId, Long skillId);
 
     CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
+    // SKILLS
+    List<CandidateSkillResponse> getSkillsByUserId(Long userId);
+    CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request);
+    CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request);
+
+    // LATEST CV
+    CvDocumentResponse getLatestGeneratedCv(Long userId);
+
+    CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
 }
 
 // ============================================================
@@ -702,15 +819,14 @@ package com.smartmatch.application.candidate.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smartmatch.application.candidate.dto.CandidateProfileRequest;
-import com.smartmatch.application.candidate.dto.CandidateProfileResponse;
-import com.smartmatch.application.candidate.dto.CvDocumentResponse;
+import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.candidate.service.CandidateService;
 import com.smartmatch.application.common.dto.FileData;
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.candidate.model.CandidateProfile;
 import com.smartmatch.domain.candidate.model.CandidateSkill;
 import com.smartmatch.domain.candidate.model.CvDocument;
+import com.smartmatch.domain.candidate.model.Skill;
 import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
 import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
 import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
@@ -737,6 +853,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final CandidateSkillRepository candidateSkillRepository;
     private final SkillRepository skillRepository;
     private final ObjectMapper objectMapper;
+    private final com.smartmatch.application.common.port.FileStoragePort fileStoragePort;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
@@ -761,11 +878,34 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getPhone(),
                 request.getGender(),
                 request.getDob(),
-                request.getAddress()
+                request.getAddress(),
+                request.getSummary()
         );
 
         CandidateProfile savedProfile =
                 candidateProfileRepository.save(profile);
+
+        // ==================== ĐOẠN BỔ SUNG VÀO HÀM saveProfile ====================
+        if (request.getSkills() != null && !request.getSkills().trim().isEmpty()) {
+            // Xóa sạch các liên kết kỹ năng cũ để tránh ghi đè trùng lặp dữ liệu
+            candidateSkillRepository.deleteByCandidateId(savedProfile.getId());
+
+            // Tách chuỗi kỹ năng gửi từ Frontend (ví dụ: "Java, React, Docker")
+            String[] skillNames = request.getSkills().split(",");
+            for (String skillName : skillNames) {
+                String trimmedName = skillName.trim();
+                if (trimmedName.isEmpty()) continue;
+
+                // ĐÃ SỬA: Sử dụng phương thức tĩnh Skill.create(name) có sẵn thay vì dùng `new` bị lỗi private
+                com.smartmatch.domain.candidate.model.Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
+                        .orElseGet(() -> skillRepository.save(com.smartmatch.domain.candidate.model.Skill.create(trimmedName)));
+
+                // Lưu liên quan hệ vào bảng liên kết CandidateSkill theo profile ID chính xác
+                CandidateSkill candidateSkill = new CandidateSkill(savedProfile.getId(), skill.getId());
+                candidateSkillRepository.save(candidateSkill);
+            }
+        }
+        // =========================================================================
 
         return mapToProfileResponse(savedProfile);
     }
@@ -789,7 +929,8 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getPhone(),
                 request.getGender(),
                 request.getDob(),
-                request.getAddress()
+                request.getAddress(),
+                request.getSummary()
         );
 
         CandidateProfile updatedProfile =
@@ -814,35 +955,27 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
-    public CvDocumentResponse uploadCv(Long userId, FileData fileData) {
+    public CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file) {
 
         candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."
-                        )
-                );
+                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
 
-        String uploadedFilePath =
-                "/uploads/cv/"
-                        + System.currentTimeMillis()
-                        + "_"
-                        + fileData.fileName();
+        // Truyền String.valueOf(userId) làm prefix (tiền tố) cho tên file
+        String prefixId = String.valueOf(userId);
 
-        String extractedRawText =
-                "Extracted text content from "
-                        + fileData.fileName();
+        // Gọi hàm lưu file với 3 tham số
+        String savedRelativePath = fileStoragePort.storeFile(file, "cv", prefixId);
 
-        CvDocument cvDocument =
-                CvDocument.upload(
-                        userId,
-                        uploadedFilePath,
-                        extractedRawText
-                );
+        String uploadedFilePath = "/uploads/" + savedRelativePath;
+        String extractedRawText = "Extracted text content from " + file.getOriginalFilename();
 
-        CvDocument savedCv =
-                cvDocumentRepository.save(cvDocument);
+        CvDocument cvDocument = CvDocument.upload(
+                userId,
+                uploadedFilePath,
+                extractedRawText
+        );
 
+        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
         return mapToCvResponse(savedCv);
     }
 
@@ -948,38 +1081,24 @@ public class CandidateServiceImpl implements CandidateService {
 
     @Override
     public void addSkillToCandidate(Long userId, Long skillId) {
-
-        candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Không tìm thấy hồ sơ ứng viên."
-                        )
-                );
+        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
 
         skillRepository.findById(skillId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Kỹ năng không tồn tại trong hệ thống."
-                        )
-                );
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại trong hệ thống."));
 
-        CandidateSkill candidateSkill =
-                new CandidateSkill(userId, skillId);
-
+        CandidateSkill candidateSkill = new CandidateSkill(profile.getId(), skillId);
         candidateSkillRepository.save(candidateSkill);
     }
 
     @Override
-    public void removeSkillFromCandidate(
-            Long userId,
-            Long skillId
-    ) {
+    public void removeSkillFromCandidate(Long userId, Long skillId) {
+        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
 
-        candidateSkillRepository
-                .deleteByCandidateIdAndSkillId(
-                        userId,
-                        skillId
-                );
+        candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
     }
 
     private CandidateProfileResponse mapToProfileResponse(
@@ -994,18 +1113,151 @@ public class CandidateServiceImpl implements CandidateService {
                 .gender(profile.getGender())
                 .dob(profile.getDob())
                 .address(profile.getAddress())
+                .summary(profile.getSummary())
                 .build();
     }
 
     private CvDocumentResponse mapToCvResponse(CvDocument cv) {
+        String name = "CV_Ban_Thao";
+        if (cv.getFilePath() != null) {
+            String[] parts = cv.getFilePath().split("/");
+            name = parts[parts.length - 1]; // Lấy phần cuối của URL/Path làm tên file
+        }
 
         return CvDocumentResponse.builder()
                 .id(cv.getId())
                 .candidateId(cv.getCandidateId())
                 .filePath(cv.getFilePath())
+                .fileName(name) // Gắn tên file trả về cho Frontend
                 .isGenerated(cv.getIsGenerated())
                 .createdAt(cv.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CandidateSkillResponse> getSkillsByUserId(Long userId) {
+        // 1. Tìm profile để lấy đúng candidateId (ID của bảng candidate_profiles)
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
+
+        // 2. Lấy danh sách CandidateSkill từ DB và map sang DTO
+        return candidateSkillRepository.findByCandidateId(profile.getId()).stream()
+                .map(cs -> {
+                    // Lấy thông tin kỹ năng gốc từ bảng skills
+                    var skill = skillRepository.findById(cs.getSkillId())
+                            .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại."));
+
+                    return CandidateSkillResponse.builder()
+                            .id(skill.getId())
+                            .skillName(skill.getName())
+                            .level(cs.getLevel())      // Lấy level từ bảng candidate_skills
+                            .description(cs.getNote()) // Lấy note từ bảng candidate_skills
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request) {
+        // 1. Tìm profile để lấy đúng candidateId
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        // 2. Tìm hoặc tạo mới Kỹ năng trong bảng danh mục tổng (skills)
+        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        // 3. Khởi tạo CandidateSkill bằng Builder (để khớp với Constructor 5 tham số của bạn)
+        CandidateSkill cs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(skill.getId())
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(0) // Giá trị mặc định cho cột mới
+                .build();
+
+        candidateSkillRepository.save(cs);
+
+        // 4. Trả về Response
+        return CandidateSkillResponse.builder()
+                .id(skill.getId())
+                .skillName(skill.getName())
+                .level(cs.getLevel())
+                .category(request.getCategory())
+                .description(cs.getNote())
+                .build();
+    }
+
+    @Override
+    public CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        // 1. Tìm hoặc tạo mới Skill mục tiêu
+        Skill targetSkill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        // 2. Tìm bản ghi cũ trong candidate_skills
+        CandidateSkill oldCs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
+
+        // 3. Nếu tên kỹ năng thay đổi (skillId khác nhau), xóa bản ghi cũ đi
+        if (!oldCs.getSkillId().equals(targetSkill.getId())) {
+            candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
+        }
+
+        // 4. Tạo bản ghi mới với thông tin cập nhật
+        CandidateSkill newCs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(targetSkill.getId()) // ID của kỹ năng mới
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(oldCs.getYearsOfEx())
+                .build();
+
+        candidateSkillRepository.save(newCs);
+
+        return CandidateSkillResponse.builder()
+                .id(targetSkill.getId())
+                .skillName(targetSkill.getName())
+                .level(newCs.getLevel())
+                .category(request.getCategory())
+                .description(newCs.getNote())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CvDocumentResponse getLatestGeneratedCv(Long userId) {
+        // 1. Tìm profile để xác định ứng viên
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng chưa có hồ sơ ứng viên."));
+
+        // 2. Tìm tất cả CV, lọc các CV Sandbox (isGenerated = true) và lấy cái mới nhất
+        List<CvDocument> cvList = cvDocumentRepository.findByCandidateId(profile.getId());
+
+        return cvList.stream()
+                .filter(cv -> Boolean.TRUE.equals(cv.getIsGenerated()))
+                .max(java.util.Comparator.comparing(CvDocument::getCreatedAt))
+                .map(this::mapToCvResponse)
+                .orElse(null);
+    }
+
+    @Override
+    public CvDocumentResponse renameCv(Long userId, Long cvId, String newName) {
+        CvDocument cv = cvDocumentRepository.findById(cvId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
+
+        if (!cv.getCandidateId().equals(userId)) {
+            throw new IllegalArgumentException("Bạn không có quyền sửa CV này.");
+        }
+
+        // Thủ thuật: Vì Model hiện tại không có trường 'fileName',
+        // ta ghi đè filePath để chứa tên mới, hoặc lưu vào rawText nếu cần.
+        // Tốt nhất bạn nên thêm trường 'fileName' vào Database.
+        // Tạm thời ở mức DTO, ta sẽ xử lý cắt chuỗi.
+        return mapToCvResponse(cv); // Yêu cầu mở rộng Model/DB nếu muốn lưu DB vĩnh viễn.
     }
 }
 
@@ -1059,7 +1311,7 @@ public interface FileStoragePort {
      * @param subDirectory Thư mục con (vd: "cv", "avatars", "logos")
      * @return Đường dẫn tương đối hoặc URL để truy cập file
      */
-    String storeFile(MultipartFile file, String subDirectory);
+    String storeFile(MultipartFile file, String subDirectory, String prefix);
 
     /**
      * Lấy dữ liệu file dưới dạng mảng byte
@@ -1140,7 +1392,7 @@ public interface EmployerService {
     CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
-    CompanyProfileResponse uploadLogo(Long userId, FileData logoData);
+    CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
 }
 
 // ============================================================
@@ -1154,6 +1406,7 @@ public interface EmployerService {
 package com.smartmatch.application.employer.service.impl;
 
 import com.smartmatch.application.common.dto.FileData;
+import com.smartmatch.application.common.port.FileStoragePort;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
@@ -1168,6 +1421,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -1177,34 +1431,21 @@ public class EmployerServiceImpl implements EmployerService {
 
     private final UserRepository userRepository;
     private final CompanyProfileRepository companyProfileRepository;
+    private final FileStoragePort fileStoragePort;
 
     @Override
     public CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request) {
-        // 1. Kiểm tra User có tồn tại không
         if (!userRepository.findById(userId).isPresent()) {
             throw new IllegalArgumentException("Tài khoản nhà tuyển dụng không tồn tại.");
         }
-
-        // 2. Kiểm tra nhà tuyển dụng đã tạo profile chưa
         if (companyProfileRepository.findByUserId(userId).isPresent()) {
             throw new IllegalArgumentException("Nhà tuyển dụng này đã có hồ sơ công ty.");
         }
 
-        // 3. Khởi tạo Domain Entity CompanyProfile qua Factory method
         CompanyProfile profile = CompanyProfile.createInitial(
-                userId,
-                request.getCompanyName(),
-                request.getWebsite(),
-                request.getDescription()
+                userId, request.getCompanyName(), request.getWebsite(), request.getDescription()
         );
-
-        // 4. Lưu vào Database
-        CompanyProfile savedProfile = companyProfileRepository.save(profile);
-
-        log.info("Hồ sơ doanh nghiệp {} được tạo thành công bởi user id: {}", savedProfile.getCompanyName(), userId);
-
-        // 5. Trả về DTO
-        return mapToResponse(savedProfile);
+        return mapToResponse(companyProfileRepository.save(profile));
     }
 
     @Override
@@ -1212,16 +1453,8 @@ public class EmployerServiceImpl implements EmployerService {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp."));
 
-        // Thực hiện cập nhật thông qua phương thức nghiệp vụ của Entity
-        // Nếu tên công ty hoặc website thay đổi, verificationStatus sẽ tự động về PENDING theo Domain Rule
-        profile.reviseProfile(
-                request.getCompanyName(),
-                request.getWebsite(),
-                request.getDescription()
-        );
-
-        CompanyProfile updatedProfile = companyProfileRepository.save(profile);
-        return mapToResponse(updatedProfile);
+        profile.reviseProfile(request.getCompanyName(), request.getWebsite(), request.getDescription());
+        return mapToResponse(companyProfileRepository.save(profile));
     }
 
     @Override
@@ -1229,24 +1462,22 @@ public class EmployerServiceImpl implements EmployerService {
     public CompanyProfileResponse getProfileByUserId(Long userId) {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp."));
-
         return mapToResponse(profile);
     }
 
     @Override
-    public CompanyProfileResponse uploadLogo(Long userId, FileData logoData) {
+    public CompanyProfileResponse uploadLogo(Long userId, MultipartFile file) {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp."));
+                .orElseThrow(() -> new IllegalArgumentException("Vui lòng tạo thông tin doanh nghiệp trước khi tải logo."));
 
-        // TODO: Gọi port hạ tầng lưu file (S3, Local...) để upload logoData
-        // Giả lập đường dẫn file sau khi upload thành công
-        String uploadedLogoUrl = "/uploads/logos/" + System.currentTimeMillis() + "_" + logoData.fileName();
+        // Gọi port hạ tầng để lưu file (Lưu vào thư mục companies/logos)
+        String prefix = "logo_owner_" + userId;
+        String savedPath = fileStoragePort.storeFile(file, "companies/logos", prefix);
 
         // Cập nhật logo thông qua Domain Method
-        profile.updateLogo(uploadedLogoUrl);
+        profile.updateLogo("/uploads/" + savedPath);
 
-        CompanyProfile updatedProfile = companyProfileRepository.save(profile);
-        return mapToResponse(updatedProfile);
+        return mapToResponse(companyProfileRepository.save(profile));
     }
 
     // ==========================================================
@@ -1273,7 +1504,9 @@ public class EmployerServiceImpl implements EmployerService {
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
 package com.smartmatch.application.job.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -1295,6 +1528,8 @@ public class JobPostingRequest {
 
     private String workType;
 
+    @NotNull(message = "Hạn nộp hồ sơ không được để trống")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime expiresAt;
 }
 

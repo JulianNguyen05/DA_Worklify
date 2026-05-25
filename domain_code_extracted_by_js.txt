@@ -388,6 +388,8 @@ public class User {
     public boolean isValidEmail() {
         return this.email != null && this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
     }
+
+    public void updatePassword(String newPasswordHash) { this.passwordHash = newPasswordHash;}
 }
 
 // ============================================================
@@ -440,6 +442,7 @@ public class CandidateProfile {
     private String gender;
     private LocalDate dob;
     private String address;
+    private String summary; // Đã có thuộc tính này
 
     public static CandidateProfile create(Long userId, String fullName) {
         if (userId == null || fullName == null || fullName.trim().isEmpty()) {
@@ -451,7 +454,8 @@ public class CandidateProfile {
                 .build();
     }
 
-    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address) {
+    // BỔ SUNG THAM SỐ summary VÀO ĐÂY
+    public void updateProfileDetails(String fullName, String phone, String gender, LocalDate dob, String address, String summary) {
         if (fullName == null || fullName.trim().isEmpty()) {
             throw new IllegalArgumentException("Họ tên không được để trống.");
         }
@@ -460,6 +464,7 @@ public class CandidateProfile {
         this.gender = gender;
         this.dob = dob;
         this.address = address;
+        this.summary = summary; // Gán giá trị summary
     }
 }
 
@@ -470,15 +475,28 @@ public class CandidateProfile {
 package com.smartmatch.domain.candidate.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
+@Builder
 @AllArgsConstructor
 @EqualsAndHashCode
 public class CandidateSkill {
     private final Long candidateId;
     private final Long skillId;
+    private String level;
+    private Integer yearsOfEx;
+    private String note;
+
+    public CandidateSkill(Long candidateId, Long skillId) {
+        this.candidateId = candidateId;
+        this.skillId = skillId;
+        this.level = "";
+        this.yearsOfEx = 0;
+        this.note = "";
+    }
 }
 
 // ============================================================
@@ -568,6 +586,13 @@ public class Skill {
                 .name(cleanSkillName.trim())
                 .build();
     }
+
+    public void setName(String trimmedName) {
+        if (trimmedName == null || trimmedName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên kỹ năng không được bỏ trống.");
+        }
+        this.name = trimmedName.trim();
+    }
 }
 
 // ============================================================
@@ -590,12 +615,14 @@ package com.smartmatch.domain.candidate.repository;
 
 import com.smartmatch.domain.candidate.model.CandidateSkill;
 import java.util.List;
+import java.util.Optional;
 
 public interface CandidateSkillRepository {
     CandidateSkill save(CandidateSkill candidateSkill);
     List<CandidateSkill> findByCandidateId(Long candidateId);
     void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId);
     void deleteByCandidateId(Long candidateId);
+    Optional<CandidateSkill> findByCandidateIdAndSkillId(Long candidateId, Long skillId);
 }
 
 // ============================================================

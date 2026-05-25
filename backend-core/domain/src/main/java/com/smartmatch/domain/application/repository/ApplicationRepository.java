@@ -9,4 +9,5 @@ public interface ApplicationRepository {
     DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable);
     DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable);
     long countAll();
+    long countByStatus(ApplicationStatus status);
 }

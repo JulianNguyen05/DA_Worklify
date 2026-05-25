@@ -112,9 +112,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+
                 <configuration>
-                    <release>21</release>
+
+                    <release>23</release>
+
+                    <generatedSourcesDirectory>
+                        ${project.build.directory}/generated-sources/annotations
+                    </generatedSourcesDirectory>
+
                     <annotationProcessorPaths>
+
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
@@ -132,6 +140,7 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>1.6.0</version>
                         </path>
+
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -1564,8 +1573,11 @@ package com.smartmatch.infrastructure.persistence.mapper;
 import com.smartmatch.domain.candidate.model.*;
 import com.smartmatch.infrastructure.persistence.entity.*;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Component
 public interface CandidateEntityMapper {
 
     CandidateProfileJpaEntity toEntity(CandidateProfile profile);
