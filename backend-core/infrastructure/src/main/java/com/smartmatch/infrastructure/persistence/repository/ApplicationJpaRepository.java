@@ -1,5 +1,6 @@
 package com.smartmatch.infrastructure.persistence.repository;
 
+import com.smartmatch.domain.application.model.ApplicationStatus;
 import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,4 +15,6 @@ public interface ApplicationJpaRepository extends JpaRepository<ApplicationJpaEn
 
     Page<ApplicationJpaEntity> findByJobId(Long jobId, Pageable pageable);
     Page<ApplicationJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
+
+    long countByStatus(ApplicationStatus status);
 }

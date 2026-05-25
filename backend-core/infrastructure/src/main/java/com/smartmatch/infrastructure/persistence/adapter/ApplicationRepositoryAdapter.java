@@ -45,4 +45,10 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
     public long countAll() {
         return jpaRepository.count();
     }
+
+    @Override
+    public long countByStatus(com.smartmatch.domain.application.model.ApplicationStatus status) {
+        // Đảm bảo ApplicationJpaRepository của bạn đã định nghĩa phương thức countByStatus
+        return jpaRepository.countByStatus(status);
+    }
 }

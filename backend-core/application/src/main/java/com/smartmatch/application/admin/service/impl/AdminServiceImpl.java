@@ -1,14 +1,20 @@
 package com.smartmatch.application.admin.service.impl;
 
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.dto.MasterDataRequest;
+import com.smartmatch.application.admin.dto.SystemLogResponse;
 import com.smartmatch.application.admin.service.AdminService;
+import com.smartmatch.application.auth.dto.UserResponse;
+import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.domain.application.model.ApplicationStatus;
 import com.smartmatch.domain.application.repository.ApplicationRepository;
 import com.smartmatch.domain.auth.repository.UserRepository;
+import com.smartmatch.domain.common.DomainPageable;
 import com.smartmatch.domain.job.model.JobStatus;
 import com.smartmatch.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -53,11 +59,43 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void moderateJob(Long jobId, JobStatus status) {
-        // Cài đặt logic cập nhật trạng thái Job
+        // TODO: Cài đặt logic cập nhật trạng thái Job
+    }
+
+    @Override
+    public void moderateCompany(Long companyId, boolean approve) {
+        // TODO: Cài đặt logic duyệt/từ chối hồ sơ doanh nghiệp
+    }
+
+    @Override
+    public void createSkillMasterData(MasterDataRequest request) {
+        // TODO: Cài đặt logic thêm mới dữ liệu kỹ năng
+    }
+
+    @Override
+    public void deleteSkillMasterData(Long skillId) {
+        // TODO: Cài đặt logic xóa dữ liệu kỹ năng
+    }
+
+    @Override
+    public PageResponse<SystemLogResponse> getSystemLogs(DomainPageable pageable) {
+        // TODO: Cài đặt logic lấy danh sách nhật ký hệ thống
+        return null;
+    }
+
+    @Override
+    public PageResponse<UserResponse> getAllUsers(DomainPageable pageable) {
+        // TODO: Cài đặt logic lấy danh sách người dùng
+        return null;
     }
 
     @Override
     public void banUser(Long userId) {
-        // Cài đặt logic ban User
+        // TODO: Cài đặt logic khóa tài khoản người dùng
+    }
+
+    @Override
+    public void unbanUser(Long userId) {
+        // TODO: Cài đặt logic mở khóa tài khoản người dùng
     }
 }
