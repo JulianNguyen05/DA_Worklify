@@ -1,6 +1,7 @@
-package com.smartmatch.api.common.exception; // Giữ nguyên package cũ của bạn
+package com.smartmatch.api.common.exception;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,7 +27,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 2. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
+     * 2. Bắt lỗi không tìm thấy tài nguyên (Ví dụ: Không tìm thấy doanh nghiệp cần duyệt)
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND) // Trả về HTTP Status 404 ra Network tab
+    public ApiResponse<Void> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return ApiResponse.error(404, ex.getMessage());
+    }
+
+    /**
+     * 3. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
      * Tự động bóc tách lỗi đầu tiên làm thông điệp đại diện (Top-level message) cho React hiển thị nhanh
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -51,7 +61,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 3. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
+     * 4. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Trả về HTTP Status 500 ra Network tab

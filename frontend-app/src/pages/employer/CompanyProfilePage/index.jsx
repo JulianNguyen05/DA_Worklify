@@ -10,6 +10,9 @@ export default function CompanyProfilePage() {
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [formData, setFormData] = useState({ companyName: '', website: '', description: '' });
   
+  // Thêm state để lưu trạng thái kiểm duyệt
+  const [verificationStatus, setVerificationStatus] = useState(null);
+
   // Trạng thái cho File Logo
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -34,11 +37,14 @@ export default function CompanyProfilePage() {
           website: res.data.website || '',
           description: res.data.description || ''
         });
+        
+        // Cập nhật trạng thái kiểm duyệt từ API
+        setVerificationStatus(res.data.verificationStatus);
+
         if (res.data.logoUrl) {
-          // Thêm tiền tố API server nếu cần (vd: http://localhost:8080)
           setLogoPreview(`http://localhost:8080${res.data.logoUrl}`);
         }
-        setIsUpdateMode(true); // Đã có profile -> Chuyển sang chế độ Cập nhật
+        setIsUpdateMode(true); 
       }
     } catch (error) {
       console.log("Chưa có hồ sơ, ở chế độ Tạo mới");
@@ -48,12 +54,11 @@ export default function CompanyProfilePage() {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Bắt sự kiện chọn file logo
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file)); // Hiển thị ảnh xem trước
+      setLogoPreview(URL.createObjectURL(file)); 
     }
   };
 
@@ -63,20 +68,22 @@ export default function CompanyProfilePage() {
     setStatusMsg({ type: null, message: '' });
     
     try {
-      // 1. Lưu thông tin Text (Tạo mới hoặc Cập nhật)
       if (isUpdateMode) {
         await employerService.updateProfile(userId, formData);
       } else {
         await employerService.createProfile(userId, formData);
-        setIsUpdateMode(true); // Tạo xong thì chuyển sang mode update
+        setIsUpdateMode(true); 
       }
 
-      // 2. Nếu người dùng có chọn file Logo mới, thì gọi API upload logo
       if (logoFile) {
         await employerService.uploadLogo(userId, logoFile);
       }
 
-      setStatusMsg({ type: 'success', message: 'Cập nhật hồ sơ doanh nghiệp thành công. Đang chờ kiểm duyệt!' });
+      setStatusMsg({ type: 'success', message: 'Cập nhật hồ sơ thành công. Đang chờ Admin kiểm duyệt!' });
+      
+      // Load lại profile để lấy trạng thái PENDING mới nhất từ Database
+      await fetchProfile(userId);
+      
     } catch (err) {
       setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Lỗi khi cập nhật hồ sơ.' });
     } finally {
@@ -84,11 +91,36 @@ export default function CompanyProfilePage() {
     }
   };
 
+  // Hàm render giao diện cho trạng thái
+  const renderStatusBadge = () => {
+    if (!verificationStatus) return null;
+    
+    switch (verificationStatus) {
+      case 'APPROVED':
+        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Đã duyệt (Hoạt động)</span>;
+      case 'REJECTED':
+        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Bị từ chối / Cần chỉnh sửa</span>;
+      case 'PENDING':
+      default:
+        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Đang chờ kiểm duyệt</span>;
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-3xl">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">Hồ sơ Doanh nghiệp</h2>
+      {/* Cập nhật khu vực Tiêu đề để hiển thị Badge trạng thái */}
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h2 className="text-xl font-bold text-gray-800">Hồ sơ Doanh nghiệp</h2>
+        {isUpdateMode && renderStatusBadge()}
+      </div>
       
       {statusMsg.type && <div className="mb-4"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
+
+      {verificationStatus === 'REJECTED' && (
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+          <strong>Lưu ý:</strong> Hồ sơ của bạn đã bị từ chối. Vui lòng cập nhật lại thông tin chính xác và bấm "Lưu Thay Đổi" để gửi yêu cầu duyệt lại.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         
@@ -145,7 +177,7 @@ export default function CompanyProfilePage() {
 
         <div className="flex justify-end pt-4 border-t border-gray-100">
           <Button type="submit" isLoading={isLoading}>
-            {isUpdateMode ? 'Lưu Thay Đổi' : 'Tạo Hồ Sơ Mới'}
+            {isUpdateMode ? 'Lưu Thay Đổi (Gửi duyệt lại)' : 'Tạo Hồ Sơ Mới'}
           </Button>
         </div>
 

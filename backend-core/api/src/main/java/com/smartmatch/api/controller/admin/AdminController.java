@@ -1,14 +1,18 @@
 package com.smartmatch.api.controller.admin;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.admin.dto.CompanyModerationRequest;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
 import com.smartmatch.application.admin.service.AdminService;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.domain.job.model.JobStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List; // Thêm dòng này để sửa lỗi List
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -28,16 +32,35 @@ public class AdminController {
     @PatchMapping("/jobs/{jobId}/moderate")
     @Operation(summary = "Kiểm duyệt (Duyệt/Khóa) tin tuyển dụng")
     public ApiResponse<Void> moderateJob(
-            @PathVariable Long jobId,
-            @RequestParam JobStatus status) {
+            @PathVariable("jobId") Long jobId, // <--- THÊM ("jobId") VÀO ĐÂY
+            @RequestParam("status") JobStatus status) { // <--- THÊM ("status") VÀO ĐÂY
         adminService.moderateJob(jobId, status);
         return ApiResponse.success(null, "Đã cập nhật trạng thái tin tuyển dụng");
     }
 
     @PatchMapping("/users/{userId}/ban")
     @Operation(summary = "Khóa tài khoản người dùng vi phạm")
-    public ApiResponse<Void> banUser(@PathVariable Long userId) {
+    public ApiResponse<Void> banUser(
+            @PathVariable("userId") Long userId) { // <--- THÊM ("userId") VÀO ĐÂY
         adminService.banUser(userId);
         return ApiResponse.success(null, "Đã khóa tài khoản người dùng");
+    }
+
+    @GetMapping("/companies/pending")
+    @Operation(summary = "Lấy danh sách doanh nghiệp đang chờ duyệt")
+    public ApiResponse<List<CompanyProfileResponse>> getPendingCompanies() {
+        return ApiResponse.success(adminService.getPendingCompanies());
+    }
+
+    @PatchMapping("/companies/{companyId}/moderate")
+    @Operation(summary = "Duyệt hoặc từ chối hồ sơ doanh nghiệp")
+    public ApiResponse<Void> moderateCompany(
+            @PathVariable("companyId") Long companyId, // <--- THÊM ("companyId") VÀO ĐÂY
+            @RequestBody CompanyModerationRequest request) {
+
+        boolean isApprove = "APPROVED".equalsIgnoreCase(request.getAction());
+        adminService.moderateCompany(companyId, isApprove, request.getReason());
+
+        return ApiResponse.success(null, "Đã xử lý hồ sơ doanh nghiệp");
     }
 }
