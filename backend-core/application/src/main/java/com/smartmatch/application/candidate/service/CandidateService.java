@@ -26,4 +26,6 @@ public interface CandidateService {
     CvDocumentResponse getLatestGeneratedCv(Long userId);
 
     CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
+
+    List<CvDocumentResponse> getCvDocuments(Long candidateId);
 }

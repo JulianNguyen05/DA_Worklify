@@ -442,4 +442,18 @@ public class CandidateServiceImpl implements CandidateService {
         // Tạm thời ở mức DTO, ta sẽ xử lý cắt chuỗi.
         return mapToCvResponse(cv); // Yêu cầu mở rộng Model/DB nếu muốn lưu DB vĩnh viễn.
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CvDocumentResponse> getCvDocuments(Long candidateId) {
+        // Giả sử bạn có repository để lấy danh sách CV của ứng viên
+        // Bạn cần thay đổi theo tên Repository thực tế trong dự án của bạn
+        return cvDocumentRepository.findByCandidateId(candidateId).stream()
+                .map(cv -> CvDocumentResponse.builder()
+                        .id(cv.getId())
+                        .fileName(cv.getFilePath() != null ? cv.getFilePath() : "CV mặc định")
+                        .createdAt(cv.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }

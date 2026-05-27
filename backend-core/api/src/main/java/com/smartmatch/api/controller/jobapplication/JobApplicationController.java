@@ -27,7 +27,7 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(summary = "Nộp hồ sơ ứng tuyển (Tự động kích hoạt AI chấm điểm)")
     public ApiResponse<ApplicationResponse> apply(
-            @PathVariable Long candidateId,
+            @PathVariable("candidateId") Long candidateId, // <--- THÊM ("candidateId")
             @Valid @RequestBody ApplicationRequest request) {
         return ApiResponse.success(applicationService.applyJob(candidateId, request), "Nộp hồ sơ thành công");
     }
@@ -36,7 +36,7 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
     @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
-            @PathVariable Long jobId,
+            @PathVariable("jobId") Long jobId, // <--- THÊM ("jobId")
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success(applicationService.getApplicationsForReviewBoard(jobId, createPageable(page, size)));
@@ -45,7 +45,8 @@ public class JobApplicationController {
     @GetMapping("/{applicationId}/ai-score")
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('CANDIDATE')")
     @Operation(summary = "Xem kết quả chấm điểm độ phù hợp của AI")
-    public ApiResponse<AiMatchScoreResponse> getAiScore(@PathVariable Long applicationId) {
+    public ApiResponse<AiMatchScoreResponse> getAiScore(
+            @PathVariable("applicationId") Long applicationId) { // <--- THÊM ("applicationId")
         return ApiResponse.success(applicationService.getAiMatchResult(applicationId));
     }
 
@@ -53,8 +54,8 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Cập nhật trạng thái hồ sơ (Duyệt/Loại)")
     public ApiResponse<Void> updateStatus(
-            @PathVariable Long companyId,
-            @PathVariable Long applicationId,
+            @PathVariable("companyId") Long companyId, // <--- THÊM ("companyId")
+            @PathVariable("applicationId") Long applicationId, // <--- THÊM ("applicationId")
             @RequestParam ApplicationStatus status) {
         applicationService.updateApplicationStatus(companyId, applicationId, status);
         return ApiResponse.success(null, "Cập nhật trạng thái thành công");

@@ -84,6 +84,8 @@ public class CandidateController {
     @GetMapping("/{userId}/cvs")
     @Operation(summary = "Lấy danh sách CV PDF/Word đã lưu của ứng viên")
     public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable("userId") Long userId) {
+        // Hàm này gọi candidateService.getCvsByUserId(userId) hoặc getCvDocuments(userId)
+        // Hãy chắc chắn tên hàm gọi ở đây khớp với service của bạn
         return ApiResponse.success(candidateService.getCvsByUserId(userId));
     }
 

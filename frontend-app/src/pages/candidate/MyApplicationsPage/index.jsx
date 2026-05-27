@@ -39,7 +39,7 @@ const MyApplicationsPage = () => {
       {isLoading ? (
         <p className="text-sm text-gray-500">Đang tải dữ liệu...</p>
       ) : applications.length === 0 ? (
-        <p className="text-sm text-gray-500">Bạn chưa ứng tuyển công việc nào.</p>
+        <p className="text-sm text-gray-500">Bạn chưa ứng tuyển công việc nàoô.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">

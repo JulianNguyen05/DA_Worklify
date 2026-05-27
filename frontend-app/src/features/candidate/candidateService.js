@@ -78,6 +78,12 @@ const candidateService = {
     });
     return response.data;
   },
+
+  getMyCVs: async (candidateId) => {
+    // Sửa thành '/candidates/${candidateId}/cvs'
+    const response = await axiosClient.get(`/candidates/${candidateId}/cvs`);
+    return response.data;
+  }
 };
 
 export default candidateService;
