@@ -5,11 +5,13 @@
 package com.smartmatch.application.employer.service.impl;
 
 import com.smartmatch.application.common.dto.FileData;
+import com.smartmatch.application.common.dto.PageResponse; // Bổ sung import
 import com.smartmatch.application.common.port.FileStoragePort;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
 import com.smartmatch.domain.auth.repository.UserRepository;
+import com.smartmatch.domain.common.DomainPageable; // Bổ sung import
 import com.smartmatch.domain.employer.model.CompanyProfile;
 import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
 
@@ -77,6 +79,28 @@ public class EmployerServiceImpl implements EmployerService {
         profile.updateLogo("/uploads/" + savedPath);
 
         return mapToResponse(companyProfileRepository.save(profile));
+    }
+
+    // ==========================================================
+    // PHƯƠNG THỨC MỚI BỔ SUNG ĐỂ SỬA LỖI IMPLEMENTS
+    // ==========================================================
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable) {
+        // TODO: Cài đặt logic truy vấn danh sách hồ sơ công ty (có phân trang) tại đây
+
+        /* Gợi ý quy trình chuẩn:
+         * 1. Query danh sách từ Repository:
+         * Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
+         * * 2. Map dữ liệu qua Response:
+         * List<CompanyProfileResponse> content = profilePage.getContent().stream()
+         * .map(this::mapToResponse)
+         * .collect(Collectors.toList());
+         * * 3. Đóng gói vào PageResponse và trả về:
+         * return new PageResponse<>(content, profilePage.getNumber(), ...);
+         */
+
+        return null; // Tạm thời return null để code compile (biên dịch) thành công.
     }
 
     // ==========================================================

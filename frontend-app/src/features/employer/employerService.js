@@ -66,6 +66,11 @@ const employerService = {
     return response.data;
   },
 
+  getAllCompanies: async (page = 0, size = 5) => {
+    const response = await axiosClient.get(`/employers?page=${page}&size=${size}`);
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {

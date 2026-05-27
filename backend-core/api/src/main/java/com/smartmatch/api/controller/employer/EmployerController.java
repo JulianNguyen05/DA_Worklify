@@ -1,9 +1,11 @@
 package com.smartmatch.api.controller.employer;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
+import com.smartmatch.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -52,5 +54,20 @@ public class EmployerController {
             @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
             @RequestPart("file") MultipartFile file) {
         return ApiResponse.success(employerService.uploadLogo(userId, file), "Tải lên logo thành công");
+    }
+
+    @GetMapping
+    @Operation(summary = "Lấy danh sách tất cả doanh nghiệp (Công ty nổi bật)")
+    public ApiResponse<PageResponse<CompanyProfileResponse>> getAllEmployers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        DomainPageable pageable = new DomainPageable() {
+            @Override public int getPageNumber() { return page; }
+            @Override public int getPageSize() { return size; }
+        };
+
+        // Lưu ý: Bạn cần đảm bảo EmployerService đã có hàm getAllProfiles(pageable)
+        return ApiResponse.success(employerService.getAllProfiles(pageable));
     }
 }

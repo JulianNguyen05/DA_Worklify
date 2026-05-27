@@ -11,4 +11,6 @@ public interface EmployerService {
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
     CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
+
+    PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable);
 }
