@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT NÀY
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +26,7 @@ public class JobController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Nhà tuyển dụng đăng tin tuyển dụng mới")
     public ApiResponse<JobPostingResponse> createJob(
-            @PathVariable("companyId") Long companyId, // <-- Đã sửa lỗi tại đây
+            @PathVariable("companyId") Long companyId,
             @Valid @RequestBody JobPostingRequest request) {
         return ApiResponse.success(jobService.createJobPosting(companyId, request), "Đăng tin chờ duyệt thành công");
     }
@@ -44,15 +45,8 @@ public class JobController {
 
     @GetMapping("/{jobId}")
     @Operation(summary = "Xem chi tiết tin tuyển dụng")
-    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable("jobId") Long jobId) { // <-- Đã sửa lỗi tại đây
+    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable("jobId") Long jobId) {
         return ApiResponse.success(jobService.getJobById(jobId));
-    }
-
-    private DomainPageable createPageable(int page, int size) {
-        return new DomainPageable() {
-            @Override public int getPageNumber() { return page; }
-            @Override public int getPageSize() { return size; }
-        };
     }
 
     @GetMapping("/employers/{companyId}")
@@ -74,7 +68,29 @@ public class JobController {
             @PathVariable("companyId") Long companyId,
             @PathVariable("jobId") Long jobId,
             @Valid @RequestBody JobPostingRequest request) {
-        // Truyền đủ 3 tham số theo đúng thiết kế của JobService nhà bạn
         return ApiResponse.success(jobService.updateJobPosting(companyId, jobId, request), "Cập nhật tin thành công");
+    }
+
+    // ==========================================================
+    // SỬA LỖI BIÊN DỊCH: Ghi đè phương thức toSpringPageable()
+    // ==========================================================
+    private DomainPageable createPageable(int page, int size) {
+        return new DomainPageable() {
+            @Override
+            public int getPageNumber() {
+                return page;
+            }
+
+            @Override
+            public int getPageSize() {
+                return size;
+            }
+
+            @Override
+            public org.springframework.data.domain.Pageable toSpringPageable() {
+                // Ánh xạ sang lớp cấu trúc phân trang của Spring Data
+                return PageRequest.of(page, size);
+            }
+        };
     }
 }

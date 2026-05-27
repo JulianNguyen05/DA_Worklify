@@ -6,6 +6,8 @@ import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
 import com.smartmatch.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.CompanyProfileJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page; // BỔ SUNG IMPORT
+import org.springframework.data.domain.Pageable; // BỔ SUNG IMPORT
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,12 +37,20 @@ public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository
 
     @Override
     public List<CompanyProfile> findByVerificationStatus(VerificationStatus status) {
-        // TRƯỚC ĐÂY: jpaRepository.findByVerificationStatus(status.name())
-
-        // SỬA THÀNH (Bỏ .name() đi, truyền thẳng biến status):
         return jpaRepository.findByVerificationStatus(status)
                 .stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    // ==========================================================
+    // BỔ SUNG: Triển khai hàm findAll phục vụ phân trang cho DDD
+    // ==========================================================
+    @Override
+    public Page<CompanyProfile> findAll(Pageable pageable) {
+        // 1. jpaRepository.findAll(pageable) sẽ lấy từ DB lên một Page<CompanyProfileEntity>
+        // 2. Sử dụng hàm .map() tích hợp sẵn của Spring Page để tự động chuyển đổi
+        //    từng Entity bên trong thành Domain Model thông qua mapper mà không làm mất cấu trúc phân trang.
+        return jpaRepository.findAll(pageable).map(mapper::toDomain);
     }
 }

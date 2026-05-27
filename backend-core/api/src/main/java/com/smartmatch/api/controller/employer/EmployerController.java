@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Tạo hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> createProfile(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody CompanyProfileRequest request) {
         return ApiResponse.success(employerService.createProfile(userId, request), "Tạo hồ sơ thành công");
     }
@@ -36,14 +37,14 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Cập nhật hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> updateProfile(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody CompanyProfileRequest request) {
         return ApiResponse.success(employerService.updateProfile(userId, request), "Cập nhật hồ sơ thành công");
     }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Xem hồ sơ doanh nghiệp (Public/Private)")
-    public ApiResponse<CompanyProfileResponse> getProfile(@PathVariable("userId") Long userId) { // <--- Đã sửa ở đây
+    public ApiResponse<CompanyProfileResponse> getProfile(@PathVariable("userId") Long userId) {
         return ApiResponse.success(employerService.getProfileByUserId(userId));
     }
 
@@ -51,7 +52,7 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Tải lên logo doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> uploadLogo(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @RequestPart("file") MultipartFile file) {
         return ApiResponse.success(employerService.uploadLogo(userId, file), "Tải lên logo thành công");
     }
@@ -59,15 +60,28 @@ public class EmployerController {
     @GetMapping
     @Operation(summary = "Lấy danh sách tất cả doanh nghiệp (Công ty nổi bật)")
     public ApiResponse<PageResponse<CompanyProfileResponse>> getAllEmployers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(value = "page", defaultValue = "0") int page, // ĐÃ SỬA: Thêm value chỉ định tên tham số
+            @RequestParam(value = "size", defaultValue = "5") int size) {  // ĐÃ SỬA: Thêm value chỉ định tên tham số
 
+        // ĐÃ SỬA: Bổ sung override phương thức toSpringPageable() còn thiếu
         DomainPageable pageable = new DomainPageable() {
-            @Override public int getPageNumber() { return page; }
-            @Override public int getPageSize() { return size; }
+            @Override
+            public int getPageNumber() {
+                return page;
+            }
+
+            @Override
+            public int getPageSize() {
+                return size;
+            }
+
+            @Override
+            public org.springframework.data.domain.Pageable toSpringPageable() {
+                // Trực tiếp map sang cấu trúc PageRequest của Spring Data
+                return PageRequest.of(page, size);
+            }
         };
 
-        // Lưu ý: Bạn cần đảm bảo EmployerService đã có hàm getAllProfiles(pageable)
         return ApiResponse.success(employerService.getAllProfiles(pageable));
     }
 }

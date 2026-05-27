@@ -8,6 +8,7 @@ import com.smartmatch.application.jobapplication.dto.ApplicationResponse;
 import com.smartmatch.application.jobapplication.service.JobApplicationService;
 import com.smartmatch.domain.application.model.ApplicationStatus;
 import com.smartmatch.domain.common.DomainPageable;
+import com.smartmatch.domain.common.SearchPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -74,9 +75,6 @@ public class JobApplicationController {
     }
 
     private DomainPageable createPageable(int page, int size) {
-        return new DomainPageable() {
-            @Override public int getPageNumber() { return page; }
-            @Override public int getPageSize() { return size; }
-        };
+        return new SearchPageable(page, size);
     }
 }

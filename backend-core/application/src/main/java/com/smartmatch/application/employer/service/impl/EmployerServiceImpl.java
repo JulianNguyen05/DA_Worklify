@@ -4,25 +4,25 @@
 
 package com.smartmatch.application.employer.service.impl;
 
-import com.smartmatch.application.common.dto.FileData;
-import com.smartmatch.application.common.dto.PageResponse; // Bổ sung import
+import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.common.port.FileStoragePort;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
 import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.DomainPageable; // Bổ sung import
+import com.smartmatch.domain.common.DomainPageable;
 import com.smartmatch.domain.employer.model.CompanyProfile;
 import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,7 +36,7 @@ public class EmployerServiceImpl implements EmployerService {
 
     @Override
     public CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request) {
-        if (!userRepository.findById(userId).isPresent()) {
+        if (userRepository.findById(userId).isEmpty()) {
             throw new IllegalArgumentException("Tài khoản nhà tuyển dụng không tồn tại.");
         }
         if (companyProfileRepository.findByUserId(userId).isPresent()) {
@@ -71,42 +71,38 @@ public class EmployerServiceImpl implements EmployerService {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Vui lòng tạo thông tin doanh nghiệp trước khi tải logo."));
 
-        // Gọi port hạ tầng để lưu file (Lưu vào thư mục companies/logos)
         String prefix = "logo_owner_" + userId;
         String savedPath = fileStoragePort.storeFile(file, "companies/logos", prefix);
 
-        // Cập nhật logo thông qua Domain Method
         profile.updateLogo("/uploads/" + savedPath);
 
         return mapToResponse(companyProfileRepository.save(profile));
     }
 
     // ==========================================================
-    // PHƯƠNG THỨC MỚI BỔ SUNG ĐỂ SỬA LỖI IMPLEMENTS
+    // LẤY DANH SÁCH CÔNG TY (CÓ PHÂN TRANG)
     // ==========================================================
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable) {
-        // TODO: Cài đặt logic truy vấn danh sách hồ sơ công ty (có phân trang) tại đây
+        Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
 
-        /* Gợi ý quy trình chuẩn:
-         * 1. Query danh sách từ Repository:
-         * Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
-         * * 2. Map dữ liệu qua Response:
-         * List<CompanyProfileResponse> content = profilePage.getContent().stream()
-         * .map(this::mapToResponse)
-         * .collect(Collectors.toList());
-         * * 3. Đóng gói vào PageResponse và trả về:
-         * return new PageResponse<>(content, profilePage.getNumber(), ...);
-         */
+        List<CompanyProfileResponse> content = profilePage.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
 
-        return null; // Tạm thời return null để code compile (biên dịch) thành công.
+        return PageResponse.<CompanyProfileResponse>builder()
+                .content(content)
+                .totalElements(profilePage.getTotalElements())
+                .totalPages(profilePage.getTotalPages())
+                .pageNumber(profilePage.getNumber() + 1)
+                .pageSize(profilePage.getSize())
+                .build();
     }
 
     // ==========================================================
     // PRIVATE HELPER METHODS (MAPPING)
     // ==========================================================
-
     private CompanyProfileResponse mapToResponse(CompanyProfile profile) {
         return CompanyProfileResponse.builder()
                 .id(profile.getId())
