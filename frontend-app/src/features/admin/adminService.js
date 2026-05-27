@@ -8,8 +8,12 @@ const adminService = {
   },
 
   // Kiểm duyệt tin tuyển dụng
-  moderateJob: async (jobId, status) => {
-    const response = await axiosClient.patch(`/admin/jobs/${jobId}/moderate?status=${status}`);
+// Kiểm duyệt tin tuyển dụng
+  moderateJob: async (jobId, action, reason = '') => {
+    const response = await axiosClient.patch(`/admin/jobs/${jobId}/moderate`, {
+      action: action,
+      reason: reason
+    });
     return response.data;
   },
 
@@ -40,9 +44,11 @@ const adminService = {
     return response.data;
   },
 
-  getPendingJobs: async (page = 0, size = 10) => {
-    // Tận dụng API search jobs nhưng thêm bộ lọc trạng thái PENDING
-    const response = await axiosClient.get(`/jobs/search?status=PENDING&page=${page}&size=${size}`);
+// Lấy danh sách tin chờ duyệt (Đã sửa URL)
+// Lấy danh sách tin chờ duyệt (Đã xóa hẳn /api/v1)
+  getPendingJobs: async () => {
+    // Gọi đúng Endpoint của Admin thay vì gọi chung với public search
+    const response = await axiosClient.get(`/admin/jobs/pending`); // <-- Chỉ để /admin/jobs/pending
     return response.data;
   }
 };

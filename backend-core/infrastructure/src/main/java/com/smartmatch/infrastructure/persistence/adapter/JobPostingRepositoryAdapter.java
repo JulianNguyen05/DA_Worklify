@@ -12,7 +12,10 @@ import com.smartmatch.infrastructure.persistence.repository.JobPostingJpaReposit
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -45,5 +48,12 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
     @Override
     public long countByStatus(JobStatus status) {
         return jpaRepository.countByStatus(status);
+    }
+
+    @Override
+    public List<JobPosting> findByStatus(JobStatus status) {
+        return jpaRepository.findByStatus(status).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 }

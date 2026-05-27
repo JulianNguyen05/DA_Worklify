@@ -1,8 +1,10 @@
 package com.smartmatch.api.controller.admin;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.admin.dto.AdminJobResponse;
 import com.smartmatch.application.admin.dto.CompanyModerationRequest;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.dto.JobModerationRequest;
 import com.smartmatch.application.admin.service.AdminService;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.domain.job.model.JobStatus;
@@ -29,13 +31,18 @@ public class AdminController {
         return ApiResponse.success(adminService.getDashboardStats());
     }
 
+// Đừng quên import DTO mới: import com.smartmatch.application.admin.dto.JobModerationRequest;
+
     @PatchMapping("/jobs/{jobId}/moderate")
     @Operation(summary = "Kiểm duyệt (Duyệt/Khóa) tin tuyển dụng")
     public ApiResponse<Void> moderateJob(
-            @PathVariable("jobId") Long jobId, // <--- THÊM ("jobId") VÀO ĐÂY
-            @RequestParam("status") JobStatus status) { // <--- THÊM ("status") VÀO ĐÂY
-        adminService.moderateJob(jobId, status);
-        return ApiResponse.success(null, "Đã cập nhật trạng thái tin tuyển dụng");
+            @PathVariable("jobId") Long jobId,
+            @RequestBody JobModerationRequest request) { // <-- Đổi sang RequestBody
+
+        boolean isApprove = "APPROVED".equalsIgnoreCase(request.getAction());
+        adminService.moderateJob(jobId, isApprove, request.getReason());
+
+        return ApiResponse.success(null, "Đã xử lý tin tuyển dụng");
     }
 
     @PatchMapping("/users/{userId}/ban")
@@ -62,5 +69,11 @@ public class AdminController {
         adminService.moderateCompany(companyId, isApprove, request.getReason());
 
         return ApiResponse.success(null, "Đã xử lý hồ sơ doanh nghiệp");
+    }
+
+    @GetMapping("/jobs/pending")
+    @Operation(summary = "Lấy danh sách tin tuyển dụng đang chờ duyệt")
+    public ApiResponse<List<AdminJobResponse>> getPendingJobs() {
+        return ApiResponse.success(adminService.getPendingJobs());
     }
 }

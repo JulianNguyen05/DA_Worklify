@@ -1,5 +1,6 @@
 package com.smartmatch.application.admin.service;
 
+import com.smartmatch.application.admin.dto.AdminJobResponse;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
 import com.smartmatch.application.admin.dto.MasterDataRequest;
 import com.smartmatch.application.admin.dto.SystemLogResponse;
@@ -14,7 +15,8 @@ import java.util.List;
 public interface AdminService {
     DashboardStatsResponse getDashboardStats();
 
-    void moderateJob(Long jobId, JobStatus status);
+    // Sửa dòng cũ thành dòng này:
+    void moderateJob(Long jobId, boolean approve, String reason);
 
     // Quản lý Master Data
     void createSkillMasterData(MasterDataRequest request);
@@ -30,4 +32,7 @@ public interface AdminService {
 
     // Chỉ giữ lại DUY NHẤT hàm 3 tham số này cho việc kiểm duyệt công ty
     void moderateCompany(Long companyId, boolean approve, String reason);
+
+    // Thêm hàm này vào interface
+    List<AdminJobResponse> getPendingJobs();
 }

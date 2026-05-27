@@ -1,5 +1,6 @@
 package com.smartmatch.application.admin.service.impl;
 
+import com.smartmatch.application.admin.dto.AdminJobResponse;
 import com.smartmatch.application.common.exception.ResourceNotFoundException;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
@@ -17,6 +18,7 @@ import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.DomainPageable;
 import com.smartmatch.domain.employer.model.CompanyProfile;
 import com.smartmatch.domain.employer.model.VerificationStatus; // Cần import thêm Enum này
+import com.smartmatch.domain.job.model.JobPosting;
 import com.smartmatch.domain.job.model.JobStatus;
 import com.smartmatch.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
@@ -70,8 +72,33 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void moderateJob(Long jobId, JobStatus status) {
-        // TODO: Cài đặt logic cập nhật trạng thái Job
+    public void moderateJob(Long jobId, boolean approve, String reason) {
+        // 1. Tìm tin tuyển dụng
+        JobPosting job = jobPostingRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tuyển dụng"));
+
+        // 2. Chuyển đổi trạng thái thông qua Domain Method đã định nghĩa trong JobPosting.java
+        String actionLog = "";
+        if (approve) {
+            job.publish(); // Đổi status thành ACTIVE
+            actionLog = "APPROVE_JOB";
+            // TODO: (Mở rộng sau) Gửi email thông báo cho nhà tuyển dụng
+        } else {
+            job.reject(); // Đổi status thành REJECTED
+            actionLog = "REJECT_JOB";
+            // TODO: (Mở rộng sau) Gửi email báo lỗi kèm 'reason'
+        }
+
+        jobPostingRepository.save(job);
+
+        // 3. Lưu vết System Log
+        Long currentAdminId = 1L; // Giả định ID Admin hiện tại
+        SystemLog log = SystemLog.record(
+                currentAdminId,
+                actionLog,
+                "Job ID: " + jobId + (approve ? "" : ". Lý do: " + reason)
+        );
+        systemLogRepository.save(log);
     }
 
     @Override
@@ -150,5 +177,32 @@ public class AdminServiceImpl implements AdminService {
                 "Company ID: " + companyId + (approve ? "" : ". Lý do: " + reason)
         );
         systemLogRepository.save(log);
+    }
+
+    // Đừng quên import DTO: import com.smartmatch.application.admin.dto.AdminJobResponse;
+
+    @Override
+    public List<AdminJobResponse> getPendingJobs() {
+        // 1. Lấy danh sách Job có trạng thái PENDING
+        List<JobPosting> pendingJobs = jobPostingRepository.findByStatus(JobStatus.PENDING);
+
+        // 2. Map sang DTO và tìm Tên công ty tương ứng
+        return pendingJobs.stream().map(job -> {
+            String companyName = companyProfileRepository.findById(job.getCompanyId())
+                    .map(CompanyProfile::getCompanyName)
+                    .orElse("Doanh nghiệp không xác định");
+
+            return AdminJobResponse.builder()
+                    .id(job.getId())
+                    .title(job.getTitle())
+                    .companyName(companyName)
+                    .salaryRange(job.getSalaryRange())
+                    .location(job.getLocation())
+                    .workType(job.getWorkType())
+                    .description(job.getDescription())
+                    .requirements(job.getRequirements())
+                    .createdAt(job.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
     }
 }
