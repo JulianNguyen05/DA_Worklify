@@ -171,7 +171,7 @@ const DashboardPage = () => {
                 <Link key={company.id} to={`/companies/${company.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {company.logoUrl ? (
-                      <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover" />
+                      <img src={`http://localhost:8080${company.logoUrl}`} alt={company.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-gray-400 font-bold">{company.name?.charAt(0) || 'C'}</span>
                     )}
