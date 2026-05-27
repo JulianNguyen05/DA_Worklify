@@ -27,16 +27,28 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(summary = "Nộp hồ sơ ứng tuyển (Tự động kích hoạt AI chấm điểm)")
     public ApiResponse<ApplicationResponse> apply(
-            @PathVariable("candidateId") Long candidateId, // <--- THÊM ("candidateId")
+            @PathVariable("candidateId") Long candidateId,
             @Valid @RequestBody ApplicationRequest request) {
         return ApiResponse.success(applicationService.applyJob(candidateId, request), "Nộp hồ sơ thành công");
     }
+
+    // ==================== ĐOẠN CODE BỔ SUNG THIẾU SÓT Ở ĐÂY ====================
+    @GetMapping("/candidates/{candidateId}")
+    @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
+    @Operation(summary = "Ứng viên xem lịch sử danh sách đơn ứng tuyển của chính mình")
+    public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsByCandidate(
+            @PathVariable("candidateId") Long candidateId,
+            @RequestParam(value = "page", defaultValue = "0") int page, // Thêm value = "page"
+            @RequestParam(value = "size", defaultValue = "10") int size) { // Thêm value = "size"
+        return ApiResponse.success(applicationService.getApplicationsByCandidate(candidateId, createPageable(page, size)), "Tải danh sách đơn ứng tuyển thành công");
+    }
+    // =========================================================================
 
     @GetMapping("/jobs/{jobId}/review-board")
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
     @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
-            @PathVariable("jobId") Long jobId, // <--- THÊM ("jobId")
+            @PathVariable("jobId") Long jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success(applicationService.getApplicationsForReviewBoard(jobId, createPageable(page, size)));
@@ -46,7 +58,7 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('CANDIDATE')")
     @Operation(summary = "Xem kết quả chấm điểm độ phù hợp của AI")
     public ApiResponse<AiMatchScoreResponse> getAiScore(
-            @PathVariable("applicationId") Long applicationId) { // <--- THÊM ("applicationId")
+            @PathVariable("applicationId") Long applicationId) {
         return ApiResponse.success(applicationService.getAiMatchResult(applicationId));
     }
 
@@ -54,8 +66,8 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Cập nhật trạng thái hồ sơ (Duyệt/Loại)")
     public ApiResponse<Void> updateStatus(
-            @PathVariable("companyId") Long companyId, // <--- THÊM ("companyId")
-            @PathVariable("applicationId") Long applicationId, // <--- THÊM ("applicationId")
+            @PathVariable("companyId") Long companyId,
+            @PathVariable("applicationId") Long applicationId,
             @RequestParam ApplicationStatus status) {
         applicationService.updateApplicationStatus(companyId, applicationId, status);
         return ApiResponse.success(null, "Cập nhật trạng thái thành công");
