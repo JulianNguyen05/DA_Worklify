@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
 import candidateService from '../../../features/candidate/candidateService';
@@ -12,18 +12,15 @@ import {
 
 const INITIAL_BLOCKS = [makeProfileBlock(), makeSkillBlock()];
 
-const ProfilePage = () => {
+const CandidateProfile = () => {
   const userId = authService.getCurrentUser()?.userId;
 
-  const [blocks, setBlocks]               = useState(INITIAL_BLOCKS);
+  const [blocks, setBlocks] = useState(INITIAL_BLOCKS);
   const [activeBlockId, setActiveBlockId] = useState('block-profile');
-  const [toast, setToast]                 = useState({ show: false, message: '', type: 'info' });
-  const [isSaving, setIsSaving]           = useState(false);
-  const [isFetching, setIsFetching]       = useState(true);
+  const [uiState, setUiState] = useState({ isLoading: true, isSaving: false });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
-  // ── Hooks dùng chung ──────────────────────────────────────────────────────
   const { dragStart, dragEnter, dragEnd } = useDragSort(setBlocks);
-
   const {
     handleBlockChange,
     handleDataChange,
@@ -32,122 +29,138 @@ const ProfilePage = () => {
     handleDeleteBlock,
   } = useBlockEditor(activeBlockId, setBlocks, setActiveBlockId, setToast);
 
-  // ── Fetch dữ liệu ban đầu ─────────────────────────────────────────────────
+  // Memoize data parsing để tránh tính toán lại mỗi lần render
+  const profileBlock = useMemo(() => blocks.find(b => b.type === 'PROFILE'), [blocks]);
+  const skillBlocks = useMemo(() => blocks.filter(b => b.type === 'SKILLS'), [blocks]);
+  const activeBlock = useMemo(() => blocks.find(b => b.id === activeBlockId), [blocks, activeBlockId]);
+
+  // Khởi tạo dữ liệu
   useEffect(() => {
-    if (!userId) { setIsFetching(false); return; }
+    if (!userId) {
+      setUiState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
 
-    const fetchInitialData = async () => {
-      setIsFetching(true);
+    const abortController = new AbortController();
+
+    const fetchProfileData = async () => {
       try {
-        const profileRes = await candidateService.getProfile(userId);
-        if (profileRes?.data) {
-          setBlocks(prev => prev.map(b =>
-            b.type === 'PROFILE' ? { ...b, data: { ...makeProfileBlock(profileRes.data).data } } : b
-          ));
+        // Gửi request song song để tối ưu hóa thời gian chờ (LCP)
+        const [profileRes, skillsRes] = await Promise.allSettled([
+          candidateService.getProfile(userId, { signal: abortController.signal }),
+          candidateService.getSkills(userId, { signal: abortController.signal })
+        ]);
+
+        let newBlocks = [...INITIAL_BLOCKS];
+
+        if (profileRes.status === 'fulfilled' && profileRes.value?.data) {
+          newBlocks = newBlocks.map(b =>
+            b.type === 'PROFILE' ? { ...b, data: { ...makeProfileBlock(profileRes.value.data).data } } : b
+          );
         }
 
-        try {
-          const skillsRes = await candidateService.getSkills(userId);
-          if (skillsRes?.data?.length > 0) {
-            setBlocks(prev => [
-              ...prev.filter(b => b.type === 'PROFILE'),
-              ...mapApiSkillsToBlocks(skillsRes.data),
-            ]);
-          }
-        } catch (skillErr) {
-          if (![404, 400].includes(skillErr.response?.status)) {
-            console.warn('Không tải được kỹ năng:', skillErr);
-          }
+        if (skillsRes.status === 'fulfilled' && skillsRes.value?.data?.length > 0) {
+          newBlocks = [
+            ...newBlocks.filter(b => b.type === 'PROFILE'),
+            ...mapApiSkillsToBlocks(skillsRes.value.data)
+          ];
         }
+
+        setBlocks(newBlocks);
       } catch (error) {
-        if (![404, 400].includes(error.response?.status)) {
-          console.error('Lỗi tải Profile:', error);
-        }
+        setToast({ show: true, type: 'error', message: 'Hệ thống đang gián đoạn, vui lòng thử lại sau.' });
       } finally {
-        setIsFetching(false);
+        setUiState(prev => ({ ...prev, isLoading: false }));
       }
     };
 
-    fetchInitialData();
+    fetchProfileData();
+
+    return () => abortController.abort(); // Cleanup fetch khi component unmount
   }, [userId]);
 
-  // ── Lưu dữ liệu ──────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    if (!userId) { setToast({ show: true, type: 'error', message: 'Lỗi phiên đăng nhập!' }); return; }
-    setIsSaving(true);
-    setToast({ show: false, message: '', type: 'info' });
-    try {
-      const profileBlock = blocks.find(b => b.type === 'PROFILE');
-      if (profileBlock) {
-        const pd = profileBlock.data;
-        if (!pd.fullName?.trim()) {
-          setToast({ show: true, type: 'error', message: 'Vui lòng nhập Họ và tên!' });
-          setIsSaving(false); return;
-        }
-        await candidateService.createOrUpdateProfile(userId, { ...pd, dob: pd.dob || null });
-      }
-
-      const skillBlocks = blocks.filter(b => b.type === 'SKILLS');
-      for (const sb of skillBlocks) {
-        const sd = sb.data;
-        if (!sd.skillName?.trim()) continue;
-        const payload = { skillName: sd.skillName, level: sd.level, category: sd.category, description: sd.description || '' };
-        if (sd.remoteId) {
-          await candidateService.updateSkill(userId, sd.remoteId, payload);
-        } else {
-          const res = await candidateService.createSkill(userId, payload);
-          if (res?.data?.id) {
-            setBlocks(prev => prev.map(b =>
-              b.id === sb.id ? { ...b, data: { ...b.data, remoteId: res.data.id } } : b
-            ));
-          }
-        }
-      }
-      setToast({ show: true, message: 'Đã lưu hồ sơ thành công!', type: 'success' });
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Có lỗi xảy ra khi lưu dữ liệu.';
-      setToast({ show: true, message: msg, type: 'error' });
-    } finally {
-      setIsSaving(false);
+  // Xử lý lưu trữ dữ liệu với useCallback để tránh re-create function
+  const handleSaveProfile = useCallback(async () => {
+    if (!userId) {
+      setToast({ show: true, type: 'error', message: 'Phiên đăng nhập không hợp lệ!' });
+      return;
     }
-  };
 
-  if (isFetching) return <LoadingSpinner />;
+    const pd = profileBlock?.data;
+    if (!pd?.fullName?.trim()) {
+      setToast({ show: true, type: 'warning', message: 'Họ và tên là thông tin bắt buộc.' });
+      return;
+    }
 
-  const profileBlock = blocks.find(b => b.type === 'PROFILE');
-  const skillBlocks  = blocks.filter(b => b.type === 'SKILLS');
-  const activeBlock  = blocks.find(b => b.id === activeBlockId);
+    setUiState(prev => ({ ...prev, isSaving: true }));
+    setToast({ show: false, message: '', type: 'info' });
+
+    try {
+      // Thực hiện gọi API cập nhật Profile
+      await candidateService.createOrUpdateProfile(userId, { ...pd, dob: pd.dob || null });
+
+      // Quản lý lưu danh sách kỹ năng
+      const skillPromises = skillBlocks.map(sb => {
+        const sd = sb.data;
+        if (!sd.skillName?.trim()) return Promise.resolve();
+
+        const payload = { skillName: sd.skillName, level: sd.level, category: sd.category, description: sd.description || '' };
+        
+        return sd.remoteId 
+          ? candidateService.updateSkill(userId, sd.remoteId, payload)
+          : candidateService.createSkill(userId, payload).then(res => {
+              if (res?.data?.id) {
+                setBlocks(prev => prev.map(b => b.id === sb.id ? { ...b, data: { ...b.data, remoteId: res.data.id } } : b));
+              }
+            });
+      });
+
+      await Promise.all(skillPromises);
+      setToast({ show: true, message: 'Cập nhật hồ sơ thành công!', type: 'success' });
+    } catch (error) {
+      setToast({ show: true, message: error.response?.data?.message || 'Lỗi đồng bộ dữ liệu.', type: 'error' });
+    } finally {
+      setUiState(prev => ({ ...prev, isSaving: false }));
+    }
+  }, [userId, profileBlock, skillBlocks]);
+
+  if (uiState.isLoading) return <LoadingSpinner />;
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex justify-between items-center bg-white px-5 py-4 rounded-xl shadow-sm border border-gray-100">
+    <div className="flex flex-col h-full space-y-6 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <header className="flex justify-between items-center bg-white px-6 py-5 rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight">Hồ sơ ứng viên</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Quản lý thông tin cá nhân và danh sách kỹ năng chuyên môn</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Hồ Sơ Năng Lực</h1>
+          <p className="text-sm text-gray-500 mt-1">Cá nhân hóa thông tin để thu hút nhà tuyển dụng</p>
         </div>
-        <Button onClick={handleSave} isLoading={isSaving}>Lưu hồ sơ</Button>
-      </div>
+        <Button onClick={handleSaveProfile} isLoading={uiState.isSaving} className="px-6 py-2.5 rounded-xl font-semibold">
+          Lưu thay đổi
+        </Button>
+      </header>
 
       {toast.show && <Toast type={toast.type} message={toast.message} onClose={() => setToast({ show: false })} />}
 
-      <div className="flex flex-col lg:flex-row gap-5 items-start">
-        {/* CANVAS */}
-        <div className="flex-[2] w-full space-y-4">
+      <main className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Workspace Canvas */}
+        <section className="flex-[2] w-full space-y-6">
           <ProfileBlockCard profileBlock={profileBlock} activeBlockId={activeBlockId} onSelect={setActiveBlockId} />
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <span className="w-5 h-0.5 bg-gray-300 rounded" />
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Kỹ năng chuyên môn</span>
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{skillBlocks.length} kỹ năng</span>
-              <span className="flex-1 h-0.5 bg-gray-100 rounded" />
+          <div className="space-y-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-1 bg-indigo-500 rounded-full" />
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Danh sách Kỹ năng</h3>
+              <span className="text-xs font-medium bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">
+                {skillBlocks.length} mục
+              </span>
+              <span className="flex-1 h-px bg-gray-200" />
             </div>
 
-            {skillBlocks.map(block => (
+            {skillBlocks.map((block, idx) => (
               <SkillBlockCard
                 key={block.id}
                 block={block}
-                globalIdx={blocks.findIndex(b => b.id === block.id)}
+                globalIdx={idx}
                 activeBlockId={activeBlockId}
                 onSelect={setActiveBlockId}
                 dragStart={dragStart}
@@ -158,34 +171,33 @@ const ProfilePage = () => {
 
             <button
               onClick={handleAddSkill}
-              className="w-full py-3.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500
-                hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200
-                font-medium flex items-center justify-center gap-2 text-sm"
+              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-semibold hover:text-indigo-600 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
             >
-              + Thêm kỹ năng mới
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+              Thêm kỹ năng chuyên môn
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* EDITOR PANEL */}
-        <div className="flex-[1] w-full bg-white rounded-xl shadow-sm border border-gray-100 sticky top-24 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-            <span className="text-sm font-bold text-gray-700">
-              {activeBlock?.type === 'PROFILE' ? 'Chỉnh sửa hồ sơ' : 'Chỉnh sửa kỹ năng'}
-            </span>
-            {activeBlock && activeBlock.id !== 'block-profile' && (
+        {/* Floating Editor Panel */}
+        <aside className="flex-[1] w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 sticky top-24 overflow-hidden transition-all">
+          <header className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
+            <h3 className="text-base font-bold text-gray-800">
+              {activeBlock?.type === 'PROFILE' ? 'Cập nhật Thông tin' : 'Chỉnh sửa Kỹ năng'}
+            </h3>
+            {activeBlock?.id !== 'block-profile' && (
               <button
                 onClick={() => handleDeleteBlock(activeBlock.id, blocks)}
-                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                className="text-sm font-medium text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors"
               >
-                Xóa
+                Gỡ bỏ
               </button>
             )}
-          </div>
+          </header>
 
-          <div className="p-5">
+          <div className="p-6">
             {activeBlock ? (
-              <div className="space-y-4">
+              <div className="space-y-5 animate-fadeIn">
                 {activeBlock.type === 'PROFILE' && (
                   <ProfileEditorPanel data={activeBlock.data} handleDataChange={handleDataChange} />
                 )}
@@ -201,13 +213,15 @@ const ProfilePage = () => {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-10">Nhấp vào một khối để chỉnh sửa</p>
+              <div className="text-center py-12">
+                <p className="text-sm text-gray-400 font-medium">Vui lòng chọn một khối bên trái để thao tác</p>
+              </div>
             )}
           </div>
-        </div>
-      </div>
+        </aside>
+      </main>
     </div>
   );
 };
 
-export default ProfilePage;
+export default CandidateProfile;
