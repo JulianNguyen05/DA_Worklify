@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Input from "../../../components/common/Input";
 import Button from "../../../components/common/Button";
-import Toast from "../../../components/common/Toast"; // Import Toast Component
+import Toast from "../../../components/common/Toast";
 import authService from "../../../features/auth/authService";
 
 const RegisterPage = () => {
@@ -109,17 +109,22 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8">
-      <div>
-        <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+    <div className="w-full space-y-6 animate-fade-in">
+      {/* Form Header */}
+      <div className="space-y-1.5">
+        <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]">
           Tạo tài khoản mới
         </h2>
+        <p className="text-sm text-[#64748B]">
+          Bắt đầu hành trình tìm kiếm cơ hội cùng Worklify.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-        {/* Tích hợp Toast dùng chung cho cả trạng thái lỗi lẫn thành công */}
+      {/* Form Handle */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Tích hợp Toast dùng chung */}
         {toast.show && (
-          <div className="animate-shake">
+          <div className={toast.type === "error" ? "animate-shake" : ""}>
             <Toast 
               type={toast.type} 
               message={toast.message} 
@@ -128,24 +133,35 @@ const RegisterPage = () => {
           </div>
         )}
 
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        {/* Bộ chuyển đổi Tab Vai Trò (Role Switcher) - Thiết kế thanh lịch dạng Pill */}
+        <div className="flex bg-[#F1F5F9] p-1 rounded-xl border border-[#E2E8F0]/30">
           <button
             type="button"
             onClick={() => handleRoleChange("CANDIDATE")}
-            className={`flex-1 text-center py-2 rounded-md text-sm font-medium transition-colors ${formData.role === "CANDIDATE" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+            className={`flex-1 text-center py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              formData.role === "CANDIDATE" 
+                ? "bg-white text-[#2563EB] shadow-sm" 
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
           >
             Ứng viên
           </button>
           <button
             type="button"
             onClick={() => handleRoleChange("EMPLOYER")}
-            className={`flex-1 text-center py-2 rounded-md text-sm font-medium transition-colors ${formData.role === "EMPLOYER" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+            className={`flex-1 text-center py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              formData.role === "EMPLOYER" 
+                ? "bg-white text-[#2563EB] shadow-sm" 
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
           >
             Nhà tuyển dụng
           </button>
         </div>
 
+        {/* Input Fields Container */}
         <div className="space-y-4">
+          {/* Render trường dữ liệu linh hoạt dựa trên Role */}
           {formData.role === "CANDIDATE" ? (
             <Input
               label="Họ và tên"
@@ -154,7 +170,8 @@ const RegisterPage = () => {
               value={formData.fullName}
               onChange={handleChange}
               required
-              placeholder="VD: Nguyễn Văn A"
+              placeholder="Nguyễn Văn A"
+              className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-sm"
             />
           ) : (
             <Input
@@ -164,7 +181,8 @@ const RegisterPage = () => {
               value={formData.companyName}
               onChange={handleChange}
               required
-              placeholder="VD: Công ty Cổ phần ABC"
+              placeholder="Công ty Cổ phần Worklify"
+              className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-sm"
             />
           )}
 
@@ -175,8 +193,10 @@ const RegisterPage = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            placeholder="Nhập email"
+            placeholder="name@company.com"
+            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-sm"
           />
+          
           <Input
             label="Mật khẩu"
             type="password"
@@ -184,8 +204,10 @@ const RegisterPage = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            placeholder="Tạo mật khẩu"
+            placeholder="Tối thiểu 6 ký tự"
+            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-sm"
           />
+          
           <Input
             label="Xác nhận mật khẩu"
             type="password"
@@ -193,28 +215,39 @@ const RegisterPage = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            placeholder="Nhập lại mật khẩu"
+            placeholder="Nhập lại mật khẩu giống phía trên"
+            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-sm"
           />
         </div>
 
+        {/* Nút Submit Đăng Ký với Spinner quay mượt mà */}
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md font-semibold transition-all"
           disabled={isLoading}
+          className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-[#2563EB]/60 text-white py-3 rounded-xl font-medium tracking-wide shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm"
         >
-          {isLoading ? "Đang xử lý..." : "Đăng ký"}
+          {isLoading ? (
+            <div className="flex items-center space-x-2">
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Đang tạo tài khoản...</span>
+            </div>
+          ) : "Đăng ký tài khoản"}
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      {/* Điều hướng quay lại trang Đăng Nhập */}
+      <div className="pt-4 border-t border-[#F1F5F9] text-center text-sm text-[#64748B]">
         Đã có tài khoản?{" "}
         <Link
           to="/auth/login"
-          className="font-medium text-blue-600 hover:text-blue-500"
+          className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
         >
           Đăng nhập ngay
         </Link>
-      </p>
+      </div>
     </div>
   );
 };
