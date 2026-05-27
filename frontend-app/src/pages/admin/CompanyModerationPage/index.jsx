@@ -10,9 +10,12 @@ export default function CompanyModerationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
   
-  // State cho Modal từ chối
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  // State cho Modal Xem chi tiết
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+
+  // State cho Modal Từ chối
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
@@ -31,20 +34,25 @@ export default function CompanyModerationPage() {
     }
   };
 
+  const handleViewDetails = (company) => {
+    setSelectedCompany(company);
+    setIsDetailModalOpen(true);
+  };
+
   const handleApprove = async (companyId) => {
     try {
       await adminService.moderateCompany(companyId, 'APPROVED');
       setStatusMsg({ type: 'success', message: 'Đã duyệt hồ sơ doanh nghiệp.' });
       setCompanies(companies.filter(c => c.id !== companyId));
+      setIsDetailModalOpen(false); // Đóng modal chi tiết
     } catch (err) {
       setStatusMsg({ type: 'error', message: 'Thao tác thất bại.' });
     }
   };
 
-  const handleOpenRejectModal = (companyId) => {
-    setSelectedCompanyId(companyId);
+  const handleOpenRejectModal = () => {
     setRejectReason('');
-    setIsModalOpen(true);
+    setIsRejectModalOpen(true);
   };
 
   const handleConfirmReject = async () => {
@@ -54,28 +62,26 @@ export default function CompanyModerationPage() {
     }
     
     try {
-      await adminService.moderateCompany(selectedCompanyId, 'REJECTED', rejectReason);
+      await adminService.moderateCompany(selectedCompany.id, 'REJECTED', rejectReason);
       setStatusMsg({ type: 'success', message: 'Đã từ chối hồ sơ doanh nghiệp.' });
-      setCompanies(companies.filter(c => c.id !== selectedCompanyId));
-      setIsModalOpen(false);
+      setCompanies(companies.filter(c => c.id !== selectedCompany.id));
+      setIsRejectModalOpen(false); // Đóng modal từ chối
+      setIsDetailModalOpen(false); // Đóng luôn modal chi tiết
     } catch (err) {
       setStatusMsg({ type: 'error', message: 'Thao tác thất bại.' });
     }
   };
 
   const columns = [
-    { header: 'Tên doanh nghiệp', accessor: 'companyName', render: (row) => <span className="font-medium">{row.companyName}</span> },
-    { header: 'Website', accessor: 'website' },
+    { header: 'Tên doanh nghiệp', accessor: 'companyName', render: (row) => <span className="font-medium text-gray-800">{row.companyName}</span> },
+    { header: 'Website', accessor: 'website', render: (row) => <a href={row.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{row.website || 'N/A'}</a> },
     { 
       header: 'Hành động', 
       className: 'text-center',
       render: (row) => (
         <div className="flex gap-2 justify-center">
-          <Button variant="primary" onClick={() => handleApprove(row.id)} className="px-3 py-1">
-            Duyệt
-          </Button>
-          <Button variant="outline" onClick={() => handleOpenRejectModal(row.id)} className="px-3 py-1 text-red-600 border-red-600 hover:bg-red-50">
-            Từ chối
+          <Button variant="outline" onClick={() => handleViewDetails(row)} className="px-3 py-1 border-blue-600 text-blue-600 hover:bg-blue-50">
+            Xem chi tiết
           </Button>
         </div>
       )
@@ -95,17 +101,53 @@ export default function CompanyModerationPage() {
         emptyMessage="Không có hồ sơ doanh nghiệp nào chờ duyệt." 
       />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Lý do từ chối">
+      {/* --- MODAL 1: XEM CHI TIẾT --- */}
+      <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title="Chi tiết hồ sơ doanh nghiệp">
+        {selectedCompany && (
+          <div className="flex flex-col gap-4 text-sm text-gray-700">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-16 h-16 bg-gray-100 border rounded flex items-center justify-center overflow-hidden">
+                {selectedCompany.logoUrl ? (
+                  <img src={`http://localhost:8080${selectedCompany.logoUrl}`} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-xs text-gray-400">No Logo</span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">{selectedCompany.companyName}</h3>
+                <p>Website: <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="text-blue-600">{selectedCompany.website || 'Không có'}</a></p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 p-3 rounded border">
+              <span className="font-semibold block mb-1">Giới thiệu công ty:</span>
+              <p className="whitespace-pre-wrap">{selectedCompany.description || 'Doanh nghiệp chưa cập nhật phần giới thiệu.'}</p>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4 border-t pt-4">
+              <Button variant="outline" onClick={handleOpenRejectModal} className="text-red-600 border-red-600 hover:bg-red-50">
+                Từ chối hồ sơ
+              </Button>
+              <Button variant="primary" onClick={() => handleApprove(selectedCompany.id)}>
+                Duyệt hồ sơ
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* --- MODAL 2: NHẬP LÝ DO TỪ CHỐI --- */}
+      <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Lý do từ chối">
         <div className="flex flex-col gap-4">
           <textarea
             className="w-full border rounded p-2 text-sm focus:outline-none focus:ring focus:border-blue-300"
             rows="4"
-            placeholder="Nhập lý do vi phạm hoặc yêu cầu chỉnh sửa..."
+            placeholder="Nhập lý do vi phạm hoặc yêu cầu chỉnh sửa gửi đến nhà tuyển dụng..."
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
           ></textarea>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
+            <Button variant="outline" onClick={() => setIsRejectModalOpen(false)}>Hủy</Button>
             <Button variant="primary" onClick={handleConfirmReject} className="bg-red-600 hover:bg-red-700 text-white">Xác nhận từ chối</Button>
           </div>
         </div>
