@@ -5,7 +5,7 @@ import jobService from '../../../features/job/jobService';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
 import JobCard from '../../../components/shared/JobCard';
-import Pagination from '../../../components/common/Pagination'; // Giả định bạn có component này
+import Pagination from '../../../components/common/Pagination'; 
 
 export default function JobListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,14 +31,13 @@ export default function JobListPage() {
   const fetchJobs = async (kw, loc, page) => {
     setIsLoading(true);
     try {
-      // Gọi API (page - 1 vì Spring Boot đếm trang từ 0)
+      // Backend Spring Boot đếm từ 0, nên page - 1 là chính xác
       const res = await jobService.searchJobs(kw, loc, page - 1, 10);
       
       if (res && res.data) {
-        // Trích xuất data từ PageResponse của Spring Boot
         const content = res.data.content || res.data.items || [];
         
-        // Lọc Frontend tạm thời cho Work Type (Nếu Backend chưa hỗ trợ filter theo workType)
+        // Lọc Frontend
         const filteredContent = activeWorkType === 'ALL' 
           ? content 
           : content.filter(job => job.workType === activeWorkType);
@@ -47,7 +46,7 @@ export default function JobListPage() {
         setPageData({
           totalElements: res.data.totalElements || 0,
           totalPages: res.data.totalPages || 0,
-          currentPage: page
+          currentPage: page // Truyền chuẩn page (1-based index) vào State
         });
       }
     } catch (error) {
@@ -58,24 +57,24 @@ export default function JobListPage() {
   };
 
   useEffect(() => {
-    fetchJobs(keywordParam, locationParam, pageParam);
+    fetchJobs(keywordParam, locationParam, pageParam, activeWorkType);
   }, [keywordParam, locationParam, pageParam, activeWorkType]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
-    setSearchParams({ 
-      keyword: filterForm.keyword, 
-      location: filterForm.location,
-      page: 1 // Reset về trang 1 khi search mới
-    });
+    const params = {};
+    if (filterForm.keyword) params.keyword = filterForm.keyword;
+    if (filterForm.location) params.location = filterForm.location;
+    params.page = "1"; // Reset về trang 1
+    setSearchParams(params);
   };
 
   const handlePageChange = (newPage) => {
-    setSearchParams({ 
-      keyword: keywordParam, 
-      location: locationParam,
-      page: newPage
-    });
+    const params = {};
+    if (keywordParam) params.keyword = keywordParam;
+    if (locationParam) params.location = locationParam;
+    params.page = newPage.toString();
+    setSearchParams(params);
   };
 
   return (
@@ -83,7 +82,6 @@ export default function JobListPage() {
       
       {/* ================= HERO BANNER ================= */}
       <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 py-16 lg:py-24 px-4 relative overflow-hidden">
-        {/* Abstract shapes for background decoration */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
           <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
           <div className="absolute bottom-0 right-10 w-80 h-80 rounded-full bg-blue-300 blur-3xl"></div>
@@ -137,7 +135,7 @@ export default function JobListPage() {
       {/* ================= MAIN CONTENT ================= */}
       <div className="max-w-6xl mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">
         
-        {/* SIDEBAR FILTERS (Dính trên màn hình khi cuộn) */}
+        {/* SIDEBAR FILTERS */}
         <aside className="w-full lg:w-1/4 shrink-0">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
             <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
@@ -158,7 +156,10 @@ export default function JobListPage() {
                       name="workType" 
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       checked={activeWorkType === type}
-                      onChange={() => setActiveWorkType(type)}
+                      onChange={() => {
+                        setActiveWorkType(type);
+                        handlePageChange(1); // Tự động đưa về trang 1
+                      }}
                     />
                     <span className="text-gray-600 group-hover:text-blue-600 transition-colors">
                       {type === 'ALL' ? 'Tất cả hình thức' : type === 'FULL_TIME' ? 'Toàn thời gian' : 'Bán thời gian'}
@@ -166,12 +167,6 @@ export default function JobListPage() {
                   </label>
                 ))}
               </div>
-            </div>
-
-            <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-sm text-blue-800 text-center font-medium">
-                Sử dụng các bộ lọc để tìm kiếm công việc chính xác nhất với nhu cầu của bạn!
-              </p>
             </div>
           </div>
         </aside>
@@ -183,7 +178,6 @@ export default function JobListPage() {
             <h2 className="text-xl font-bold text-gray-800">
               {isLoading ? 'Đang tìm kiếm...' : `Tìm thấy ${pageData.totalElements} việc làm phù hợp`}
             </h2>
-            {/* Chỗ này có thể làm Sort dropdown sau (Mới nhất, Cũ nhất) */}
           </div>
 
           {/* Rendering Logic */}
@@ -222,15 +216,13 @@ export default function JobListPage() {
             </div>
           )}
 
-          {/* PAGINATION */}
+          {/* COMPONENT PHÂN TRANG NÂNG CẤP */}
           {!isLoading && pageData.totalPages > 1 && (
-            <div className="mt-10 flex justify-center border-t border-gray-200 pt-8">
-              <Pagination 
-                currentPage={pageData.currentPage} 
-                totalPages={pageData.totalPages} 
-                onPageChange={handlePageChange} 
-              />
-            </div>
+            <Pagination 
+              currentPage={pageData.currentPage} 
+              totalPages={pageData.totalPages} 
+              onPageChange={handlePageChange} 
+            />
           )}
 
         </main>

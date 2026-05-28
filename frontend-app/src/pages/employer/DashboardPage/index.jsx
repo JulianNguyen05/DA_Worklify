@@ -56,7 +56,10 @@ const StatCard = ({ title, value, subtitle, link, icon, accentClass, isLoading }
   >
     <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity ${accentClass}`} />
     <div className="flex items-start justify-between mb-4">
-      <div className={`p-2.5 rounded-xl ${accentClass} bg-opacity-10`}>{icon}</div>
+      {/* FIX: Đổi nền thành màu đặc, bo góc tròn và icon màu trắng */}
+      <div className={`p-3 rounded-xl ${accentClass} shadow-sm flex items-center justify-center w-max text-white`}>
+        {icon}
+      </div>
       <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
     </div>
     {isLoading ? (
@@ -216,10 +219,26 @@ export default function EmployerDashboardPage() {
 
       {/* STAT CARDS */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Tin đang hoạt động" subtitle="Tổng số bài viết công khai" value={stats.activeJobs} link="/employer/jobs" accentClass="bg-blue-500" icon={<Briefcase className="w-5 h-5 text-blue-600" />} />
-        <StatCard title="Tổng đơn ứng tuyển" subtitle="Bảng hồ sơ ứng viên" value={stats.totalApplications} link="/employer/applications" accentClass="bg-indigo-500" icon={<FileText className="w-5 h-5 text-indigo-600" />} />
-        <StatCard title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications?status=PENDING" accentClass="bg-amber-500" icon={<Inbox className="w-5 h-5 text-amber-600" />} />
-        <StatCard title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications?status=ACCEPTED" accentClass="bg-emerald-500" icon={<CheckCircle className="w-5 h-5 text-emerald-600" />} />
+        <StatCard 
+          title="Tin đang hoạt động" subtitle="Tổng số bài viết công khai" value={stats.activeJobs} link="/employer/jobs" 
+          accentClass="bg-blue-500" 
+          icon={<Briefcase className="w-6 h-6 text-white" />} 
+        />
+        <StatCard 
+          title="Tổng đơn ứng tuyển" subtitle="Bảng hồ sơ ứng viên" value={stats.totalApplications} link="/employer/applications" 
+          accentClass="bg-indigo-500" 
+          icon={<FileText className="w-6 h-6 text-white" />} 
+        />
+        <StatCard 
+          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications?status=PENDING" 
+          accentClass="bg-orange-500" 
+          icon={<Inbox className="w-6 h-6 text-white" />} 
+        />
+        <StatCard 
+          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications?status=ACCEPTED" 
+          accentClass="bg-emerald-500" 
+          icon={<CheckCircle className="w-6 h-6 text-white" />} 
+        />
       </section>
 
       {/* DETAILED TABLES */}
