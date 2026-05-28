@@ -6,12 +6,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.smartmatch</groupId>
+    <groupId>com.worklify</groupId>
     <artifactId>backend-core</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>SmartMatch Backend Core</name>
+    <name>Worklify Backend Core</name>
     <description>Job Matching Platform - Multi Module Spring Boot</description>
 
     <properties>

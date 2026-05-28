@@ -12,6 +12,7 @@ const RegisterPage = () => {
     fullName: "",
     companyName: "",
     email: "",
+    phone: "", // [ĐÃ THÊM] Bổ sung trường số điện thoại khớp với DB
     password: "",
     confirmPassword: "",
     role: "CANDIDATE",
@@ -50,8 +51,10 @@ const RegisterPage = () => {
 
     try {
       // 2. Chuẩn hóa cấu trúc Payload động dựa theo vai trò (Role)
+      // [ĐÃ SỬA] Thêm trường phone vào payload gửi lên API
       const payload = {
         email: formData.email,
+        phone: formData.phone, 
         password: formData.password,
         role: formData.role,
         ...(formData.role === "CANDIDATE"
@@ -194,6 +197,18 @@ const RegisterPage = () => {
             onChange={handleChange}
             required
             placeholder="name@company.com"
+            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-[15px] font-medium placeholder:font-normal text-[#0F172A]"
+          />
+
+          {/* [ĐÃ THÊM] Input cho Số điện thoại */}
+          <Input
+            label="Số điện thoại liên hệ"
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+            placeholder="VD: 0901234567"
             className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-[15px] font-medium placeholder:font-normal text-[#0F172A]"
           />
           

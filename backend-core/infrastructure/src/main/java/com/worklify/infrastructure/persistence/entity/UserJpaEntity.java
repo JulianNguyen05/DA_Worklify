@@ -1,11 +1,9 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
 package com.worklify.infrastructure.persistence.entity;
 
 import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
-// [ĐÃ THÊM] Import thư viện tự động tạo thời gian của Hibernate
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -24,29 +22,33 @@ public class UserJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(unique = true, nullable = false, length = 191)
     private String email;
 
-    @Column(nullable = false)
+    // [ĐÃ BỔ SUNG] Thêm trường phone để khớp với Database (init.sql)
+    @Column(length = 20)
+    private String phone;
+
+    // [ĐÃ SỬA] Ép tên cột thành password_hash để khớp với Database
+    @Column(name = "password_hash", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private UserStatus status;
 
-    @Column(name = "mfa_enabled", nullable = false)
+    // [ĐÃ SỬA] Ép tên cột thành is_mfa_enabled để khớp với Database
+    @Column(name = "is_mfa_enabled", nullable = false)
     private boolean mfaEnabled;
 
-    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại khi Insert lần đầu
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại mỗi khi record bị Update
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
