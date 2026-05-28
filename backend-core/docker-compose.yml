@@ -3,24 +3,24 @@ version: '3.9'
 services:
   mysql:
     image: mysql:8.4
-    container_name: smartmatch-mysql
+    container_name: worklify-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: smartmatch_db
-      MYSQL_USER: smartmatch
-      MYSQL_PASSWORD: smartmatch123
+      MYSQL_DATABASE: worklify_db
+      MYSQL_USER: worklify
+      MYSQL_PASSWORD: worklify_password
     ports:
       - "3307:3306" # Map ra ngoài máy host ở port 3307 để không trùng MySQL có sẵn
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - smartmatch-network
+      - worklify-network
 
   phpmyadmin:
     image: phpmyadmin:5.2
-    container_name: smartmatch-phpmyadmin
+    container_name: worklify-phpmyadmin
     restart: unless-stopped
     depends_on:
       - mysql
@@ -32,24 +32,10 @@ services:
     ports:
       - "8081:80"
     networks:
-      - smartmatch-network
-
-  # Hệ thống Message Broker để xử lý chấm điểm AI bất đồng bộ
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: smartmatch-rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"   # Port giao tiếp mặc định
-      - "15672:15672" # Port trang quản trị RabbitMQ UI
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - smartmatch-network
+      - worklify-network
 
 networks:
-  smartmatch-network:
+  worklify-network:
     driver: bridge
 
 volumes:

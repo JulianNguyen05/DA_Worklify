@@ -1,7 +1,7 @@
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
 package com.smartmatch.application.job.dto;
 
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.job.model.JobStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;

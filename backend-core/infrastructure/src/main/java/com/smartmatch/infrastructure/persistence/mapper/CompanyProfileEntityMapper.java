@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.model.CompanyProfile;
 import com.smartmatch.infrastructure.persistence.entity.CompanyProfileJpaEntity;
 import org.mapstruct.Mapper;
 

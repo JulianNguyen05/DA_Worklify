@@ -1,8 +1,8 @@
 package com.smartmatch.application.jobapplication.service;
 import com.smartmatch.application.jobapplication.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.application.model.ApplicationStatus;
 
 public interface JobApplicationService {
     ApplicationResponse applyJob(Long candidateId, ApplicationRequest request);

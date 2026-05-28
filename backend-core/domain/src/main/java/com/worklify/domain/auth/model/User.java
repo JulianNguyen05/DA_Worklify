@@ -1,0 +1,53 @@
+package com.worklify.domain.auth.model;
+
+import com.worklify.domain.common.valueobject.EmailAddress;
+import com.worklify.domain.common.valueobject.PhoneNumber;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class User {
+    private Long id;
+    private EmailAddress email;
+    private PhoneNumber phone;
+    private String passwordHash;
+    private Role role;
+    private UserStatus status;
+    private boolean isMfaEnabled;
+
+    // Business Behavior: Kích hoạt MFA
+    public void enableMfa() {
+        if (this.isMfaEnabled) {
+            throw new IllegalStateException("MFA đã được kích hoạt cho tài khoản này.");
+        }
+        this.isMfaEnabled = true;
+    }
+
+    // Business Behavior: Khóa tài khoản
+    public void ban() {
+        if (this.status == UserStatus.BANNED) {
+            throw new IllegalStateException("Tài khoản này đã bị khóa từ trước.");
+        }
+        this.status = UserStatus.BANNED;
+    }
+
+    // Business Behavior: Mở khóa tài khoản
+    public void unban() {
+        if (this.status != UserStatus.BANNED) {
+            throw new IllegalStateException("Tài khoản không nằm trong danh sách bị khóa.");
+        }
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public boolean isValidEmail() {
+        return this.email != null && this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+}

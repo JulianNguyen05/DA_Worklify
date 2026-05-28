@@ -4,16 +4,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.candidate.service.CandidateService;
-import com.smartmatch.application.common.dto.FileData;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.model.CandidateSkill;
-import com.smartmatch.domain.candidate.model.CvDocument;
-import com.smartmatch.domain.candidate.model.Skill;
-import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
-import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
-import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
-import com.smartmatch.domain.candidate.repository.SkillRepository;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.model.CandidateSkill;
+import com.worklify.domain.candidate.model.CvDocument;
+import com.worklify.domain.candidate.model.Skill;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.candidate.repository.CandidateSkillRepository;
+import com.worklify.domain.candidate.repository.CvDocumentRepository;
+import com.worklify.domain.candidate.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -80,8 +79,8 @@ public class CandidateServiceImpl implements CandidateService {
                 if (trimmedName.isEmpty()) continue;
 
                 // ĐÃ SỬA: Sử dụng phương thức tĩnh Skill.create(name) có sẵn thay vì dùng `new` bị lỗi private
-                com.smartmatch.domain.candidate.model.Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
-                        .orElseGet(() -> skillRepository.save(com.smartmatch.domain.candidate.model.Skill.create(trimmedName)));
+                Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
+                        .orElseGet(() -> skillRepository.save(Skill.create(trimmedName)));
 
                 // Lưu liên quan hệ vào bảng liên kết CandidateSkill theo profile ID chính xác
                 CandidateSkill candidateSkill = new CandidateSkill(savedProfile.getId(), skill.getId());
@@ -204,11 +203,11 @@ public class CandidateServiceImpl implements CandidateService {
                                     // SỬA: Tìm kiếm ID thực tế từ bảng danh mục tổng 'skills'
                                     // (Cần bổ sung hàm findByNameIgnoreCase trong SkillRepository tầng Domain)
                                     Long validSkillId = skillRepository.findByNameIgnoreCase(cleanSkillName)
-                                            .map(com.smartmatch.domain.candidate.model.Skill::getId)
+                                            .map(Skill::getId)
                                             .orElseGet(() -> {
                                                 // Nếu hệ thống chưa có từ khóa này, tiến hành tự động tạo mới vào danh mục tổng
-                                                com.smartmatch.domain.candidate.model.Skill newSkill =
-                                                        com.smartmatch.domain.candidate.model.Skill.create(cleanSkillName);
+                                                Skill newSkill =
+                                                        Skill.create(cleanSkillName);
                                                 return skillRepository.save(newSkill).getId();
                                             });
 

@@ -7,7 +7,6 @@ import com.smartmatch.application.admin.dto.DashboardStatsResponse;
 import com.smartmatch.application.admin.dto.JobModerationRequest;
 import com.smartmatch.application.admin.service.AdminService;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
-import com.smartmatch.domain.job.model.JobStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

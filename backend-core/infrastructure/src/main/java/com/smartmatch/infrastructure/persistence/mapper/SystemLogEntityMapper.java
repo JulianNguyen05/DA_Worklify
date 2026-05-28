@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.admin.model.SystemLog;
+import com.worklify.domain.admin.model.SystemLog;
 import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
 import org.mapstruct.Mapper;
 

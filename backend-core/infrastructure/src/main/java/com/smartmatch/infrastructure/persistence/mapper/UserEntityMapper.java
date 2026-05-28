@@ -1,8 +1,8 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.common.valueobject.EmailAddress;
-import com.smartmatch.domain.common.valueobject.PhoneNumber;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.common.valueobject.EmailAddress;
+import com.worklify.domain.common.valueobject.PhoneNumber;
 import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping; // [ĐÃ THÊM] Import annotation Mapping

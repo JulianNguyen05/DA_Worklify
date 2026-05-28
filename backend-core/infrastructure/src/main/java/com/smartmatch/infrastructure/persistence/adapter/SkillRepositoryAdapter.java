@@ -1,7 +1,7 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.candidate.model.Skill;
-import com.smartmatch.domain.candidate.repository.SkillRepository;
+import com.worklify.domain.candidate.model.Skill;
+import com.worklify.domain.candidate.repository.SkillRepository;
 import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.SkillJpaRepository;
 import lombok.RequiredArgsConstructor;

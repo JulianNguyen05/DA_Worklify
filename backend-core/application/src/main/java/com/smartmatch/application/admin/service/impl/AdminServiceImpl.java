@@ -3,24 +3,24 @@ package com.smartmatch.application.admin.service.impl;
 import com.smartmatch.application.admin.dto.AdminJobResponse;
 import com.smartmatch.application.common.exception.ResourceNotFoundException;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
-import com.smartmatch.domain.admin.repository.SystemLogRepository;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.admin.repository.SystemLogRepository;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
 import com.smartmatch.application.admin.dto.MasterDataRequest;
 import com.smartmatch.application.admin.dto.SystemLogResponse;
 import com.smartmatch.application.admin.service.AdminService;
 import com.smartmatch.application.auth.dto.UserResponse;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.admin.model.SystemLog;
-import com.smartmatch.domain.application.model.ApplicationStatus;
-import com.smartmatch.domain.application.repository.ApplicationRepository;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.model.VerificationStatus; // Cần import thêm Enum này
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
-import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.admin.model.SystemLog;
+import com.worklify.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.model.VerificationStatus; // Cần import thêm Enum này
+import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

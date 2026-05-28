@@ -1,7 +1,7 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\JobPostingJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.job.model.JobStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

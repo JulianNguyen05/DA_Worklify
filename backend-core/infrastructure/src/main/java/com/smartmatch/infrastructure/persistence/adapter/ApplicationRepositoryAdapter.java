@@ -1,9 +1,10 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.application.model.Application;
-import com.smartmatch.domain.application.repository.ApplicationRepository;
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.application.model.Application;
+import com.worklify.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
 import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
@@ -47,7 +48,7 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
     }
 
     @Override
-    public long countByStatus(com.smartmatch.domain.application.model.ApplicationStatus status) {
+    public long countByStatus(ApplicationStatus status) {
         // Đảm bảo ApplicationJpaRepository của bạn đã định nghĩa phương thức countByStatus
         return jpaRepository.countByStatus(status);
     }

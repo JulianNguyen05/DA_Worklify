@@ -1,7 +1,7 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
 package com.smartmatch.infrastructure.messaging;
 
-import com.smartmatch.domain.application.event.ApplicationSubmittedEvent;
+import com.worklify.domain.application.event.ApplicationSubmittedEvent;
 import com.smartmatch.infrastructure.config.RabbitMqConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

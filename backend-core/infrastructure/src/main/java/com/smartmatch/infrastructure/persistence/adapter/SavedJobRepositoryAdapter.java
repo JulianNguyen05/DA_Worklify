@@ -1,9 +1,9 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.SavedJob;
-import com.smartmatch.domain.job.repository.SavedJobRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.job.model.SavedJob;
+import com.worklify.domain.job.repository.SavedJobRepository;
 import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.SavedJobEntityMapper;

@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.employer.repository.CompanyLikeRepository;
+import com.worklify.domain.employer.repository.CompanyLikeRepository;
 import com.smartmatch.infrastructure.persistence.entity.CompanyLikeJpaEntity;
 import com.smartmatch.infrastructure.persistence.repository.CompanyLikeJpaRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,10 +1,10 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
-import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.repository.JobPostingRepository;
 import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.JobPostingEntityMapper;

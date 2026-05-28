@@ -1,7 +1,7 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.repository.UserRepository;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.repository.UserRepository;
 import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.UserEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.UserJpaRepository;

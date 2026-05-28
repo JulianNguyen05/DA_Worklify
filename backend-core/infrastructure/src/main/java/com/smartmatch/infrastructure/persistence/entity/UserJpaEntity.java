@@ -1,8 +1,8 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-import com.smartmatch.domain.auth.model.Role;
-import com.smartmatch.domain.auth.model.UserStatus;
+import com.worklify.domain.auth.model.Role;
+import com.worklify.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 // [ĐÃ THÊM] Import thư viện tự động tạo thời gian của Hibernate

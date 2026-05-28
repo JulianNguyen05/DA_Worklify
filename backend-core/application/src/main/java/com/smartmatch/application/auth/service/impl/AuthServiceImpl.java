@@ -2,18 +2,18 @@ package com.smartmatch.application.auth.service.impl;
 
 import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
-import com.smartmatch.domain.auth.model.Role;
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.model.UserStatus;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.valueobject.EmailAddress;
+import com.worklify.domain.auth.model.Role;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.model.UserStatus;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.valueobject.EmailAddress;
 import com.smartmatch.application.common.port.TokenProviderPort;
 
 // [ĐÃ THÊM] Import các Repository và Model của Candidate và Employer
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

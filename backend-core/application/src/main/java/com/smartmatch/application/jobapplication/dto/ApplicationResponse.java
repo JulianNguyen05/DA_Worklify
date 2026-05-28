@@ -1,6 +1,6 @@
 package com.smartmatch.application.jobapplication.dto;
 
-import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.model.ApplicationStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;

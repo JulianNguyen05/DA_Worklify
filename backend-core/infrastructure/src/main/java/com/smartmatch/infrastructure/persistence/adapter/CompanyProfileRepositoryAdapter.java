@@ -1,8 +1,8 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.model.VerificationStatus;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.model.VerificationStatus;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 import com.smartmatch.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.CompanyProfileJpaRepository;
 import lombok.RequiredArgsConstructor;

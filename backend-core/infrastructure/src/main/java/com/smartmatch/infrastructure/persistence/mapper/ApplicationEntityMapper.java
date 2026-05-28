@@ -1,7 +1,6 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.application.model.AiMatchScore;
-import com.smartmatch.domain.application.model.Application;
+import com.worklify.domain.application.model.Application;
 import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
 import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.mapstruct.Mapper;

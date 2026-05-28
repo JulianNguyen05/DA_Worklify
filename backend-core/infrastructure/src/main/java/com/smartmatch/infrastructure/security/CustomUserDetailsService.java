@@ -1,8 +1,8 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
 package com.smartmatch.infrastructure.security;
 
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.repository.UserRepository;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

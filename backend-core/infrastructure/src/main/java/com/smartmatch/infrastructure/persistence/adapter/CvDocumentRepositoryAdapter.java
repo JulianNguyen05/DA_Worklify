@@ -1,7 +1,7 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.candidate.model.CvDocument;
-import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
+import com.worklify.domain.candidate.model.CvDocument;
+import com.worklify.domain.candidate.repository.CvDocumentRepository;
 import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.CvDocumentJpaRepository;
 import lombok.RequiredArgsConstructor;

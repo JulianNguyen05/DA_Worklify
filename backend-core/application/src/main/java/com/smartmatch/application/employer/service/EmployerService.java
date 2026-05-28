@@ -1,9 +1,7 @@
 package com.smartmatch.application.employer.service;
-import com.smartmatch.application.common.dto.FileData;
 import com.smartmatch.application.employer.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.employer.model.VerificationStatus;
+import com.worklify.domain.common.DomainPageable;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface EmployerService {

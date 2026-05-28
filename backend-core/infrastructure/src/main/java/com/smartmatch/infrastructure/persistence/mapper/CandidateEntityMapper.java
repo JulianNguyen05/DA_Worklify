@@ -1,7 +1,10 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.candidate.model.*;
 import com.smartmatch.infrastructure.persistence.entity.*;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.model.CandidateSkill;
+import com.worklify.domain.candidate.model.CvDocument;
+import com.worklify.domain.candidate.model.Skill;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.stereotype.Component;

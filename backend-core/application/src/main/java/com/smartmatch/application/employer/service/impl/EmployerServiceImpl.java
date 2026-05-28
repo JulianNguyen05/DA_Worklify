@@ -9,11 +9,11 @@ import com.smartmatch.application.common.port.FileStoragePort;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.repository.CompanyLikeRepository;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyLikeRepository;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

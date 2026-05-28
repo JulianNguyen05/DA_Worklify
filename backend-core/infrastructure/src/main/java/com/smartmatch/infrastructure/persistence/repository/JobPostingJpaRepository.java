@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.persistence.repository;
 
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.job.model.JobStatus;
 import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

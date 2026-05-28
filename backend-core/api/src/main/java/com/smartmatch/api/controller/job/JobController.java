@@ -5,7 +5,7 @@ import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.job.dto.JobPostingRequest;
 import com.smartmatch.application.job.dto.JobPostingResponse;
 import com.smartmatch.application.job.service.JobService;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

@@ -1,6 +1,6 @@
 package com.smartmatch.application.employer.dto;
 
-import com.smartmatch.domain.employer.model.VerificationStatus;
+import com.worklify.domain.employer.model.VerificationStatus;
 import lombok.Builder;
 import lombok.Data;
 

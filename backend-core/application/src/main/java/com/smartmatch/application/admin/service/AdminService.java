@@ -7,8 +7,7 @@ import com.smartmatch.application.admin.dto.SystemLogResponse;
 import com.smartmatch.application.auth.dto.UserResponse;
 import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.common.DomainPageable;
 
 import java.util.List;
 

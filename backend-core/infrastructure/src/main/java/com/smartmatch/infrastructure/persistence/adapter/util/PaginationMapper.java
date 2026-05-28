@@ -1,7 +1,7 @@
 package com.smartmatch.infrastructure.persistence.adapter.util;
 
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

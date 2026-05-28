@@ -5,8 +5,7 @@ import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 

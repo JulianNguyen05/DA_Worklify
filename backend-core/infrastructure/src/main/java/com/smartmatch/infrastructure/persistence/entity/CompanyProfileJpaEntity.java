@@ -1,7 +1,7 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CompanyProfileJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-import com.smartmatch.domain.employer.model.VerificationStatus;
+import com.worklify.domain.employer.model.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

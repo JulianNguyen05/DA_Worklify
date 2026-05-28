@@ -1,6 +1,6 @@
 package com.smartmatch.application.auth.dto;
 
-import com.smartmatch.domain.auth.model.Role;
+import com.worklify.domain.auth.model.Role;
 import lombok.Builder;
 import lombok.Data;
 

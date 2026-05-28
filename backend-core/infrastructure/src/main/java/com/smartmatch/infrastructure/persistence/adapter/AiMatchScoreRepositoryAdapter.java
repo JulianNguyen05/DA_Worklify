@@ -1,7 +1,5 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.application.model.AiMatchScore;
-import com.smartmatch.domain.application.repository.AiMatchScoreRepository;
 import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
 import com.smartmatch.infrastructure.persistence.repository.AiMatchScoreJpaRepository;
 import lombok.RequiredArgsConstructor;

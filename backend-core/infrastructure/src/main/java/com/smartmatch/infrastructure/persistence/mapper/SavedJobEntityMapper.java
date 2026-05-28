@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.persistence.mapper;
 
-import com.smartmatch.domain.job.model.SavedJob;
+import com.worklify.domain.job.model.SavedJob;
 import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.mapstruct.Mapper;
 

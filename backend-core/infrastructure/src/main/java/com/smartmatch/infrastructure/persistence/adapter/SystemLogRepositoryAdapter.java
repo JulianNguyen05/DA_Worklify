@@ -1,9 +1,9 @@
 package com.smartmatch.infrastructure.persistence.adapter;
 
-import com.smartmatch.domain.admin.model.SystemLog;
-import com.smartmatch.domain.admin.repository.SystemLogRepository;
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.admin.model.SystemLog;
+import com.worklify.domain.admin.repository.SystemLogRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
 import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
 import com.smartmatch.infrastructure.persistence.mapper.SystemLogEntityMapper;

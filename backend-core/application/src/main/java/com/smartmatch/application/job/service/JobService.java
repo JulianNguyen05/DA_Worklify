@@ -3,8 +3,7 @@ package com.smartmatch.application.job.service;
 
 import com.smartmatch.application.job.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.common.DomainPageable;
 
 public interface JobService {
     JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request);

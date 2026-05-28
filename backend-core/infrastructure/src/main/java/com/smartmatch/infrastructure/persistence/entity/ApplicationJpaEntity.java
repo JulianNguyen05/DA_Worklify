@@ -2,7 +2,7 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\ApplicationJpaEntity.java
 package com.smartmatch.infrastructure.persistence.entity;
 
-import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.model.ApplicationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
