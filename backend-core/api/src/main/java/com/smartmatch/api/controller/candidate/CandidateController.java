@@ -1,9 +1,8 @@
 package com.smartmatch.api.controller.candidate;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.candidate.dto.*;
-import com.smartmatch.application.candidate.service.CandidateService;
-import com.smartmatch.application.common.dto.FileData;
+import com.worklify.application.candidate.dto.*;
+import com.worklify.application.candidate.service.CandidateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

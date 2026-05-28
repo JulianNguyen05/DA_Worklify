@@ -1,10 +1,10 @@
 package com.smartmatch.api.controller.job;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.job.dto.JobPostingRequest;
-import com.smartmatch.application.job.dto.JobPostingResponse;
-import com.smartmatch.application.job.service.JobService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.job.dto.JobPostingRequest;
+import com.worklify.application.job.dto.JobPostingResponse;
+import com.worklify.application.job.service.JobService;
 import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

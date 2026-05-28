@@ -1,6 +1,6 @@
 package com.smartmatch.api.common.response;
 
-import com.smartmatch.application.common.dto.PageResponse;
+import com.worklify.application.common.dto.PageResponse;
 import lombok.Builder;
 import lombok.Data;
 

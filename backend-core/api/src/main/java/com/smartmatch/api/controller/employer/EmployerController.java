@@ -1,10 +1,10 @@
 package com.smartmatch.api.controller.employer;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.employer.dto.CompanyProfileRequest;
-import com.smartmatch.application.employer.dto.CompanyProfileResponse;
-import com.smartmatch.application.employer.service.EmployerService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.employer.dto.CompanyProfileRequest;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
+import com.worklify.application.employer.service.EmployerService;
 import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

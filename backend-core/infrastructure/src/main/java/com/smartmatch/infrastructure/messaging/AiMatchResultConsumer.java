@@ -1,6 +1,6 @@
 package com.smartmatch.infrastructure.messaging;
 
-import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import com.worklify.application.jobapplication.service.JobApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

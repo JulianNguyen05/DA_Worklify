@@ -1,11 +1,10 @@
 package com.smartmatch.api.controller.jobapplication;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.jobapplication.dto.AiMatchScoreResponse;
-import com.smartmatch.application.jobapplication.dto.ApplicationRequest;
-import com.smartmatch.application.jobapplication.dto.ApplicationResponse;
-import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.jobapplication.dto.ApplicationRequest;
+import com.worklify.application.jobapplication.dto.ApplicationResponse;
+import com.worklify.application.jobapplication.service.JobApplicationService;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.common.SearchPageable;

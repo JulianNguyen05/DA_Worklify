@@ -1,12 +1,12 @@
 package com.smartmatch.api.controller.admin;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.admin.dto.AdminJobResponse;
-import com.smartmatch.application.admin.dto.CompanyModerationRequest;
-import com.smartmatch.application.admin.dto.DashboardStatsResponse;
-import com.smartmatch.application.admin.dto.JobModerationRequest;
-import com.smartmatch.application.admin.service.AdminService;
-import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.worklify.application.admin.dto.AdminJobResponse;
+import com.worklify.application.admin.dto.CompanyModerationRequest;
+import com.worklify.application.admin.dto.DashboardStatsResponse;
+import com.worklify.application.admin.dto.JobModerationRequest;
+import com.worklify.application.admin.service.AdminService;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

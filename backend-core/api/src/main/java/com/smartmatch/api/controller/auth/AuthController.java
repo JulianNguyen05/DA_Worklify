@@ -1,8 +1,8 @@
 package com.smartmatch.api.controller.auth;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.auth.dto.*;
-import com.smartmatch.application.auth.service.AuthService;
+import com.worklify.application.auth.dto.*;
+import com.worklify.application.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

@@ -97,6 +97,10 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
 
     </dependencies>
 
@@ -140,6 +144,45 @@
 </project>
 
 // ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\AdminJobResponse.java
+// ============================================================
+
+package com.smartmatch.application.admin.dto;
+
+import lombok.Builder;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class AdminJobResponse {
+    private Long id;
+    private String title;
+    private String companyName;
+    private String salaryRange;
+    private String location;
+    private String workType;
+    private String description;
+    private String requirements;
+    private LocalDateTime createdAt;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\CompanyModerationRequest.java
+// ============================================================
+
+package com.smartmatch.application.admin.dto;
+
+import lombok.Data;
+
+@Data
+public class CompanyModerationRequest {
+    private String action; // "APPROVED" hoặc "REJECTED"
+    private String reason; // Có thể null nếu APPROVED
+}
+
+
+// ============================================================
 // File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\DashboardStatsResponse.java
 // ============================================================
 
@@ -148,15 +191,43 @@ package com.smartmatch.application.admin.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class DashboardStatsResponse {
-    private long totalCandidates;
-    private long totalEmployers;
+    // Thẻ số lượng tổng quan
+    private long totalUsers;
     private long activeJobs;
-    private long totalApplications;
+    private long pendingJobs;
+    private long successfulApplications;
+
+    // Dữ liệu cho Biểu đồ
+    private List<ChartData> userGrowth; // Dùng cho biểu đồ đường
+    private List<ChartData> jobDistribution; // Dùng cho biểu đồ tròn
+
+    @Data
+    @Builder
+    public static class ChartData {
+        private String name;
+        private long value;
+    }
 }
 
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\JobModerationRequest.java
+// ============================================================
+
+package com.smartmatch.application.admin.dto;
+
+import lombok.Data;
+
+@Data
+public class JobModerationRequest {
+    private String action; // "APPROVED" hoặc "REJECTED"
+    private String reason; // Có thể null nếu APPROVED
+}
 
 // ============================================================
 // File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\MasterDataRequest.java
@@ -201,28 +272,41 @@ public class SystemLogResponse {
 // ============================================================
 
 package com.smartmatch.application.admin.service;
+
+import com.smartmatch.application.admin.dto.AdminJobResponse;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
 import com.smartmatch.application.admin.dto.MasterDataRequest;
 import com.smartmatch.application.admin.dto.SystemLogResponse;
 import com.smartmatch.application.auth.dto.UserResponse;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.worklify.domain.common.DomainPageable;
+
+import java.util.List;
 
 public interface AdminService {
     DashboardStatsResponse getDashboardStats();
-    void moderateJob(Long jobId, JobStatus status);
-    void moderateCompany(Long companyId, boolean approve);
+
+    // Sửa dòng cũ thành dòng này:
+    void moderateJob(Long jobId, boolean approve, String reason);
 
     // Quản lý Master Data
     void createSkillMasterData(MasterDataRequest request);
     void deleteSkillMasterData(Long skillId);
 
-    // [ĐÃ SỬA] Bổ sung các tính năng bị thiếu
     PageResponse<SystemLogResponse> getSystemLogs(DomainPageable pageable);
     PageResponse<UserResponse> getAllUsers(DomainPageable pageable);
+
     void banUser(Long userId);
     void unbanUser(Long userId);
+
+    List<CompanyProfileResponse> getPendingCompanies();
+
+    // Chỉ giữ lại DUY NHẤT hàm 3 tham số này cho việc kiểm duyệt công ty
+    void moderateCompany(Long companyId, boolean approve, String reason);
+
+    // Thêm hàm này vào interface
+    List<AdminJobResponse> getPendingJobs();
 }
 
 // ============================================================
@@ -231,111 +315,210 @@ public interface AdminService {
 
 package com.smartmatch.application.admin.service.impl;
 
-import com.smartmatch.application.admin.dto.*;
+import com.smartmatch.application.admin.dto.AdminJobResponse;
+import com.smartmatch.application.common.exception.ResourceNotFoundException;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.admin.repository.SystemLogRepository;
+import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.dto.MasterDataRequest;
+import com.smartmatch.application.admin.dto.SystemLogResponse;
 import com.smartmatch.application.admin.service.AdminService;
 import com.smartmatch.application.auth.dto.UserResponse;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.admin.model.SystemLog;
-import com.smartmatch.domain.admin.repository.SystemLogRepository;
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
-import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.admin.model.SystemLog;
+import com.worklify.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.model.VerificationStatus; // Cần import thêm Enum này
+import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.stream.Collectors; // Import cho stream map
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final JobPostingRepository jobPostingRepository;
+    private final ApplicationRepository applicationRepository;
+
+    // Bổ sung các Repository cần thiết cho nghiệp vụ kiểm duyệt
+    private final CompanyProfileRepository companyProfileRepository;
     private final SystemLogRepository systemLogRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats() {
+        // 1. Lấy dữ liệu số lượng tổng quan
+        long totalUsers = userRepository.count();
+        long activeJobs = jobPostingRepository.countByStatus(JobStatus.ACTIVE);
+        long pendingJobs = jobPostingRepository.countByStatus(JobStatus.PENDING);
+        long successApps = applicationRepository.countByStatus(ApplicationStatus.ACCEPTED);
+
+        // 2. Dữ liệu giả lập cho Biểu đồ
+        List<DashboardStatsResponse.ChartData> userGrowth = List.of(
+                DashboardStatsResponse.ChartData.builder().name("T2").value(120).build(),
+                DashboardStatsResponse.ChartData.builder().name("T3").value(250).build(),
+                DashboardStatsResponse.ChartData.builder().name("T4").value(380).build(),
+                DashboardStatsResponse.ChartData.builder().name("T5").value(500).build()
+        );
+
+        List<DashboardStatsResponse.ChartData> jobDist = List.of(
+                DashboardStatsResponse.ChartData.builder().name("Đang hoạt động").value(activeJobs).build(),
+                DashboardStatsResponse.ChartData.builder().name("Chờ duyệt").value(pendingJobs).build(),
+                DashboardStatsResponse.ChartData.builder().name("Đã đóng").value(45).build()
+        );
+
         return DashboardStatsResponse.builder()
-                .activeJobs(jobPostingRepository.countByStatus(JobStatus.ACTIVE))
-                .totalApplications(0) // Cần tích hợp thêm ApplicationRepository
+                .totalUsers(totalUsers)
+                .activeJobs(activeJobs)
+                .pendingJobs(pendingJobs)
+                .successfulApplications(successApps)
+                .userGrowth(userGrowth)
+                .jobDistribution(jobDist)
                 .build();
     }
 
     @Override
-    public void moderateJob(Long jobId, JobStatus status) {
+    public void moderateJob(Long jobId, boolean approve, String reason) {
+        // 1. Tìm tin tuyển dụng
         JobPosting job = jobPostingRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tuyển dụng"));
 
-        if (status == JobStatus.ACTIVE) {
-            job.publish();
-        } else if (status == JobStatus.REJECTED) {
-            job.reject();
+        // 2. Chuyển đổi trạng thái thông qua Domain Method đã định nghĩa trong JobPosting.java
+        String actionLog = "";
+        if (approve) {
+            job.publish(); // Đổi status thành ACTIVE
+            actionLog = "APPROVE_JOB";
+            // TODO: (Mở rộng sau) Gửi email thông báo cho nhà tuyển dụng
+        } else {
+            job.reject(); // Đổi status thành REJECTED
+            actionLog = "REJECT_JOB";
+            // TODO: (Mở rộng sau) Gửi email báo lỗi kèm 'reason'
         }
 
         jobPostingRepository.save(job);
-        systemLogRepository.save(SystemLog.record(null, "MODERATE_JOB", "Job ID: " + jobId + " status: " + status));
-    }
 
-    @Override
-    public void moderateCompany(Long companyId, boolean approve) {
-        // Implement logic duyệt công ty
+        // 3. Lưu vết System Log
+        Long currentAdminId = 1L; // Giả định ID Admin hiện tại
+        SystemLog log = SystemLog.record(
+                currentAdminId,
+                actionLog,
+                "Job ID: " + jobId + (approve ? "" : ". Lý do: " + reason)
+        );
+        systemLogRepository.save(log);
     }
 
     @Override
     public void createSkillMasterData(MasterDataRequest request) {
-        // Implement logic thêm danh mục Skill
+        // TODO: Cài đặt logic thêm mới dữ liệu kỹ năng
     }
 
     @Override
     public void deleteSkillMasterData(Long skillId) {
-        // Implement logic xóa Skill
+        // TODO: Cài đặt logic xóa dữ liệu kỹ năng
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PageResponse<SystemLogResponse> getSystemLogs(DomainPageable pageable) {
-        DomainPage<SystemLog> page = systemLogRepository.findAll(pageable);
-
-        return PageResponse.<SystemLogResponse>builder()
-                .content(page.getContent().stream().map(log -> SystemLogResponse.builder()
-                        .id(log.getId())
-                        .action(log.getAction())
-                        .details(log.getDetails())
-                        .createdAt(log.getCreatedAt())
-                        .build()).collect(Collectors.toList()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .build();
+        // TODO: Cài đặt logic lấy danh sách nhật ký hệ thống
+        return null;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(DomainPageable pageable) {
-        // Logic lấy danh sách User theo phân trang
-        return PageResponse.<UserResponse>builder().build();
+        // TODO: Cài đặt logic lấy danh sách người dùng
+        return null;
     }
 
     @Override
     public void banUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-        user.ban();
-        userRepository.save(user);
+        // TODO: Cài đặt logic khóa tài khoản người dùng
     }
 
     @Override
     public void unbanUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-        user.unban();
-        userRepository.save(user);
+        // TODO: Cài đặt logic mở khóa tài khoản người dùng
+    }
+
+    @Override
+    public List<CompanyProfileResponse> getPendingCompanies() {
+        // Lấy danh sách các công ty đang ở trạng thái PENDING từ Database
+        List<CompanyProfile> pendingProfiles = companyProfileRepository.findByVerificationStatus(VerificationStatus.PENDING);
+
+        // Map Domain Entity sang DTO Response để trả về cho Frontend
+        return pendingProfiles.stream()
+                .map(profile -> CompanyProfileResponse.builder()
+                        .id(profile.getId())
+                        .companyName(profile.getCompanyName())
+                        .website(profile.getWebsite())
+                        // Thêm các trường khác (như logoUrl) nếu DTO của bạn yêu cầu
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void moderateCompany(Long companyId, boolean approve, String reason) {
+        // 1. Tìm công ty
+        CompanyProfile company = companyProfileRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy doanh nghiệp"));
+
+        // 2. Thay đổi trạng thái
+        String actionLog = "";
+        if (approve) {
+            company.approve();
+            actionLog = "APPROVE_COMPANY";
+            // TODO: Gửi email thông báo tài khoản doanh nghiệp đã được duyệt
+        } else {
+            company.reject();
+            actionLog = "REJECT_COMPANY";
+            // TODO: Gửi email kèm 'reason' yêu cầu chỉnh sửa
+        }
+
+        companyProfileRepository.save(company);
+
+        // 3. Lưu vết System Log
+        Long currentAdminId = 1L;
+        SystemLog log = SystemLog.record(
+                currentAdminId,
+                actionLog,
+                "Company ID: " + companyId + (approve ? "" : ". Lý do: " + reason)
+        );
+        systemLogRepository.save(log);
+    }
+
+    // Đừng quên import DTO: import com.smartmatch.application.admin.dto.AdminJobResponse;
+
+    @Override
+    public List<AdminJobResponse> getPendingJobs() {
+        // 1. Lấy danh sách Job có trạng thái PENDING
+        List<JobPosting> pendingJobs = jobPostingRepository.findByStatus(JobStatus.PENDING);
+
+        // 2. Map sang DTO và tìm Tên công ty tương ứng
+        return pendingJobs.stream().map(job -> {
+            String companyName = companyProfileRepository.findById(job.getCompanyId())
+                    .map(CompanyProfile::getCompanyName)
+                    .orElse("Doanh nghiệp không xác định");
+
+            return AdminJobResponse.builder()
+                    .id(job.getId())
+                    .title(job.getTitle())
+                    .companyName(companyName)
+                    .salaryRange(job.getSalaryRange())
+                    .location(job.getLocation())
+                    .workType(job.getWorkType())
+                    .description(job.getDescription())
+                    .requirements(job.getRequirements())
+                    .createdAt(job.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
     }
 }
 
@@ -345,7 +528,7 @@ public class AdminServiceImpl implements AdminService {
 
 package com.smartmatch.application.auth.dto;
 
-import com.smartmatch.domain.auth.model.Role;
+import com.worklify.domain.auth.model.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -406,7 +589,7 @@ public class LoginRequest {
 
 package com.smartmatch.application.auth.dto;
 
-import com.smartmatch.domain.auth.model.Role;
+import com.worklify.domain.auth.model.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -438,8 +621,8 @@ public class RegisterRequest {
 
 package com.smartmatch.application.auth.dto;
 
-import com.smartmatch.domain.auth.model.Role;
-import com.smartmatch.domain.auth.model.UserStatus;
+import com.worklify.domain.auth.model.Role;
+import com.worklify.domain.auth.model.UserStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -479,18 +662,18 @@ package com.smartmatch.application.auth.service.impl;
 
 import com.smartmatch.application.auth.dto.*;
 import com.smartmatch.application.auth.service.AuthService;
-import com.smartmatch.domain.auth.model.Role;
-import com.smartmatch.domain.auth.model.User;
-import com.smartmatch.domain.auth.model.UserStatus;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.common.valueobject.EmailAddress;
+import com.worklify.domain.auth.model.Role;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.model.UserStatus;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.valueobject.EmailAddress;
 import com.smartmatch.application.common.port.TokenProviderPort;
 
 // [ĐÃ THÊM] Import các Repository và Model của Candidate và Employer
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -809,6 +992,8 @@ public interface CandidateService {
     CvDocumentResponse getLatestGeneratedCv(Long userId);
 
     CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
+
+    List<CvDocumentResponse> getCvDocuments(Long candidateId);
 }
 
 // ============================================================
@@ -821,16 +1006,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartmatch.application.candidate.dto.*;
 import com.smartmatch.application.candidate.service.CandidateService;
-import com.smartmatch.application.common.dto.FileData;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.candidate.model.CandidateProfile;
-import com.smartmatch.domain.candidate.model.CandidateSkill;
-import com.smartmatch.domain.candidate.model.CvDocument;
-import com.smartmatch.domain.candidate.model.Skill;
-import com.smartmatch.domain.candidate.repository.CandidateProfileRepository;
-import com.smartmatch.domain.candidate.repository.CandidateSkillRepository;
-import com.smartmatch.domain.candidate.repository.CvDocumentRepository;
-import com.smartmatch.domain.candidate.repository.SkillRepository;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.model.CandidateSkill;
+import com.worklify.domain.candidate.model.CvDocument;
+import com.worklify.domain.candidate.model.Skill;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.candidate.repository.CandidateSkillRepository;
+import com.worklify.domain.candidate.repository.CvDocumentRepository;
+import com.worklify.domain.candidate.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -897,8 +1081,8 @@ public class CandidateServiceImpl implements CandidateService {
                 if (trimmedName.isEmpty()) continue;
 
                 // ĐÃ SỬA: Sử dụng phương thức tĩnh Skill.create(name) có sẵn thay vì dùng `new` bị lỗi private
-                com.smartmatch.domain.candidate.model.Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
-                        .orElseGet(() -> skillRepository.save(com.smartmatch.domain.candidate.model.Skill.create(trimmedName)));
+                Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
+                        .orElseGet(() -> skillRepository.save(Skill.create(trimmedName)));
 
                 // Lưu liên quan hệ vào bảng liên kết CandidateSkill theo profile ID chính xác
                 CandidateSkill candidateSkill = new CandidateSkill(savedProfile.getId(), skill.getId());
@@ -1021,11 +1205,11 @@ public class CandidateServiceImpl implements CandidateService {
                                     // SỬA: Tìm kiếm ID thực tế từ bảng danh mục tổng 'skills'
                                     // (Cần bổ sung hàm findByNameIgnoreCase trong SkillRepository tầng Domain)
                                     Long validSkillId = skillRepository.findByNameIgnoreCase(cleanSkillName)
-                                            .map(com.smartmatch.domain.candidate.model.Skill::getId)
+                                            .map(Skill::getId)
                                             .orElseGet(() -> {
                                                 // Nếu hệ thống chưa có từ khóa này, tiến hành tự động tạo mới vào danh mục tổng
-                                                com.smartmatch.domain.candidate.model.Skill newSkill =
-                                                        com.smartmatch.domain.candidate.model.Skill.create(cleanSkillName);
+                                                Skill newSkill =
+                                                        Skill.create(cleanSkillName);
                                                 return skillRepository.save(newSkill).getId();
                                             });
 
@@ -1259,6 +1443,20 @@ public class CandidateServiceImpl implements CandidateService {
         // Tạm thời ở mức DTO, ta sẽ xử lý cắt chuỗi.
         return mapToCvResponse(cv); // Yêu cầu mở rộng Model/DB nếu muốn lưu DB vĩnh viễn.
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CvDocumentResponse> getCvDocuments(Long candidateId) {
+        // Giả sử bạn có repository để lấy danh sách CV của ứng viên
+        // Bạn cần thay đổi theo tên Repository thực tế trong dự án của bạn
+        return cvDocumentRepository.findByCandidateId(candidateId).stream()
+                .map(cv -> CvDocumentResponse.builder()
+                        .id(cv.getId())
+                        .fileName(cv.getFilePath() != null ? cv.getFilePath() : "CV mặc định")
+                        .createdAt(cv.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
 
 // ============================================================
@@ -1293,6 +1491,23 @@ public class PageResponse<T> {
     private int totalPages;
     private int pageNumber;
     private int pageSize;
+}
+
+// ============================================================
+// File: \backend-core\application\src\main\java\com\smartmatch\application\common\exception\ResourceNotFoundException.java
+// ============================================================
+
+package com.smartmatch.application.common.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+
+    public ResourceNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
 
 // ============================================================
@@ -1360,7 +1575,7 @@ public class CompanyProfileRequest {
 
 package com.smartmatch.application.employer.dto;
 
-import com.smartmatch.domain.employer.model.VerificationStatus;
+import com.worklify.domain.employer.model.VerificationStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -1374,6 +1589,9 @@ public class CompanyProfileResponse {
     private String website;
     private String description;
     private VerificationStatus verificationStatus;
+    private Integer likeCount;
+    private Boolean isLiked;
+    private Integer activeJobsCount;
 }
 
 // ============================================================
@@ -1381,11 +1599,9 @@ public class CompanyProfileResponse {
 // ============================================================
 
 package com.smartmatch.application.employer.service;
-import com.smartmatch.application.common.dto.FileData;
 import com.smartmatch.application.employer.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.employer.model.VerificationStatus;
+import com.worklify.domain.common.DomainPageable;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface EmployerService {
@@ -1393,6 +1609,10 @@ public interface EmployerService {
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
     CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
+
+    PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long userId);
+
+    void toggleLikeCompany(Long currentUserId, Long companyId);
 }
 
 // ============================================================
@@ -1405,23 +1625,26 @@ public interface EmployerService {
 
 package com.smartmatch.application.employer.service.impl;
 
-import com.smartmatch.application.common.dto.FileData;
+import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.common.port.FileStoragePort;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
-import com.smartmatch.domain.auth.repository.UserRepository;
-import com.smartmatch.domain.employer.model.CompanyProfile;
-import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyLikeRepository;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -1432,10 +1655,11 @@ public class EmployerServiceImpl implements EmployerService {
     private final UserRepository userRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final FileStoragePort fileStoragePort;
+    private final CompanyLikeRepository companyLikeRepository;
 
     @Override
     public CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request) {
-        if (!userRepository.findById(userId).isPresent()) {
+        if (userRepository.findById(userId).isEmpty()) {
             throw new IllegalArgumentException("Tài khoản nhà tuyển dụng không tồn tại.");
         }
         if (companyProfileRepository.findByUserId(userId).isPresent()) {
@@ -1470,21 +1694,65 @@ public class EmployerServiceImpl implements EmployerService {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Vui lòng tạo thông tin doanh nghiệp trước khi tải logo."));
 
-        // Gọi port hạ tầng để lưu file (Lưu vào thư mục companies/logos)
         String prefix = "logo_owner_" + userId;
         String savedPath = fileStoragePort.storeFile(file, "companies/logos", prefix);
 
-        // Cập nhật logo thông qua Domain Method
         profile.updateLogo("/uploads/" + savedPath);
 
         return mapToResponse(companyProfileRepository.save(profile));
     }
 
     // ==========================================================
+    // LẤY DANH SÁCH CÔNG TY (CÓ PHÂN TRANG VÀ KIỂM TRA LƯỢT LIKE)
+    // ==========================================================
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long currentUserId) {
+        Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
+
+        // Sử dụng currentUserId để kiểm tra trạng thái Like của từng công ty
+        List<CompanyProfileResponse> content = profilePage.getContent().stream()
+                .map(profile -> mapToResponse(profile, currentUserId))
+                .collect(Collectors.toList());
+
+        return PageResponse.<CompanyProfileResponse>builder()
+                .content(content)
+                .totalElements(profilePage.getTotalElements())
+                .totalPages(profilePage.getTotalPages())
+                .pageNumber(profilePage.getNumber() + 1)
+                .pageSize(profilePage.getSize())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void toggleLikeCompany(Long userId, Long companyId) {
+        if (companyLikeRepository.isLikedByUser(userId, companyId)) {
+            companyLikeRepository.removeLike(userId, companyId);
+        } else {
+            companyLikeRepository.addLike(userId, companyId);
+        }
+    }
+
+    // ==========================================================
     // PRIVATE HELPER METHODS (MAPPING)
     // ==========================================================
 
+    // Hàm phụ trợ khi không cần biết user đang đăng nhập là ai
     private CompanyProfileResponse mapToResponse(CompanyProfile profile) {
+        return mapToResponse(profile, null);
+    }
+
+    // Hàm chính ánh xạ dữ liệu và đếm số lượt Like
+    private CompanyProfileResponse mapToResponse(CompanyProfile profile, Long currentUserId) {
+        int likeCount = companyLikeRepository.countLikesByCompany(profile.getId());
+        boolean isLiked = false;
+
+        // Nếu người dùng đã đăng nhập, kiểm tra xem họ đã Like công ty này chưa
+        if (currentUserId != null) {
+            isLiked = companyLikeRepository.isLikedByUser(currentUserId, profile.getId());
+        }
+
         return CompanyProfileResponse.builder()
                 .id(profile.getId())
                 .userId(profile.getUserId())
@@ -1493,6 +1761,9 @@ public class EmployerServiceImpl implements EmployerService {
                 .website(profile.getWebsite())
                 .description(profile.getDescription())
                 .verificationStatus(profile.getVerificationStatus())
+                .likeCount(likeCount)
+                .isLiked(isLiked)
+                .activeJobsCount(0) // Cần tích hợp JobRepository nếu muốn đếm Job thật
                 .build();
     }
 }
@@ -1540,7 +1811,7 @@ public class JobPostingRequest {
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
 package com.smartmatch.application.job.dto;
 
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.job.model.JobStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -1592,11 +1863,11 @@ package com.smartmatch.application.job.service.impl;
 import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.job.dto.*;
 import com.smartmatch.application.job.service.JobService;
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
-import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -1731,8 +2002,7 @@ package com.smartmatch.application.job.service;
 
 import com.smartmatch.application.job.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.worklify.domain.common.DomainPageable;
 
 public interface JobService {
     JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request);
@@ -1789,7 +2059,7 @@ public class ApplicationRequest {
 
 package com.smartmatch.application.jobapplication.dto;
 
-import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.model.ApplicationStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -1817,16 +2087,14 @@ package com.smartmatch.application.jobapplication.service.impl;
 import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.jobapplication.dto.*;
 import com.smartmatch.application.jobapplication.service.JobApplicationService;
-import com.smartmatch.domain.application.model.Application;
-import com.smartmatch.domain.application.model.ApplicationStatus;
-import com.smartmatch.domain.application.model.AiMatchScore;
-import com.smartmatch.domain.application.repository.ApplicationRepository;
-import com.smartmatch.domain.application.repository.AiMatchScoreRepository;
-import com.smartmatch.domain.common.DomainPage;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.job.model.JobPosting;
-import com.smartmatch.domain.job.model.JobStatus;
-import com.smartmatch.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.application.model.Application;
+import com.worklify.domain.application.model.ApplicationStatus;
+import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -1840,7 +2108,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final JobPostingRepository jobPostingRepository;
-    private final AiMatchScoreRepository aiMatchScoreRepository;
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, ApplicationRequest request) {
@@ -1909,34 +2176,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         applicationRepository.save(application);
     }
 
-    @Override
-    public void triggerAiMatchingAsync(Long applicationId) {
-        // [Ý ĐỒ THIẾT KẾ KIẾN TRÚC]: Xử lý bất đồng bộ (Event-Driven Async via Message Broker) chống nghẽn hệ thống (5-8s ML Process)
-        // Hiện tại gán tạm hành vi sinh mã Blind Testing của Domain trước khi hệ thống kích hoạt Consumer lắng nghe
-        applicationRepository.findById(applicationId).ifPresent(app -> {
-            app.enableBlindTesting();
-            applicationRepository.save(app);
-
-            // Giả lập lưu kết quả Match Score ban đầu từ mô hình phân tích học máy
-            AiMatchScore mockScore = AiMatchScore.evaluate(applicationId, 85.0f, "Hồ sơ đáp ứng tốt các tiêu chí cốt lõi.");
-            aiMatchScoreRepository.save(mockScore);
-        });
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public AiMatchScoreResponse getAiMatchResult(Long applicationId) {
-        AiMatchScore score = aiMatchScoreRepository.findByApplicationId(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("Chưa có kết quả phân tích AI cho đơn ứng tuyển này"));
-
-        return AiMatchScoreResponse.builder()
-                .id(score.getId())
-                .applicationId(score.getApplicationId())
-                .confidenceScore(score.getConfidenceScore())
-                .analysisDetails(score.getAnalysisDetails())
-                .build();
-    }
-
     // Mapper helper: Ánh xạ đầy đủ thông tin dành cho Ứng viên hoặc Nhà tuyển dụng sở hữu
     private ApplicationResponse mapToResponse(Application app) {
         return ApplicationResponse.builder()
@@ -1946,8 +2185,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .candidateId(app.getCandidateId())
                 .coverLetter(app.getCoverLetter())
                 .status(app.getStatus())
-                .appliedAt(app.getAppliedAt())
-                .blindTestUrl(app.getBlindTestToken()) // Đồng bộ Token định danh ẩn danh
+                .appliedAt(app.getAppliedAt())// Đồng bộ Token định danh ẩn danh
                 .build();
     }
 
@@ -1960,8 +2198,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .candidateId(null)   // Khử định danh Ứng viên
                 .coverLetter(app.getCoverLetter())
                 .status(app.getStatus())
-                .appliedAt(app.getAppliedAt())
-                .blindTestUrl(app.getBlindTestToken()) // Chỉ cung cấp mã Token kiểm tra ẩn danh
+                .appliedAt(app.getAppliedAt())// Chỉ cung cấp mã Token kiểm tra ẩn danh
                 .build();
     }
 
@@ -1984,8 +2221,8 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 package com.smartmatch.application.jobapplication.service;
 import com.smartmatch.application.jobapplication.dto.*;
 import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.domain.common.DomainPageable;
-import com.smartmatch.domain.application.model.ApplicationStatus;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.application.model.ApplicationStatus;
 
 public interface JobApplicationService {
     ApplicationResponse applyJob(Long candidateId, ApplicationRequest request);

@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import com.smartmatch.application.common.port.TokenProviderPort;
+import com.worklify.application.common.port.TokenProviderPort;
 
 @Service
 public class JwtService implements TokenProviderPort {

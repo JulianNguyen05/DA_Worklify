@@ -1,7 +1,7 @@
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
 package com.smartmatch.infrastructure.storage;
 
-import com.smartmatch.application.common.port.FileStoragePort;
+import com.worklify.application.common.port.FileStoragePort;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,10 +12,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.util.Objects;
-import java.util.UUID;
 
 @Slf4j
 @Service

@@ -142,9 +142,10 @@ public class ErrorResponse {
    FILE: \backend-core\api\src\main\java\com\smartmatch\api\common\exception\GlobalExceptionHandler.java
    ============================================================ */
 
-package com.smartmatch.api.common.exception; // Giữ nguyên package cũ của bạn
+package com.smartmatch.api.common.exception;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -170,7 +171,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 2. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
+     * 2. Bắt lỗi không tìm thấy tài nguyên (Ví dụ: Không tìm thấy doanh nghiệp cần duyệt)
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND) // Trả về HTTP Status 404 ra Network tab
+    public ApiResponse<Void> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return ApiResponse.error(404, ex.getMessage());
+    }
+
+    /**
+     * 3. Bắt lỗi ràng buộc dữ liệu đầu vào của các DTO (@NotBlank, @Email, @Size,...)
      * Tự động bóc tách lỗi đầu tiên làm thông điệp đại diện (Top-level message) cho React hiển thị nhanh
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -195,7 +205,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 3. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
+     * 4. Bắt các lỗi hệ thống phát sinh ngoài ý muốn (NullPointerException, lỗi kết nối DB,...)
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Trả về HTTP Status 500 ra Network tab
@@ -383,14 +393,19 @@ public class WebMvcConfig implements WebMvcConfigurer {
 package com.smartmatch.api.controller.admin;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.admin.dto.AdminJobResponse;
+import com.smartmatch.application.admin.dto.CompanyModerationRequest;
 import com.smartmatch.application.admin.dto.DashboardStatsResponse;
+import com.smartmatch.application.admin.dto.JobModerationRequest;
 import com.smartmatch.application.admin.service.AdminService;
-import com.smartmatch.domain.job.model.JobStatus;
+import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List; // Thêm dòng này để sửa lỗi List
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -407,20 +422,50 @@ public class AdminController {
         return ApiResponse.success(adminService.getDashboardStats());
     }
 
+// Đừng quên import DTO mới: import com.smartmatch.application.admin.dto.JobModerationRequest;
+
     @PatchMapping("/jobs/{jobId}/moderate")
     @Operation(summary = "Kiểm duyệt (Duyệt/Khóa) tin tuyển dụng")
     public ApiResponse<Void> moderateJob(
-            @PathVariable Long jobId,
-            @RequestParam JobStatus status) {
-        adminService.moderateJob(jobId, status);
-        return ApiResponse.success(null, "Đã cập nhật trạng thái tin tuyển dụng");
+            @PathVariable("jobId") Long jobId,
+            @RequestBody JobModerationRequest request) { // <-- Đổi sang RequestBody
+
+        boolean isApprove = "APPROVED".equalsIgnoreCase(request.getAction());
+        adminService.moderateJob(jobId, isApprove, request.getReason());
+
+        return ApiResponse.success(null, "Đã xử lý tin tuyển dụng");
     }
 
     @PatchMapping("/users/{userId}/ban")
     @Operation(summary = "Khóa tài khoản người dùng vi phạm")
-    public ApiResponse<Void> banUser(@PathVariable Long userId) {
+    public ApiResponse<Void> banUser(
+            @PathVariable("userId") Long userId) { // <--- THÊM ("userId") VÀO ĐÂY
         adminService.banUser(userId);
         return ApiResponse.success(null, "Đã khóa tài khoản người dùng");
+    }
+
+    @GetMapping("/companies/pending")
+    @Operation(summary = "Lấy danh sách doanh nghiệp đang chờ duyệt")
+    public ApiResponse<List<CompanyProfileResponse>> getPendingCompanies() {
+        return ApiResponse.success(adminService.getPendingCompanies());
+    }
+
+    @PatchMapping("/companies/{companyId}/moderate")
+    @Operation(summary = "Duyệt hoặc từ chối hồ sơ doanh nghiệp")
+    public ApiResponse<Void> moderateCompany(
+            @PathVariable("companyId") Long companyId, // <--- THÊM ("companyId") VÀO ĐÂY
+            @RequestBody CompanyModerationRequest request) {
+
+        boolean isApprove = "APPROVED".equalsIgnoreCase(request.getAction());
+        adminService.moderateCompany(companyId, isApprove, request.getReason());
+
+        return ApiResponse.success(null, "Đã xử lý hồ sơ doanh nghiệp");
+    }
+
+    @GetMapping("/jobs/pending")
+    @Operation(summary = "Lấy danh sách tin tuyển dụng đang chờ duyệt")
+    public ApiResponse<List<AdminJobResponse>> getPendingJobs() {
+        return ApiResponse.success(adminService.getPendingJobs());
     }
 }
 
@@ -593,6 +638,8 @@ public class CandidateController {
     @GetMapping("/{userId}/cvs")
     @Operation(summary = "Lấy danh sách CV PDF/Word đã lưu của ứng viên")
     public ApiResponse<List<CvDocumentResponse>> getCvs(@PathVariable("userId") Long userId) {
+        // Hàm này gọi candidateService.getCvsByUserId(userId) hoặc getCvDocuments(userId)
+        // Hãy chắc chắn tên hàm gọi ở đây khớp với service của bạn
         return ApiResponse.success(candidateService.getCvsByUserId(userId));
     }
 
@@ -639,13 +686,16 @@ public class CandidateController {
 package com.smartmatch.api.controller.employer;
 
 import com.smartmatch.api.common.response.ApiResponse;
+import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
+import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -663,7 +713,7 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Tạo hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> createProfile(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody CompanyProfileRequest request) {
         return ApiResponse.success(employerService.createProfile(userId, request), "Tạo hồ sơ thành công");
     }
@@ -672,14 +722,14 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Cập nhật hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> updateProfile(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @Valid @RequestBody CompanyProfileRequest request) {
         return ApiResponse.success(employerService.updateProfile(userId, request), "Cập nhật hồ sơ thành công");
     }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Xem hồ sơ doanh nghiệp (Public/Private)")
-    public ApiResponse<CompanyProfileResponse> getProfile(@PathVariable("userId") Long userId) { // <--- Đã sửa ở đây
+    public ApiResponse<CompanyProfileResponse> getProfile(@PathVariable("userId") Long userId) {
         return ApiResponse.success(employerService.getProfileByUserId(userId));
     }
 
@@ -687,9 +737,43 @@ public class EmployerController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Tải lên logo doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> uploadLogo(
-            @PathVariable("userId") Long userId, // <--- Đã sửa ở đây
+            @PathVariable("userId") Long userId,
             @RequestPart("file") MultipartFile file) {
         return ApiResponse.success(employerService.uploadLogo(userId, file), "Tải lên logo thành công");
+    }
+
+    @PostMapping("/{companyId}/like")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
+    @Operation(summary = "Thích / Bỏ thích công ty")
+    public ApiResponse<Void> toggleLikeCompany(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam("userId") Long userId) { // ĐÃ SỬA: Nhận trực tiếp userId từ Frontend
+
+        employerService.toggleLikeCompany(userId, companyId);
+        return ApiResponse.success(null, "Thao tác thả tim thành công");
+    }
+
+    @GetMapping
+    @Operation(summary = "Lấy danh sách tất cả doanh nghiệp (Công ty nổi bật)")
+    public ApiResponse<PageResponse<CompanyProfileResponse>> getAllEmployers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "5") int size,
+            // THÊM DÒNG DƯỚI ĐÂY (required = false để khách vãng lai không đăng nhập vẫn xem được)
+            @RequestParam(value = "userId", required = false) Long userId) {
+
+        DomainPageable pageable = new DomainPageable() {
+            @Override
+            public int getPageNumber() { return page; }
+            @Override
+            public int getPageSize() { return size; }
+            @Override
+            public org.springframework.data.domain.Pageable toSpringPageable() {
+                return PageRequest.of(page, size);
+            }
+        };
+
+        // TRUYỀN THÊM userId VÀO SERVICE
+        return ApiResponse.success(employerService.getAllProfiles(pageable, userId));
     }
 }
 
@@ -705,11 +789,12 @@ import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.job.dto.JobPostingRequest;
 import com.smartmatch.application.job.dto.JobPostingResponse;
 import com.smartmatch.application.job.service.JobService;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT NÀY
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -725,7 +810,7 @@ public class JobController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Nhà tuyển dụng đăng tin tuyển dụng mới")
     public ApiResponse<JobPostingResponse> createJob(
-            @PathVariable("companyId") Long companyId, // <-- Đã sửa lỗi tại đây
+            @PathVariable("companyId") Long companyId,
             @Valid @RequestBody JobPostingRequest request) {
         return ApiResponse.success(jobService.createJobPosting(companyId, request), "Đăng tin chờ duyệt thành công");
     }
@@ -744,15 +829,8 @@ public class JobController {
 
     @GetMapping("/{jobId}")
     @Operation(summary = "Xem chi tiết tin tuyển dụng")
-    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable("jobId") Long jobId) { // <-- Đã sửa lỗi tại đây
+    public ApiResponse<JobPostingResponse> getJobDetail(@PathVariable("jobId") Long jobId) {
         return ApiResponse.success(jobService.getJobById(jobId));
-    }
-
-    private DomainPageable createPageable(int page, int size) {
-        return new DomainPageable() {
-            @Override public int getPageNumber() { return page; }
-            @Override public int getPageSize() { return size; }
-        };
     }
 
     @GetMapping("/employers/{companyId}")
@@ -774,8 +852,30 @@ public class JobController {
             @PathVariable("companyId") Long companyId,
             @PathVariable("jobId") Long jobId,
             @Valid @RequestBody JobPostingRequest request) {
-        // Truyền đủ 3 tham số theo đúng thiết kế của JobService nhà bạn
         return ApiResponse.success(jobService.updateJobPosting(companyId, jobId, request), "Cập nhật tin thành công");
+    }
+
+    // ==========================================================
+    // SỬA LỖI BIÊN DỊCH: Ghi đè phương thức toSpringPageable()
+    // ==========================================================
+    private DomainPageable createPageable(int page, int size) {
+        return new DomainPageable() {
+            @Override
+            public int getPageNumber() {
+                return page;
+            }
+
+            @Override
+            public int getPageSize() {
+                return size;
+            }
+
+            @Override
+            public org.springframework.data.domain.Pageable toSpringPageable() {
+                // Ánh xạ sang lớp cấu trúc phân trang của Spring Data
+                return PageRequest.of(page, size);
+            }
+        };
     }
 }
 
@@ -792,8 +892,9 @@ import com.smartmatch.application.jobapplication.dto.AiMatchScoreResponse;
 import com.smartmatch.application.jobapplication.dto.ApplicationRequest;
 import com.smartmatch.application.jobapplication.dto.ApplicationResponse;
 import com.smartmatch.application.jobapplication.service.JobApplicationService;
-import com.smartmatch.domain.application.model.ApplicationStatus;
-import com.smartmatch.domain.common.DomainPageable;
+import com.worklify.domain.application.model.ApplicationStatus;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.common.SearchPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -813,16 +914,28 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(summary = "Nộp hồ sơ ứng tuyển (Tự động kích hoạt AI chấm điểm)")
     public ApiResponse<ApplicationResponse> apply(
-            @PathVariable Long candidateId,
+            @PathVariable("candidateId") Long candidateId,
             @Valid @RequestBody ApplicationRequest request) {
         return ApiResponse.success(applicationService.applyJob(candidateId, request), "Nộp hồ sơ thành công");
     }
+
+    // ==================== ĐOẠN CODE BỔ SUNG THIẾU SÓT Ở ĐÂY ====================
+    @GetMapping("/candidates/{candidateId}")
+    @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
+    @Operation(summary = "Ứng viên xem lịch sử danh sách đơn ứng tuyển của chính mình")
+    public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsByCandidate(
+            @PathVariable("candidateId") Long candidateId,
+            @RequestParam(value = "page", defaultValue = "0") int page, // Thêm value = "page"
+            @RequestParam(value = "size", defaultValue = "10") int size) { // Thêm value = "size"
+        return ApiResponse.success(applicationService.getApplicationsByCandidate(candidateId, createPageable(page, size)), "Tải danh sách đơn ứng tuyển thành công");
+    }
+    // =========================================================================
 
     @GetMapping("/jobs/{jobId}/review-board")
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
     @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
-            @PathVariable Long jobId,
+            @PathVariable("jobId") Long jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success(applicationService.getApplicationsForReviewBoard(jobId, createPageable(page, size)));
@@ -831,7 +944,8 @@ public class JobApplicationController {
     @GetMapping("/{applicationId}/ai-score")
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('CANDIDATE')")
     @Operation(summary = "Xem kết quả chấm điểm độ phù hợp của AI")
-    public ApiResponse<AiMatchScoreResponse> getAiScore(@PathVariable Long applicationId) {
+    public ApiResponse<AiMatchScoreResponse> getAiScore(
+            @PathVariable("applicationId") Long applicationId) {
         return ApiResponse.success(applicationService.getAiMatchResult(applicationId));
     }
 
@@ -839,18 +953,15 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Cập nhật trạng thái hồ sơ (Duyệt/Loại)")
     public ApiResponse<Void> updateStatus(
-            @PathVariable Long companyId,
-            @PathVariable Long applicationId,
+            @PathVariable("companyId") Long companyId,
+            @PathVariable("applicationId") Long applicationId,
             @RequestParam ApplicationStatus status) {
         applicationService.updateApplicationStatus(companyId, applicationId, status);
         return ApiResponse.success(null, "Cập nhật trạng thái thành công");
     }
 
     private DomainPageable createPageable(int page, int size) {
-        return new DomainPageable() {
-            @Override public int getPageNumber() { return page; }
-            @Override public int getPageSize() { return size; }
-        };
+        return new SearchPageable(page, size);
     }
 }
 

@@ -1,7 +1,7 @@
 package com.smartmatch.api.common.exception;
 
 import com.smartmatch.api.common.response.ApiResponse;
-import com.smartmatch.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
+import com.worklify.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
