@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Building2, Globe, FileText, Camera, CheckCircle, AlertCircle, Clock, Edit2, X } from 'lucide-react';
 import employerService from '../../../features/employer/employerService';
 import authService from '../../../features/auth/authService';
 import Input from '../../../components/common/Input';
@@ -8,22 +9,19 @@ import Toast from '../../../components/common/Toast';
 export default function CompanyProfilePage() {
   const [userId, setUserId] = useState(null);
   
-  // State phân biệt hồ sơ đã tồn tại hay chưa
+  // Trạng thái Form & Dữ liệu
   const [isUpdateMode, setIsUpdateMode] = useState(false);
-  
-  // State điều khiển chế độ Xem (View) hay Sửa (Edit)
   const [isEditing, setIsEditing] = useState(false);
-
-  // State lưu dữ liệu form và dữ liệu gốc để so sánh
   const [formData, setFormData] = useState({ companyName: '', website: '', description: '' });
   const [originalData, setOriginalData] = useState({ companyName: '', website: '', description: '' });
-  
   const [verificationStatus, setVerificationStatus] = useState(null);
 
+  // Xử lý Logo
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [originalLogo, setOriginalLogo] = useState(null);
 
+  // Trạng thái UI
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
@@ -46,7 +44,7 @@ export default function CompanyProfilePage() {
         };
         
         setFormData(fetchedData);
-        setOriginalData(fetchedData); // Lưu lại bản gốc để đối chiếu
+        setOriginalData(fetchedData);
         setVerificationStatus(res.data.verificationStatus);
 
         if (res.data.logoUrl) {
@@ -56,12 +54,11 @@ export default function CompanyProfilePage() {
         }
         
         setIsUpdateMode(true); 
-        setIsEditing(false); // Có data rồi thì mặc định là chế độ Xem
+        setIsEditing(false);
       }
     } catch (error) {
-      console.log("Chưa có hồ sơ, ở chế độ Tạo mới");
       setIsUpdateMode(false);
-      setIsEditing(true); // Chưa có data thì bắt buộc mở Form để tạo
+      setIsEditing(true); // Bắt buộc nhập nếu chưa có hồ sơ
     }
   };
 
@@ -76,7 +73,6 @@ export default function CompanyProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    // Hủy sửa thì khôi phục lại dữ liệu gốc
     setFormData(originalData);
     setLogoPreview(originalLogo);
     setLogoFile(null);
@@ -100,156 +96,187 @@ export default function CompanyProfilePage() {
         await employerService.uploadLogo(userId, logoFile);
       }
 
-      setStatusMsg({ type: 'success', message: 'Cập nhật hồ sơ thành công. Đang chờ Admin kiểm duyệt!' });
-      
-      // Load lại profile để lấy trạng thái PENDING mới nhất
+      setStatusMsg({ type: 'success', message: 'Hồ sơ đã được lưu! Đang chờ Quản trị viên kiểm duyệt.' });
       await fetchProfile(userId);
-      setLogoFile(null); // Reset file upload state
+      setLogoFile(null);
       
     } catch (err) {
-      setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Lỗi khi cập nhật hồ sơ.' });
+      setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Helper kiểm tra xem field nào đã bị thay đổi
-  const isModified = (fieldName) => isUpdateMode && formData[fieldName] !== originalData[fieldName];
-  const isLogoModified = logoFile !== null;
-
-  const renderStatusBadge = () => {
+  // UI Components helpers
+  const StatusBanner = () => {
     if (!verificationStatus) return null;
-    switch (verificationStatus) {
-      case 'APPROVED':
-        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Đã duyệt (Hoạt động)</span>;
-      case 'REJECTED':
-        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Bị từ chối / Cần chỉnh sửa</span>;
-      case 'PENDING':
-      default:
-        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Đang chờ kiểm duyệt</span>;
-    }
+    
+    const statusConfig = {
+      APPROVED: { icon: <CheckCircle className="w-5 h-5 text-green-600" />, bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Hồ sơ đã được phê duyệt và đang hoạt động.' },
+      REJECTED: { icon: <AlertCircle className="w-5 h-5 text-red-600" />, bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Hồ sơ bị từ chối. Vui lòng cập nhật lại thông tin cho chính xác.' },
+      PENDING: { icon: <Clock className="w-5 h-5 text-yellow-600" />, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Hồ sơ đang chờ Quản trị viên kiểm duyệt.' }
+    };
+    const config = statusConfig[verificationStatus] || statusConfig.PENDING;
+
+    return (
+      <div className={`flex items-center gap-3 p-4 mb-6 rounded-lg border ${config.bg} ${config.text}`}>
+        {config.icon}
+        <span className="text-sm font-medium">{config.label}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-3xl">
+    <div className="max-w-4xl mx-auto pb-10">
       
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 className="text-xl font-bold text-gray-800">Hồ sơ Doanh nghiệp</h2>
-        <div className="flex items-center gap-3">
-          {isUpdateMode && renderStatusBadge()}
-          {!isEditing && isUpdateMode && (
-            <Button variant="outline" onClick={() => setIsEditing(true)} className="px-3 py-1 text-sm border-blue-600 text-blue-600 hover:bg-blue-50">
-              Chỉnh sửa hồ sơ
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {statusMsg.type && <div className="mb-4"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
-
-      {verificationStatus === 'REJECTED' && !isEditing && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          <strong>Lưu ý:</strong> Hồ sơ của bạn đã bị từ chối kiểm duyệt. Vui lòng bấm <b>Chỉnh sửa hồ sơ</b> để khắc phục thông tin.
-        </div>
-      )}
-
-      {/* --- GIAO DIỆN CHẾ ĐỘ XEM (VIEW MODE) --- */}
-      {!isEditing ? (
-        <div className="flex flex-col gap-6 text-gray-700 text-sm">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-gray-50 border border-gray-200 rounded-md flex items-center justify-center overflow-hidden">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-xs text-gray-400">Chưa có Logo</span>
-              )}
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">{originalData.companyName || 'Chưa cập nhật tên'}</h3>
-              <p className="mt-1">Website: {originalData.website ? <a href={originalData.website} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">{originalData.website}</a> : 'Chưa cập nhật'}</p>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-semibold text-gray-800 mb-2 border-b pb-1">Giới thiệu văn hóa công ty</h4>
-            <p className="whitespace-pre-wrap leading-relaxed">{originalData.description || 'Chưa có thông tin mô tả.'}</p>
-          </div>
-        </div>
-      ) : (
-
-      /* --- GIAO DIỆN CHẾ ĐỘ SỬA (EDIT MODE) --- */
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        
-        <div className="flex items-center gap-6 p-4 bg-gray-50 border rounded-md relative">
-          {isLogoModified && <span className="absolute top-2 right-2 bg-orange-100 text-orange-600 px-2 py-0.5 text-[10px] rounded-full font-bold">Đã đổi ảnh</span>}
-          <div className="w-24 h-24 bg-white border border-gray-300 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0">
-            {logoPreview ? (
-              <img src={logoPreview} alt="Company Logo" className="w-full h-full object-contain" />
-            ) : (
-              <span className="text-xs text-gray-400">Chưa có Logo</span>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Logo Doanh Nghiệp (Tùy chọn)</label>
-            <input 
-              type="file" 
-              accept="image/png, image/jpeg, image/jpg" 
-              onChange={handleFileChange}
-              className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        <div className="relative">
-          {isModified('companyName') && <span className="absolute right-0 top-0 text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          <Input 
-              label="Tên công ty (Bắt buộc)" 
-              name="companyName" 
-              value={formData.companyName} 
-              onChange={handleChange} 
-              required 
-          />
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Hồ Sơ Doanh Nghiệp</h1>
+          <p className="text-gray-500 text-sm mt-1">Quản lý thông tin và hình ảnh thương hiệu tuyển dụng của bạn.</p>
         </div>
         
-        <div className="relative">
-          {isModified('website') && <span className="absolute right-0 top-0 text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          <Input 
-              label="Trang web chính thức" 
-              type="url" 
-              name="website" 
-              value={formData.website} 
-              onChange={handleChange} 
-              placeholder="https://..." 
-          />
-        </div>
-        
-        <div className="flex flex-col gap-1 relative">
-          <div className="flex justify-between items-end">
-            <label className="text-sm font-medium text-gray-700">Giới thiệu văn hóa công ty</label>
-            {isModified('description') && <span className="text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          </div>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="6"
-            placeholder="Mô tả quy mô, ngành nghề, văn hóa công ty..."
-            className={`border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 ${isModified('description') ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
-          ></textarea>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-          {isUpdateMode && (
-            <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isLoading}>
-              Hủy
-            </Button>
-          )}
-          <Button type="submit" isLoading={isLoading}>
-            {isUpdateMode ? 'Lưu Thay Đổi (Gửi duyệt lại)' : 'Tạo Hồ Sơ Mới'}
+        {isUpdateMode && !isEditing && (
+          <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 shadow-sm">
+            <Edit2 className="w-4 h-4" />
+            Chỉnh sửa thông tin
           </Button>
-        </div>
+        )}
+      </div>
 
-      </form>
+      {statusMsg.type && (
+        <div className="mb-6">
+          <Toast type={statusMsg.type} message={statusMsg.message} />
+        </div>
       )}
+
+      {isUpdateMode && !isEditing && <StatusBanner />}
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        
+        {/* --- CHẾ ĐỘ XEM (VIEW MODE) --- */}
+        {!isEditing ? (
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              {/* Logo Display */}
+              <div className="w-32 h-32 flex-shrink-0 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center p-2 shadow-sm">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+                ) : (
+                  <Building2 className="w-12 h-12 text-gray-300" />
+                )}
+              </div>
+
+              {/* Info Display */}
+              <div className="flex-1 space-y-6 w-full">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {originalData.companyName || 'Chưa cập nhật tên công ty'}
+                  </h2>
+                  
+                  {originalData.website && (
+                    <a href={originalData.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium">
+                      <Globe className="w-4 h-4" />
+                      {originalData.website}
+                    </a>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-100 pt-6">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-3">
+                    <FileText className="w-5 h-5 text-gray-500" />
+                    Giới thiệu công ty
+                  </h3>
+                  <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {originalData.description ? originalData.description : <span className="italic text-gray-400">Chưa có thông tin mô tả. Hãy cập nhật để ứng viên hiểu thêm về bạn.</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+
+        /* --- CHẾ ĐỘ SỬA (EDIT MODE) --- */
+        <div className="p-8 bg-gray-50/50">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Cập nhật Logo */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Logo Doanh Nghiệp</label>
+              <div className="flex items-center gap-6">
+                <div className="relative w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 bg-white flex items-center justify-center overflow-hidden group hover:border-blue-500 transition-colors">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <div className="text-center">
+                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                      <span className="text-[10px] text-gray-500 font-medium">Tải ảnh lên</span>
+                    </div>
+                  )}
+                  {/* Lớp overlay khi hover vào ảnh để chọn file */}
+                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="w-6 h-6 text-white" />
+                    <input type="file" accept="image/png, image/jpeg, image/jpg" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
+                <div className="text-sm text-gray-500">
+                  <p>Định dạng: JPG, PNG, JPEG.</p>
+                  <p>Kích thước khuyên dùng: Hình vuông 400x400px.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input 
+                  label="Tên công ty (Bắt buộc)" 
+                  name="companyName" 
+                  value={formData.companyName} 
+                  onChange={handleChange} 
+                  required 
+                  placeholder="VD: Công ty TNHH Worklify"
+                  icon={<Building2 className="w-4 h-4 text-gray-400" />}
+              />
+              <Input 
+                  label="Trang web chính thức" 
+                  type="url" 
+                  name="website" 
+                  value={formData.website} 
+                  onChange={handleChange} 
+                  placeholder="https://..." 
+                  icon={<Globe className="w-4 h-4 text-gray-400" />}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Giới thiệu tổng quan</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="6"
+                placeholder="Mô tả quy mô, lĩnh vực hoạt động, chế độ phúc lợi và văn hóa công ty..."
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all resize-y"
+              ></textarea>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+              {isUpdateMode && (
+                <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isLoading} className="flex items-center gap-2">
+                  <X className="w-4 h-4" />
+                  Hủy bỏ
+                </Button>
+              )}
+              <Button type="submit" isLoading={isLoading} className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                {isUpdateMode ? 'Lưu thay đổi & Gửi duyệt' : 'Hoàn tất & Tạo hồ sơ'}
+              </Button>
+            </div>
+          </form>
+        </div>
+        )}
+      </div>
     </div>
   );
 }

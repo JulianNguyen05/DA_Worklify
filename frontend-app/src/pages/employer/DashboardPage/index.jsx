@@ -1,268 +1,505 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, FileText, CheckCircle, ArrowRight, Activity, MapPin } from 'lucide-react';
+import {
+  Briefcase, Users, FileText, CheckCircle, ArrowRight,
+  MapPin, Clock, TrendingUp, Eye, Calendar, ChevronRight,
+  Plus, Search, AlertCircle, Building2, Inbox
+} from 'lucide-react';
 import authService from '../../../features/auth/authService';
 import employerService from '../../../features/employer/employerService';
+import candidateService from '../../../features/candidate/candidateService';
 
-const DashboardPage = () => {
-  const [uiState, setUiState] = useState({ isLoading: true, error: null });
-  const [data, setData] = useState({
-    user: null,
-    stats: { activeJobs: 0, totalApplications: 0, newCandidates: 0, successHires: 0 },
-    recentJobs: [],
-    recentApplications: []
+// ─────────────────────────────────────────────
+// STATUS BADGE COMPONENTS (khớp với DB enum)
+// ─────────────────────────────────────────────
+const JOB_STATUS_MAP = {
+  ACTIVE:   { label: 'Đang mở',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  PENDING:  { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  CLOSED:   { label: 'Đã đóng',   bg: 'bg-gray-100 text-gray-600 border-gray-200' },
+  REJECTED: { label: 'Từ chối',   bg: 'bg-red-50 text-red-600 border-red-200' },
+};
+
+const APP_STATUS_MAP = {
+  PENDING:              { label: 'Chờ xử lý',  bg: 'bg-amber-50 text-amber-700 border-amber-200',     dot: 'bg-amber-400' },
+  REVIEWED:             { label: 'Đã xem',      bg: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-400' },
+  INTERVIEW_SCHEDULED:  { label: 'Phỏng vấn',  bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+  ACCEPTED:             { label: 'Đã tuyển',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  REJECTED:             { label: 'Từ chối',    bg: 'bg-gray-100 text-gray-500 border-gray-200',       dot: 'bg-gray-400' },
+};
+
+const JobStatusBadge = ({ status }) => {
+  const cfg = JOB_STATUS_MAP[status] ?? JOB_STATUS_MAP.PENDING;
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.bg}`}>
+      {cfg.label}
+    </span>
+  );
+};
+
+const AppStatusBadge = ({ status }) => {
+  const cfg = APP_STATUS_MAP[status] ?? APP_STATUS_MAP.PENDING;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${cfg.bg}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STAT CARD (số liệu tổng quan)
+// ─────────────────────────────────────────────
+const StatCard = ({ title, value, subtitle, link, icon, accentClass, isLoading }) => (
+  <Link
+    to={link}
+    className={`group relative p-6 rounded-2xl border border-gray-100 bg-white overflow-hidden
+      hover:shadow-lg hover:border-gray-200 transition-all duration-200`}
+  >
+    <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity ${accentClass}`} />
+    <div className="flex items-start justify-between mb-4">
+      <div className={`p-2.5 rounded-xl ${accentClass} bg-opacity-10`}>{icon}</div>
+      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
+    </div>
+    {isLoading ? (
+      <div className="h-8 w-16 bg-gray-100 rounded animate-pulse mb-1" />
+    ) : (
+      <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{value ?? 0}</p>
+    )}
+    <p className="text-sm font-semibold text-gray-500 mt-1">{title}</p>
+    {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+  </Link>
+);
+
+// ─────────────────────────────────────────────
+// SKELETON LOADERS
+// ─────────────────────────────────────────────
+const SkeletonRow = () => (
+  <div className="p-5 flex items-center gap-4 border-b border-gray-50 last:border-0 animate-pulse">
+    <div className="flex-1 space-y-2">
+      <div className="h-4 w-2/3 bg-gray-100 rounded" />
+      <div className="h-3 w-1/3 bg-gray-50 rounded" />
+    </div>
+    <div className="h-6 w-20 bg-gray-100 rounded-full" />
+  </div>
+);
+
+// ─────────────────────────────────────────────
+// MAIN DASHBOARD PAGE
+// ─────────────────────────────────────────────
+export default function EmployerDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+  const [user, setUser]     = useState(null);
+
+  // Data từ BE
+  const [stats, setStats]   = useState({
+    activeJobs: 0,
+    totalApplications: 0,
+    pendingApplications: 0,
+    acceptedApplications: 0,
   });
+  const [recentJobs, setRecentJobs]           = useState([]);
+  const [recentApplications, setRecentApplications] = useState([]);
 
+  // ── Fetch ─────────────────────────────────────
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const run = async () => {
       const currentUser = authService.getCurrentUser();
-      
       if (!currentUser?.userId) {
-        setUiState({ isLoading: false, error: 'Không tìm thấy phiên đăng nhập.' });
+        setError('Không tìm thấy phiên đăng nhập.');
+        setLoading(false);
         return;
       }
+      setUser(currentUser);
 
       try {
-        // Tối ưu hoá: Lấy thông tin cần thiết song song
-        // Lưu ý: Các hàm API này giả định đã được định nghĩa trong employerService
-        const [jobsRes, statsRes] = await Promise.allSettled([
+        // Gọi song song tất cả API cần thiết
+        const [jobsRes, appsRes] = await Promise.allSettled([
           employerService.getMyJobs(currentUser.userId, 0, 5),
-          employerService.getDashboardStats(currentUser.userId) // Dữ liệu thống kê tổng hợp (nếu Backend có)
+          employerService.getApplicationsByEmployer?.(currentUser.userId, 0, 5)
+            ?? candidateService.getApplicationsByEmployer?.(currentUser.userId, 0, 5),
         ]);
 
-        const jobs = jobsRes.status === 'fulfilled' ? jobsRes.value?.data : { items: [], totalElements: 0 };
-        // Lấy tạm 1 data giả lập nếu statsRes bị lỗi (Ví dụ: Backend chưa code xong api /dashboard)
-        const statsData = statsRes.status === 'fulfilled' ? statsRes.value?.data : {
-            activeJobs: jobs?.totalElements || 0,
-            totalApplications: 24, // Giả lập
-            newCandidates: 8,     // Giả lập
-            successHires: 3       // Giả lập
-        };
+        // Xử lý jobs (khớp với bảng job_postings)
+        const jobsData = jobsRes.status === 'fulfilled'
+          ? (jobsRes.value?.data ?? jobsRes.value)
+          : null;
+        // Support cả { items, totalElements } lẫn { content, totalElements }
+        const jobItems   = jobsData?.items ?? jobsData?.content ?? [];
+        const totalJobs  = jobsData?.totalElements ?? jobItems.length;
+        const activeJobs = jobItems.filter(j => j.status === 'ACTIVE').length;
 
-        setData({
-          user: currentUser,
-          stats: statsData,
-          recentJobs: jobs?.items || jobs?.content || [],
-          // Giả lập danh sách ứng viên mới vì chưa có API getRecentApplications
-          recentApplications: [
-            { id: 101, name: "Nguyễn Văn A", position: "Frontend Developer", date: "2 giờ trước", status: "Chờ duyệt" },
-            { id: 102, name: "Trần Thị B", position: "Backend Java", date: "5 giờ trước", status: "Chờ duyệt" },
-            { id: 103, name: "Lê Hoàng C", position: "Product Manager", date: "Hôm qua", status: "Đã đánh giá" },
-          ]
+        // Xử lý applications (khớp với bảng applications)
+        const appsData = appsRes.status === 'fulfilled'
+          ? (appsRes.value?.data ?? appsRes.value)
+          : null;
+        const appItems    = appsData?.items ?? appsData?.content ?? [];
+        const totalApps   = appsData?.totalElements ?? appItems.length;
+        const pendingApps = appItems.filter(a => a.status === 'PENDING').length;
+        const acceptedApps= appItems.filter(a => a.status === 'ACCEPTED').length;
+
+        setStats({
+          activeJobs,
+          totalApplications: totalApps,
+          pendingApplications: pendingApps,
+          acceptedApplications: acceptedApps,
         });
-
+        setRecentJobs(jobItems.slice(0, 5));
+        setRecentApplications(appItems.slice(0, 6));
       } catch (err) {
-        console.error(err);
-        setUiState(prev => ({ ...prev, error: 'Đã xảy ra lỗi khi đồng bộ dữ liệu doanh nghiệp.' }));
+        console.error('[EmployerDashboard]', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
       } finally {
-        setUiState(prev => ({ ...prev, isLoading: false }));
+        setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    run();
   }, []);
 
+  // ── Hiển thị tên nhà tuyển dụng ──────────────
   const displayName = useMemo(() => {
-    if (data.user?.companyName) return data.user.companyName;
-    return data.user?.email ? data.user.email.split('@')[0] : "Nhà tuyển dụng";
-  }, [data.user]);
+    if (user?.companyName) return user.companyName;
+    if (user?.fullName)    return user.fullName;
+    return user?.email?.split('@')[0] ?? 'Nhà tuyển dụng';
+  }, [user]);
 
-  if (uiState.isLoading) {
+  // ── Reload handler ────────────────────────────
+  const handleReload = useCallback(() => window.location.reload(), []);
+
+  // ── Loading state ─────────────────────────────
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-gray-600 font-medium">Đang tải dữ liệu tổng quan...</span>
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tải dữ liệu tổng quan...</p>
       </div>
     );
   }
 
-  if (uiState.error) {
+  // ── Error state ───────────────────────────────
+  if (error) {
     return (
-      <div className="p-6 max-w-4xl mx-auto bg-red-50 border border-red-200 text-red-700 rounded-xl mt-10">
-        <p className="font-semibold">{uiState.error}</p>
-        <button onClick={() => window.location.reload()} className="mt-3 text-sm underline text-red-800">Thử lại</button>
+      <div className="max-w-lg mx-auto mt-16 p-6 bg-red-50 border border-red-200 rounded-2xl text-center">
+        <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+        <p className="font-semibold text-red-700 mb-4">{error}</p>
+        <button
+          onClick={handleReload}
+          className="px-5 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
+        >
+          Tải lại trang
+        </button>
       </div>
     );
   }
 
+  // ── Main render ───────────────────────────────
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      {/* 1. Header Area - Lời chào & Nút thao tác nhanh */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-        {/* Background Pattern Nhẹ */}
-        <div className="absolute right-0 top-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-60"></div>
-        
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+      {/* ── HEADER ─────────────────────────────── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-5
+        bg-gradient-to-br from-blue-600 to-blue-700 text-white
+        rounded-2xl px-8 py-7 shadow-lg shadow-blue-200 relative overflow-hidden">
+
+        {/* decorative circles */}
+        <div className="absolute right-0 top-0 w-72 h-72 rounded-full bg-blue-500/30 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute right-16 bottom-0 w-40 h-40 rounded-full bg-blue-800/20 translate-y-1/2 pointer-events-none" />
+
         <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Chào mừng trở lại, <span className="text-blue-700">{displayName}</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 className="w-5 h-5 text-blue-200" />
+            <span className="text-blue-200 text-sm font-medium">Bảng điều khiển nhà tuyển dụng</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Chào mừng, <span className="text-yellow-300">{displayName}</span>
           </h1>
-          <p className="text-gray-500 mt-2 font-medium">
-            Theo dõi hiệu quả tuyển dụng và quản lý hồ sơ ứng viên của bạn hôm nay.
+          <p className="text-blue-100 text-sm mt-1.5 font-medium">
+            Quản lý tin tuyển dụng và hồ sơ ứng viên của bạn tại đây.
           </p>
         </div>
-        
-        <div className="relative z-10 flex gap-3">
-          <Link 
-            to="/employer/candidates/search" 
-            className="px-6 py-2.5 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+
+        <div className="relative z-10 flex flex-wrap gap-3">
+          <Link
+            to="/employer/candidates/search"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25
+              text-white text-sm font-semibold border border-white/25 transition-all backdrop-blur-sm"
           >
-            <Users className="w-4 h-4" /> Tìm ứng viên
+            <Search className="w-4 h-4" /> Tìm ứng viên
           </Link>
-          <Link 
-            to="/employer/jobs/create" 
-            className="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2"
+          <Link
+            to="/employer/jobs/create"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-700
+              text-sm font-bold shadow-sm hover:bg-blue-50 transition-all"
           >
-            <Briefcase className="w-4 h-4" /> Đăng tin mới
+            <Plus className="w-4 h-4" /> Đăng tin mới
           </Link>
         </div>
       </header>
 
-      {/* 2. Tổng quan số liệu (Quick Stats Cards) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Tin đang mở" 
-          value={data.stats.activeJobs} 
-          link="/employer/jobs" 
-          icon={<Briefcase className="w-7 h-7 text-blue-700" />}
-          colorClass="bg-blue-50/50 border-blue-100"
+      {/* ── STAT CARDS (khớp với cột trong DB) ──── */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard
+          title="Tin đang hoạt động"
+          subtitle="Tổng số job_postings ACTIVE"
+          value={stats.activeJobs}
+          link="/employer/jobs"
+          accentClass="bg-blue-500"
+          icon={<Briefcase className="w-5 h-5 text-blue-600" />}
         />
-        <StatCard 
-          title="Tổng CV nhận được" 
-          value={data.stats.totalApplications} 
-          link="/employer/applications" 
-          icon={<FileText className="w-7 h-7 text-indigo-600" />}
-          colorClass="bg-indigo-50/50 border-indigo-100"
+        <StatCard
+          title="Tổng đơn ứng tuyển"
+          subtitle="Bảng applications"
+          value={stats.totalApplications}
+          link="/employer/applications"
+          accentClass="bg-indigo-500"
+          icon={<FileText className="w-5 h-5 text-indigo-600" />}
         />
-        <StatCard 
-          title="Ứng viên mới (Tuần này)" 
-          value={`+${data.stats.newCandidates}`} 
-          link="/employer/applications" 
-          icon={<Activity className="w-7 h-7 text-amber-600" />}
-          colorClass="bg-amber-50/50 border-amber-100"
+        <StatCard
+          title="Đơn chờ xử lý"
+          subtitle="Status PENDING"
+          value={stats.pendingApplications}
+          link="/employer/applications?status=PENDING"
+          accentClass="bg-amber-500"
+          icon={<Inbox className="w-5 h-5 text-amber-600" />}
         />
-        <StatCard 
-          title="Tuyển dụng thành công" 
-          value={data.stats.successHires} 
-          link="/employer/applications" 
-          icon={<CheckCircle className="w-7 h-7 text-emerald-600" />}
-          colorClass="bg-emerald-50/50 border-emerald-100"
+        <StatCard
+          title="Tuyển thành công"
+          subtitle="Status ACCEPTED"
+          value={stats.acceptedApplications}
+          link="/employer/applications?status=ACCEPTED"
+          accentClass="bg-emerald-500"
+          icon={<CheckCircle className="w-5 h-5 text-emerald-600" />}
         />
       </section>
 
-      {/* 3. Phân bổ công việc (Layout 2 cột) */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        {/* Cột trái (Rộng hơn): Tin tuyển dụng gần đây */}
-        <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-            <h2 className="text-xl font-extrabold text-gray-900">Tin đăng gần đây</h2>
-            <Link to="/employer/jobs" className="text-sm font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1">
-              Quản lý tin <ArrowRight className="w-4 h-4" />
+      {/* ── 2-COLUMN LAYOUT ──────────────────────── */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+
+        {/* ── LEFT: Tin tuyển dụng gần đây ─────── */}
+        <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/40">
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-4.5 h-4.5 text-gray-500" strokeWidth={2} />
+              <h2 className="text-sm font-bold text-gray-800">Tin tuyển dụng gần đây</h2>
+            </div>
+            <Link
+              to="/employer/jobs"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+            >
+              Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          
+
+          {/* Table header */}
+          <div className="hidden sm:grid grid-cols-12 px-6 py-2.5 bg-gray-50/60 border-b border-gray-100
+            text-xs font-bold text-gray-400 uppercase tracking-wider">
+            <span className="col-span-5">Vị trí</span>
+            <span className="col-span-3">Mức lương</span>
+            <span className="col-span-2">Địa điểm</span>
+            <span className="col-span-2 text-right">Trạng thái</span>
+          </div>
+
           <div className="divide-y divide-gray-50">
-            {data.recentJobs.length > 0 ? (
-              data.recentJobs.map(job => (
-                <div key={job.id} className="p-8 hover:bg-slate-50 transition-colors group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <Link to={`/jobs/${job.id}`} className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
-                      {job.title}
-                    </Link>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm font-medium">
-                      <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                        {job.salaryRange || 'Thỏa thuận'}
-                      </span>
-                      <span className="text-gray-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" /> {job.location || 'Chưa cập nhật'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                      Đang mở
-                    </span>
-                    <Link 
-                      to={`/employer/jobs/${job.id}/edit`}
-                      className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-                    >
-                      Sửa tin
-                    </Link>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-12 text-center flex flex-col items-center">
-                <Briefcase className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-gray-500 font-medium">Bạn chưa đăng tin tuyển dụng nào.</p>
-                <Link to="/employer/jobs/create" className="mt-4 text-blue-700 font-semibold hover:underline">
-                  Tạo tin đăng đầu tiên
+            {recentJobs.length === 0 ? (
+              <div className="py-14 text-center">
+                <Briefcase className="w-9 h-9 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium">Chưa có tin tuyển dụng nào.</p>
+                <Link
+                  to="/employer/jobs/create"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:underline"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Đăng tin đầu tiên
                 </Link>
               </div>
-            )}
-          </div>
-        </div>
+            ) : (
+              recentJobs.map(job => (
+                <div
+                  key={job.id}
+                  className="px-6 py-4 hover:bg-gray-50/60 transition-colors grid grid-cols-1 sm:grid-cols-12 gap-3 items-center"
+                >
+                  {/* Title + meta */}
+                  <div className="sm:col-span-5 min-w-0">
+                    <Link
+                      to={`/employer/jobs/${job.id}/edit`}
+                      className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm line-clamp-1"
+                    >
+                      {job.title}
+                    </Link>
+                    {/* work_type từ DB */}
+                    {job.work_type && (
+                      <span className="text-xs text-gray-400 mt-0.5 block">{job.work_type}</span>
+                    )}
+                    {/* expires_at từ DB */}
+                    {job.expires_at && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 mt-1">
+                        <Calendar className="w-3 h-3" />
+                        Hết hạn: {new Date(job.expires_at).toLocaleDateString('vi-VN')}
+                      </span>
+                    )}
+                  </div>
 
-        {/* Cột phải: Ứng viên mới cập nhật */}
-        <div className="lg:col-span-1 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-            <h2 className="text-lg font-extrabold text-gray-900">CV mới nhận</h2>
-          </div>
-          
-          <div className="divide-y divide-gray-50 p-2">
-            {data.recentApplications.length > 0 ? (
-              data.recentApplications.map(app => (
-                <div key={app.id} className="p-4 hover:bg-blue-50/50 rounded-xl transition-colors cursor-pointer group">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-gray-900 group-hover:text-blue-700">{app.name}</h3>
-                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {app.date}
+                  {/* salary_range */}
+                  <div className="sm:col-span-3">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
+                      <TrendingUp className="w-3 h-3" />
+                      {job.salary_range || 'Thỏa thuận'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 truncate">{app.position}</p>
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
-                      {app.status}
+
+                  {/* location */}
+                  <div className="sm:col-span-2">
+                    <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{job.location || '—'}</span>
                     </span>
-                    <Link to={`/employer/applications/${app.id}`} className="text-sm text-blue-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      Xem hồ sơ
+                  </div>
+
+                  {/* status */}
+                  <div className="sm:col-span-2 sm:text-right">
+                    <JobStatusBadge status={job.status} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer action */}
+          {recentJobs.length > 0 && (
+            <div className="px-6 py-3 bg-gray-50/60 border-t border-gray-100 flex justify-end">
+              <Link
+                to="/employer/jobs"
+                className="text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+              >
+                Quản lý tất cả tin <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT: Đơn ứng tuyển mới ─────────── */}
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/40">
+            <div className="flex items-center gap-2">
+              <Users className="w-4.5 h-4.5 text-gray-500" strokeWidth={2} />
+              <h2 className="text-sm font-bold text-gray-800">Đơn ứng tuyển mới</h2>
+            </div>
+            <Link
+              to="/employer/applications"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+            >
+              Tất cả <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-gray-50">
+            {recentApplications.length === 0 ? (
+              <div className="py-14 text-center">
+                <Inbox className="w-9 h-9 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium">Chưa có đơn nào.</p>
+              </div>
+            ) : (
+              recentApplications.map(app => (
+                <div
+                  key={app.id}
+                  className="px-5 py-3.5 hover:bg-blue-50/30 transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    {/* full_name từ bảng candidate_profiles */}
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
+                      {app.full_name ?? app.candidateName ?? 'Ứng viên'}
+                    </p>
+                    {/* applied_at từ bảng applications */}
+                    <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                      <Clock className="w-3 h-3" />
+                      {app.applied_at
+                        ? new Date(app.applied_at).toLocaleDateString('vi-VN')
+                        : app.appliedAt
+                          ? new Date(app.appliedAt).toLocaleDateString('vi-VN')
+                          : '—'
+                      }
+                    </span>
+                  </div>
+
+                  {/* job title — JOIN từ job_postings */}
+                  <p className="text-xs text-gray-500 truncate mb-2">
+                    {app.job_title ?? app.jobTitle ?? '—'}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <AppStatusBadge status={app.status} />
+                    <Link
+                      to={`/employer/applications/${app.id}`}
+                      className="text-xs text-blue-500 font-semibold opacity-0 group-hover:opacity-100 transition-opacity
+                        inline-flex items-center gap-1"
+                    >
+                      <Eye className="w-3 h-3" /> Xem
                     </Link>
                   </div>
                 </div>
               ))
-            ) : (
-              <div className="p-8 text-center text-sm text-gray-500">Chưa có ứng viên mới.</div>
             )}
           </div>
-          
-          <div className="p-4 border-t border-gray-100 bg-gray-50/30">
-             <Link to="/employer/applications" className="block w-full text-center py-2 text-sm font-bold text-gray-700 hover:text-blue-700 transition-colors">
-                Xem tất cả danh sách
-             </Link>
-          </div>
+
+          {recentApplications.length > 0 && (
+            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+              <Link
+                to="/employer/applications"
+                className="block w-full text-center text-xs font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                Xem tất cả đơn ứng tuyển
+              </Link>
+            </div>
+          )}
         </div>
 
       </section>
+
+      {/* ── QUICK ACTIONS ────────────────────────── */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <QuickAction
+          to="/employer/jobs/create"
+          icon={<Plus className="w-5 h-5" />}
+          title="Đăng tin mới"
+          desc="Tạo bài đăng tuyển dụng"
+          colorClass="text-blue-600 bg-blue-50 group-hover:bg-blue-100"
+        />
+        <QuickAction
+          to="/employer/candidates/search"
+          icon={<Search className="w-5 h-5" />}
+          title="Tìm kiếm ứng viên"
+          desc="Duyệt hồ sơ ứng viên"
+          colorClass="text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100"
+        />
+        <QuickAction
+          to="/employer/profile"
+          icon={<Building2 className="w-5 h-5" />}
+          title="Hồ sơ công ty"
+          desc="Cập nhật thông tin doanh nghiệp"
+          colorClass="text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100"
+        />
+      </section>
+
     </div>
   );
-};
+}
 
-// Sub-component cho Thẻ Thống Kê
-const StatCard = ({ title, value, link, icon, colorClass }) => (
-  <Link to={link} className={`p-6 rounded-3xl border border-gray-100 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-lg bg-white relative overflow-hidden group`}>
-    {/* Vệt màu trang trí */}
-    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 transition-opacity group-hover:opacity-100 ${colorClass.split(' ')[0]}`}></div>
-    
-    <div className="flex justify-between items-start relative z-10">
-      <div>
-        <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">{title}</p>
-        <h3 className="text-4xl font-extrabold text-gray-900 mt-2 tracking-tight">{value}</h3>
-      </div>
-      <div className={`p-3 rounded-2xl ${colorClass}`}>
-        {icon}
-      </div>
+// ─────────────────────────────────────────────
+// QUICK ACTION CARD
+// ─────────────────────────────────────────────
+const QuickAction = ({ to, icon, title, desc, colorClass }) => (
+  <Link
+    to={to}
+    className="group flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl
+      hover:shadow-md hover:border-gray-200 transition-all duration-200"
+  >
+    <div className={`p-3 rounded-xl transition-colors ${colorClass}`}>
+      {icon}
     </div>
+    <div className="min-w-0">
+      <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{title}</p>
+      <p className="text-xs text-gray-400 truncate">{desc}</p>
+    </div>
+    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 ml-auto flex-shrink-0 transition-colors" />
   </Link>
 );
-
-export default DashboardPage;

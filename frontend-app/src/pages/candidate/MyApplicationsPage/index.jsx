@@ -1,215 +1,436 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import candidateService from '../../../features/candidate/candidateService';
 import authService from '../../../features/auth/authService';
-import SearchBar from '../../../components/common/SearchBar';
 import Pagination from '../../../components/common/Pagination';
-import ApplicationStatusBadge from '../../../components/shared/ApplicationStatusBadge';
-// Giả sử bạn có thư viện icon, nếu không có thể thay bằng thẻ <i> hoặc text
-import { Briefcase, Building2, Calendar, FileText, ChevronRight, Search } from 'lucide-react'; 
+import {
+  Briefcase, Building2, Calendar, FileText,
+  ChevronRight, Search, Clock, CheckCircle2,
+  XCircle, Eye, Users, Filter, SlidersHorizontal,
+  ArrowUpRight, Inbox
+} from 'lucide-react';
 
-const MyApplicationsPage = () => {
-  const user = authService.getCurrentUser();
-  const userId = user?.id || user?.userId;
-  
-  const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(5);
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-  const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, PENDING, REVIEWED, INTERVIEW_SCHEDULED...
-  const [filteredData, setFilteredData] = useState([]);
+const STATUS_CONFIG = {
+  PENDING: {
+    label: 'Chờ phản hồi',
+    color: 'amber',
+    icon: Clock,
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#F59E0B',
+  },
+  REVIEWED: {
+    label: 'Đã xem',
+    color: 'blue',
+    icon: Eye,
+    bg: '#DBEAFE',
+    text: '#1E40AF',
+    dot: '#3B82F6',
+  },
+  INTERVIEW_SCHEDULED: {
+    label: 'Phỏng vấn',
+    color: 'purple',
+    icon: Users,
+    bg: '#EDE9FE',
+    text: '#5B21B6',
+    dot: '#7C3AED',
+  },
+  ACCEPTED: {
+    label: 'Trúng tuyển',
+    color: 'green',
+    icon: CheckCircle2,
+    bg: '#D1FAE5',
+    text: '#065F46',
+    dot: '#10B981',
+  },
+  REJECTED: {
+    label: 'Từ chối',
+    color: 'red',
+    icon: XCircle,
+    bg: '#FEE2E2',
+    text: '#991B1B',
+    dot: '#EF4444',
+  },
+};
 
-  // Danh sách trạng thái chuẩn theo Database của bạn
-  const STATUS_TABS = [
-    { key: 'ALL', label: 'Tất cả' },
-    { key: 'PENDING', label: 'Chờ phản hồi' },
-    { key: 'REVIEWED', label: 'Đã xem' },
-    { key: 'INTERVIEW_SCHEDULED', label: 'Phỏng vấn' },
-    { key: 'ACCEPTED', label: 'Trúng tuyển' },
-    { key: 'REJECTED', label: 'Từ chối' }
-  ];
+const STATUS_TABS = [
+  { key: 'ALL', label: 'Tất cả' },
+  ...Object.entries(STATUS_CONFIG).map(([key, val]) => ({ key, label: val.label })),
+];
 
-  useEffect(() => {
-    if (!userId) {
-      setIsLoading(false);
-      return;
-    }
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
-    const fetchApplications = async () => {
-      setIsLoading(true);
-      try {
-        const res = await candidateService.getMyApplications(userId, currentPage, pageSize);
-        const data = res.data?.content || [];
-        setApplications(data);
-        setFilteredData(data);
-        setTotalPages(res.data?.totalPages || 0);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách đơn ứng tuyển:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchApplications();
-  }, [userId, currentPage, pageSize]);
+const StatusBadge = ({ status }) => {
+  const cfg = STATUS_CONFIG[status];
+  if (!cfg) return null;
+  const Icon = cfg.icon;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+      background: cfg.bg, color: cfg.text, whiteSpace: 'nowrap',
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
+    </span>
+  );
+};
 
-  // Xử lý bộ lọc (Filter) và Tìm kiếm (Search) đồng thời
-  useEffect(() => {
-    let result = applications;
+const CompanyAvatar = ({ logo, name, size = 52 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = name ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
 
-    if (statusFilter !== "ALL") {
-      result = result.filter(app => app.status === statusFilter);
-    }
-
-    if (searchText.trim()) {
-      const lowerTerm = searchText.toLowerCase();
-      result = result.filter(app => 
-        app.jobTitle?.toLowerCase().includes(lowerTerm) || 
-        app.companyName?.toLowerCase().includes(lowerTerm)
-      );
-    }
-
-    setFilteredData(result);
-  }, [searchText, statusFilter, applications]);
-
-  if (!userId && !isLoading) {
+  if (logo && !imgError) {
     return (
-      <div className="flex flex-col items-center justify-center bg-white p-8 rounded-2xl shadow-sm border border-gray-100 min-h-[400px]">
-        <Briefcase className="w-16 h-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-800">Bạn chưa đăng nhập</h3>
-        <p className="text-gray-500 text-sm mt-2">Vui lòng đăng nhập để theo dõi hành trình ứng tuyển của bạn.</p>
+      <div style={{
+        width: size, height: size, borderRadius: 12, overflow: 'hidden',
+        border: '1px solid #E5E7EB', flexShrink: 0, background: '#F9FAFB',
+      }}>
+        <img
+          src={logo} alt={name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setImgError(true)}
+        />
       </div>
     );
   }
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header Section */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-800">Lịch sử ứng tuyển</h2>
-        <p className="text-gray-500 text-sm mt-1 mb-6">Theo dõi và quản lý các cơ hội nghề nghiệp bạn đã tham gia</p>
-        
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-          {/* Tabs Trạng thái */}
-          <div className="flex w-full md:w-auto overflow-x-auto pb-2 scrollbar-hide gap-2">
-            {STATUS_TABS.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  statusFilter === tab.key 
-                    ? 'bg-blue-50 text-blue-600 border border-blue-200' 
-                    : 'bg-gray-50 text-gray-600 border border-transparent hover:bg-gray-100'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+  const colors = ['#EDE9FE', '#DBEAFE', '#D1FAE5', '#FEF3C7', '#FCE7F3'];
+  const textColors = ['#5B21B6', '#1E40AF', '#065F46', '#92400E', '#9D174D'];
+  const idx = name ? name.charCodeAt(0) % colors.length : 0;
 
-          {/* Thanh tìm kiếm */}
-          <div className="w-full md:w-72 relative">
-            <input
-              type="text"
-              placeholder="Tìm công ty, vị trí..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-            />
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
-          </div>
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: 12, flexShrink: 0,
+      background: colors[idx], color: textColors[idx],
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 15, fontWeight: 700, letterSpacing: 1,
+      border: `1px solid ${colors[idx]}`,
+    }}>
+      {initials}
+    </div>
+  );
+};
+
+const SkeletonCard = () => (
+  <div style={{
+    background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
+    padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center',
+  }}>
+    <div style={{ width: 52, height: 52, borderRadius: 12, background: '#F3F4F6', flexShrink: 0 }} />
+    <div style={{ flex: 1 }}>
+      <div style={{ height: 16, borderRadius: 8, background: '#F3F4F6', width: '40%', marginBottom: 10 }} />
+      <div style={{ height: 13, borderRadius: 8, background: '#F3F4F6', width: '25%' }} />
+    </div>
+    <div style={{ height: 26, borderRadius: 20, background: '#F3F4F6', width: 90 }} />
+  </div>
+);
+
+const EmptyState = ({ isFiltered }) => (
+  <div style={{
+    background: '#fff', borderRadius: 16, border: '1px dashed #E5E7EB',
+    padding: '64px 24px', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 12, textAlign: 'center',
+  }}>
+    <div style={{
+      width: 64, height: 64, borderRadius: 16, background: '#F9FAFB',
+      border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Inbox size={28} color="#9CA3AF" />
+    </div>
+    <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#111827' }}>
+      {isFiltered ? 'Không tìm thấy kết quả' : 'Chưa có đơn ứng tuyển'}
+    </p>
+    <p style={{ margin: 0, fontSize: 13, color: '#6B7280', maxWidth: 320, lineHeight: 1.6 }}>
+      {isFiltered
+        ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem thêm kết quả.'
+        : 'Hãy khám phá các cơ hội việc làm và nộp đơn ứng tuyển ngay hôm nay!'}
+    </p>
+  </div>
+);
+
+const StatsBar = ({ applications }) => {
+  const counts = Object.keys(STATUS_CONFIG).reduce((acc, key) => {
+    acc[key] = applications.filter(a => a.status === key).length;
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+        <div key={key} style={{
+          background: '#fff', borderRadius: 12, border: '1px solid #F3F4F6',
+          padding: '12px 14px',
+        }}>
+          <p style={{ margin: '0 0 4px', fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+            {cfg.label}
+          </p>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: cfg.text }}>
+            {counts[key] || 0}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── ApplicationCard ───────────────────────────────────────────────────────────
+
+const ApplicationCard = ({ app }) => {
+  const [hovered, setHovered] = useState(false);
+
+  const formattedDate = app.appliedAt
+    ? new Date(app.appliedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '—';
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: '#fff',
+        borderRadius: 16,
+        border: `1px solid ${hovered ? '#D1D5DB' : '#F3F4F6'}`,
+        padding: '18px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.06)' : 'none',
+        cursor: 'default',
+      }}
+    >
+      <CompanyAvatar logo={app.companyLogo} name={app.companyName} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{
+          margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#111827',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {app.jobTitle || 'Vị trí không xác định'}
+        </h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#374151', fontWeight: 500 }}>
+            <Building2 size={13} color="#9CA3AF" />
+            {app.companyName || 'Công ty'}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#6B7280' }}>
+            <Calendar size={13} color="#9CA3AF" />
+            {formattedDate}
+          </span>
+          {app.cvFileName && (
+            <span style={{
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
+              color: '#3B82F6', background: '#EFF6FF', padding: '2px 8px',
+              borderRadius: 6, fontWeight: 500,
+            }}>
+              <FileText size={11} />
+              {app.cvFileName}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Danh sách Card ứng tuyển */}
-      <div className="space-y-4">
-        {isLoading ? (
-          // Skeleton Loading
-          [1, 2, 3].map(i => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm animate-pulse flex gap-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
-              <div className="flex-1 space-y-3">
-                <div className="h-5 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              </div>
-            </div>
-          ))
-        ) : filteredData.length > 0 ? (
-          filteredData.map((app) => (
-            <div key={app.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 group">
-              <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
-                
-                {/* Logo Công ty (Có fallback nếu null) */}
-                <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
-                  {app.companyLogo ? (
-                    <img src={app.companyLogo} alt={app.companyName} className="w-full h-full object-cover" />
-                  ) : (
-                    <Building2 className="w-8 h-8 text-gray-400" />
-                  )}
-                </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <StatusBadge status={app.status} />
+        <button
+          onClick={() => window.location.href = `/jobs/${app.jobId}`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 13, fontWeight: 500,
+            color: hovered ? '#2563EB' : '#9CA3AF',
+            transition: 'color 0.15s', padding: '4px 0',
+          }}
+          title="Xem chi tiết công việc"
+        >
+          <ArrowUpRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
-                {/* Thông tin chính */}
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                    {app.jobTitle}
-                  </h3>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Building2 className="w-4 h-4 text-gray-400" />
-                      {app.companyName}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      Đã nộp: {new Date(app.appliedAt).toLocaleDateString('vi-VN')}
-                    </span>
-                    {app.cvFileName && (
-                      <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                        <FileText className="w-3.5 h-3.5" />
-                        {app.cvFileName}
-                      </span>
-                    )}
-                  </div>
-                </div>
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
-                {/* Trạng thái & Hành động */}
-                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-4 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                  <ApplicationStatusBadge status={app.status} />
-                  
-                  {/* Nút xem chi tiết công việc */}
-                  <button 
-                    onClick={() => window.location.href = `/jobs/${app.jobId}`}
-                    className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
-                  >
-                    Xem chi tiết <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+const MyApplicationsPage = () => {
+  const user = authService.getCurrentUser();
+  const userId = user?.id || user?.userId;
 
-              </div>
-            </div>
-          ))
-        ) : (
-          /* Empty State */
-          <div className="bg-white p-12 rounded-2xl shadow-sm border border-gray-100 text-center flex flex-col items-center">
-            <img src="/empty-folder.png" alt="Empty" className="w-32 h-32 mb-4 opacity-50" onError={(e) => e.target.style.display = 'none'} />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Chưa có dữ liệu</h3>
-            <p className="text-gray-500 text-sm max-w-sm">
-              {statusFilter === "ALL" 
-                ? "Bạn chưa nộp đơn ứng tuyển cho công việc nào. Hãy khám phá các cơ hội nghề nghiệp ngay!"
-                : "Không tìm thấy hồ sơ ứng tuyển nào khớp với bộ lọc hiện tại."}
-            </p>
-          </div>
-        )}
+  const [applications, setApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE = 8;
+
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [filteredData, setFilteredData] = useState([]);
+
+  // ── Fetch ──
+  const fetchApplications = useCallback(async () => {
+    if (!userId) { setIsLoading(false); return; }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await candidateService.getMyApplications(userId, currentPage, PAGE_SIZE);
+      const data = res.data?.content || [];
+      setApplications(data);
+      setTotalPages(res.data?.totalPages || 0);
+    } catch (err) {
+      setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, currentPage]);
+
+  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+  // ── Filter ──
+  useEffect(() => {
+    let result = applications;
+    if (statusFilter !== 'ALL') result = result.filter(a => a.status === statusFilter);
+    if (searchText.trim()) {
+      const term = searchText.toLowerCase();
+      result = result.filter(a =>
+        a.jobTitle?.toLowerCase().includes(term) ||
+        a.companyName?.toLowerCase().includes(term)
+      );
+    }
+    setFilteredData(result);
+  }, [searchText, statusFilter, applications]);
+
+  // ── Guard ──
+  if (!userId && !isLoading) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', background: '#fff', borderRadius: 20,
+        border: '1px solid #F3F4F6', minHeight: 360, gap: 12, padding: 32,
+      }}>
+        <Briefcase size={40} color="#D1D5DB" />
+        <p style={{ margin: 0, fontWeight: 600, fontSize: 16, color: '#111827' }}>Bạn chưa đăng nhập</p>
+        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>Vui lòng đăng nhập để theo dõi hành trình ứng tuyển.</p>
+      </div>
+    );
+  }
+
+  const isFiltered = statusFilter !== 'ALL' || searchText.trim() !== '';
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── Header ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111827' }}>
+            Lịch sử ứng tuyển
+          </h1>
+          {!isLoading && (
+            <span style={{ fontSize: 13, color: '#6B7280' }}>
+              {filteredData.length} kết quả
+            </span>
+          )}
+        </div>
+        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>
+          Theo dõi tiến trình và trạng thái các đơn ứng tuyển của bạn
+        </p>
       </div>
 
-      {/* Phân trang */}
-      {!isLoading && totalPages > 0 && (
-        <div className="mt-8 flex justify-center">
-          <Pagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            onPageChange={(newPage) => setCurrentPage(newPage)} 
+      {/* ── Stats Bar ── */}
+      {!isLoading && applications.length > 0 && <StatsBar applications={applications} />}
+
+      {/* ── Filters ── */}
+      <div style={{
+        background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
+        padding: '16px 20px', display: 'flex', flexWrap: 'wrap',
+        gap: 12, alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        {/* Status Tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {STATUS_TABS.map(tab => {
+            const active = statusFilter === tab.key;
+            const cfg = STATUS_CONFIG[tab.key];
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                style={{
+                  padding: '6px 14px', borderRadius: 8, fontSize: 13,
+                  fontWeight: active ? 600 : 500, cursor: 'pointer', transition: 'all 0.15s',
+                  border: active ? `1.5px solid ${cfg?.dot || '#2563EB'}` : '1.5px solid transparent',
+                  background: active ? (cfg?.bg || '#EFF6FF') : '#F9FAFB',
+                  color: active ? (cfg?.text || '#1D4ED8') : '#4B5563',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', width: 260 }}>
+          <Search size={14} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Tìm công ty, vị trí..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+              border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13,
+              outline: 'none', color: '#111827', background: '#F9FAFB',
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={e => e.target.style.borderColor = '#3B82F6'}
+            onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+          />
+        </div>
+      </div>
+
+      {/* ── Error ── */}
+      {error && (
+        <div style={{
+          background: '#FEF2F2', border: '1px solid #FECACA',
+          borderRadius: 12, padding: '12px 16px', color: '#B91C1C', fontSize: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span>{error}</span>
+          <button
+            onClick={fetchApplications}
+            style={{
+              background: '#FEE2E2', border: 'none', cursor: 'pointer',
+              color: '#B91C1C', fontSize: 12, fontWeight: 600,
+              padding: '4px 10px', borderRadius: 6,
+            }}
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* ── List ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {isLoading
+          ? [1, 2, 3, 4].map(i => <SkeletonCard key={i} />)
+          : filteredData.length > 0
+            ? filteredData.map(app => <ApplicationCard key={app.id} app={app} />)
+            : <EmptyState isFiltered={isFiltered} />
+        }
+      </div>
+
+      {/* ── Pagination ── */}
+      {!isLoading && totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         </div>
       )}
