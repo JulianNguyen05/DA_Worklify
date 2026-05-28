@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateProfileJpaEntity.java
 package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
@@ -21,21 +20,20 @@ public class CandidateProfileJpaEntity {
     @Column(name = "user_id", unique = true, nullable = false)
     private Long userId;
 
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false, length = 255)
     private String fullName;
 
     @Column(length = 20)
     private String phone;
 
-    @Column(length = 10)
+    @Column(length = 20)
     private String gender;
 
     private LocalDate dob;
 
-    @Column(length = 255)
+    @Column(length = 500)
     private String address;
 
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 }
-

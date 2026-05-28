@@ -1,10 +1,12 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SystemLogJpaEntity.java
 package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * [ĐÃ SỬA] length của cột action tăng từ 100 lên 255 để khớp với định nghĩa trong init.sql.
+ */
 @Entity
 @Table(name = "system_logs")
 @Getter
@@ -18,10 +20,10 @@ public class SystemLogJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id") // Nullable vì có thể khách vãng lai thao tác sinh log
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 255)
     private String action;
 
     @Column(columnDefinition = "TEXT")

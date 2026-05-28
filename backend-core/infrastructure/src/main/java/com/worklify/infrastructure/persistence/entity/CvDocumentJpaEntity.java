@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
 package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
@@ -15,8 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EntityListeners(AuditingEntityListener.class) // ĐÃ THÊM: Lắng nghe sự kiện để tự động hóa điền dữ liệu auditing
+@EntityListeners(AuditingEntityListener.class)
 public class CvDocumentJpaEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,7 +24,7 @@ public class CvDocumentJpaEntity {
     @Column(name = "candidate_id", nullable = false)
     private Long candidateId;
 
-    @Column(name = "file_path")
+    @Column(name = "file_path", length = 500)
     private String filePath;
 
     @Column(name = "raw_text", columnDefinition = "LONGTEXT")
@@ -33,7 +33,7 @@ public class CvDocumentJpaEntity {
     @Column(name = "is_generated", nullable = false)
     private Boolean isGenerated;
 
-    @CreatedDate // ĐÃ THÊM: Spring sẽ tự động lấy thời gian hiện tại gán vào đây khi insert bản ghi mới
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

@@ -4,13 +4,13 @@ import com.worklify.domain.application.model.Application;
 import com.worklify.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.stereotype.Component;
 
-// Ép Spring nhận diện Bean và bỏ qua các warning mapping thiếu trường
+/**
+ * [ĐÃ SỬA] Loại bỏ @Component thừa — @Mapper(componentModel = "spring") đã đủ để Spring quản lý Bean.
+ * Đặt @Component trùng trên @Mapper interface gây ra ambiguous bean definition.
+ */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-@Component
 public interface ApplicationEntityMapper {
-
     ApplicationJpaEntity toEntity(Application application);
     Application toDomain(ApplicationJpaEntity entity);
 }

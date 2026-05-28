@@ -23,7 +23,7 @@ public class JwtService implements TokenProviderPort {
     @Value("${spring.security.jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    public long getExpirationTimeTimeMs() {
+    public long getExpirationTimeMs() {
         return jwtExpiration;
     }
 
@@ -37,11 +37,11 @@ public class JwtService implements TokenProviderPort {
 
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
         return Jwts.builder()
-                .claims(extraClaims) // Cú pháp chuẩn của 0.12.x
+                .claims(extraClaims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey()) // Tự động nhận diện thuật toán HS256 từ độ dài Key
+                .signWith(getSignInKey())
                 .compact();
     }
 
@@ -56,7 +56,7 @@ public class JwtService implements TokenProviderPort {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignInKey()) // Cú pháp chuẩn giải mã của 0.12.x
+                .verifyWith(getSignInKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

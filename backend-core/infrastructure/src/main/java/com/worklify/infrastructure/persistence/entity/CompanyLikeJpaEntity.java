@@ -5,7 +5,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "company_likes")
+@Table(name = "company_likes",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "company_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +27,6 @@ public class CompanyLikeJpaEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Tự động gán thời gian hiện tại khi tạo mới bản ghi
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

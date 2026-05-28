@@ -42,9 +42,12 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
+    /**
+     * [ĐÃ SỬA] Trước đây hardcode trả về false. Nay delegate sang JPA repository thực sự.
+     */
     @Override
     public boolean existsByCandidateIdAndJobId(Long candidateId, Long jobId) {
-        return false;
+        return jpaRepository.existsByJobIdAndCandidateId(jobId, candidateId);
     }
 
     @Override
@@ -54,7 +57,6 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
 
     @Override
     public long countByStatus(ApplicationStatus status) {
-        // Đảm bảo ApplicationJpaRepository của bạn đã định nghĩa phương thức countByStatus
         return jpaRepository.countByStatus(status);
     }
 }

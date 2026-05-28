@@ -24,7 +24,6 @@ public class PaginationMapper {
                 .map(mapperFunction)
                 .collect(Collectors.toList());
 
-        // Sử dụng constructor 5 tham số của DomainPage đã được định nghĩa ở tầng Domain
         return new DomainPage<>(
                 content,
                 springPage.getTotalElements(),

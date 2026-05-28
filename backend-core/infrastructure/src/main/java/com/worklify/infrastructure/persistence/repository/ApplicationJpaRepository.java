@@ -10,9 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ApplicationJpaRepository extends JpaRepository<ApplicationJpaEntity, Long> {
     boolean existsByJobIdAndCandidateId(Long jobId, Long candidateId);
-
     Page<ApplicationJpaEntity> findByJobId(Long jobId, Pageable pageable);
     Page<ApplicationJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
-
     long countByStatus(ApplicationStatus status);
 }

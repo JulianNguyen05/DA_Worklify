@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Long> {
     Optional<SkillJpaEntity> findByName(String name);
-
     Optional<SkillJpaEntity> findByNameIgnoreCase(String name);
 }

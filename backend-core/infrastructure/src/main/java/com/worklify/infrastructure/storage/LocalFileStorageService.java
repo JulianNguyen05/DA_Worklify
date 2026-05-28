@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
 package com.worklify.infrastructure.storage;
 
 import com.worklify.application.common.port.FileStoragePort;
@@ -37,34 +36,27 @@ public class LocalFileStorageService implements FileStoragePort {
 
     @Override
     public String storeFile(MultipartFile file, String subDirectory, String prefix) {
-        // 1. Kiểm tra file hợp lệ
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Không thể lưu file rỗng.");
         }
 
-        // 2. Chuẩn hóa tên file và xử lý bảo mật (Chống Path Traversal)
         String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         if (originalFilename.contains("..")) {
             throw new IllegalArgumentException("Tên file chứa ký tự đường dẫn không hợp lệ: " + originalFilename);
         }
 
-        // 3. ĐỔI TÊN FILE: [prefix]_[tên_gốc]
-        // Loại bỏ khoảng trắng trong tên file gốc để URL web không bị lỗi
         String safeOriginalName = originalFilename.replaceAll("\\s+", "_");
         String finalFileName = prefix + "_" + safeOriginalName;
 
         try {
-            // 4. Xác định thư mục đích và tạo nếu chưa tồn tại
             Path targetLocation = this.rootLocation.resolve(subDirectory);
             Files.createDirectories(targetLocation);
 
-            // 5. Lưu file vào ổ cứng (Nếu file trùng tên sẽ ghi đè bản cũ)
             Path targetFile = targetLocation.resolve(finalFileName);
             Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
 
             log.info("Lưu file thành công: {}", targetFile);
 
-            // 6. Trả về đường dẫn tương đối (vd: cv/5_CV_Dev.pdf) để lưu vào Database
             return subDirectory + "/" + finalFileName;
 
         } catch (IOException ex) {
@@ -83,7 +75,7 @@ public class LocalFileStorageService implements FileStoragePort {
             } else {
                 throw new RuntimeException("Không thể đọc file hoặc file không tồn tại: " + filePath);
             }
-        } catch (IOException ex) { // Đã xóa bỏ MalformedURLException
+        } catch (IOException ex) {
             throw new RuntimeException("Lỗi khi đọc file: " + filePath, ex);
         }
     }
@@ -100,9 +92,6 @@ public class LocalFileStorageService implements FileStoragePort {
         }
     }
 
-    /**
-     * Hàm phụ trợ lấy đuôi file (extension)
-     */
     private String getFileExtension(String fileName) {
         if (fileName == null || fileName.lastIndexOf(".") == -1) {
             return "";

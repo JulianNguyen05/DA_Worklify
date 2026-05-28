@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SkillJpaEntity.java
 package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
@@ -12,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillJpaEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

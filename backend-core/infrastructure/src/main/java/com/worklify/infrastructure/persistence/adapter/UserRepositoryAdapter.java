@@ -37,9 +37,8 @@ public class UserRepositoryAdapter implements UserRepository {
         return jpaRepository.existsByEmail(email);
     }
 
-    // [ĐÃ THÊM] Triển khai phương thức đếm tổng số User
     @Override
     public long count() {
-        return jpaRepository.count(); // Hàm count() có sẵn của Spring Data JPA
+        return jpaRepository.count();
     }
 }

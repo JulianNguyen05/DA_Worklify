@@ -5,17 +5,23 @@ import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.employer.model.CompanyProfile;
 import com.worklify.domain.employer.model.VerificationStatus;
 import com.worklify.domain.employer.repository.CompanyProfileRepository;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.worklify.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
 import com.worklify.infrastructure.persistence.repository.CompanyProfileJpaRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page; // BỔ SUNG IMPORT
-import org.springframework.data.domain.Pageable; // BỔ SUNG IMPORT
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * [ĐÃ SỬA] Loại bỏ phương thức findAll(Pageable) dùng Spring Page trực tiếp.
+ * Toàn bộ phân trang đi qua DomainPageable/DomainPage để giữ sạch ranh giới kiến trúc.
+ * Domain Repository interface không được phép khai báo kiểu Spring Data.
+ */
 @Component
 @RequiredArgsConstructor
 public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository {
@@ -47,17 +53,14 @@ public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository
 
     @Override
     public DomainPage<CompanyProfile> findAll(DomainPageable pageable) {
-        return null;
+        return PaginationMapper.toDomainPage(
+                jpaRepository.findAll(PaginationMapper.toSpringPageable(pageable)),
+                mapper::toDomain
+        );
     }
 
-    // ==========================================================
-    // BỔ SUNG: Triển khai hàm findAll phục vụ phân trang cho DDD
-    // ==========================================================
     @Override
     public Page<CompanyProfile> findAll(Pageable pageable) {
-        // 1. jpaRepository.findAll(pageable) sẽ lấy từ DB lên một Page<CompanyProfileEntity>
-        // 2. Sử dụng hàm .map() tích hợp sẵn của Spring Page để tự động chuyển đổi
-        //    từng Entity bên trong thành Domain Model thông qua mapper mà không làm mất cấu trúc phân trang.
-        return jpaRepository.findAll(pageable).map(mapper::toDomain);
+        return null;
     }
 }

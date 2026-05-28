@@ -31,20 +31,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Kích hoạt cấu hình CORS toàn cục áp dụng cho cả luồng phản hồi Exception lỗi
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép các đường dẫn auth đi qua để không bị chặn nhầm
                         .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-
-                        // [BỔ SUNG QUAN TRỌNG]: Cho phép khách vãng lai xem việc làm và công ty
                         .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/employers/**").permitAll()
-
-                        // Mọi request còn lại đều phải có Token
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -54,15 +48,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Định nghĩa chi tiết cấu hình CORS (ĐÃ FIX ĐỂ CHO PHÉP TẤT CẢ)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOriginPatterns(List.of("*")); // Thay AllowedOrigins bằng OriginPatterns để tương thích tối đa
-        configuration.setAllowedMethods(List.of("*")); // Cho phép mọi phương thức (GET, POST, PUT, DELETE, PATCH, OPTIONS...)
-        configuration.setAllowedHeaders(List.of("*")); // Cho phép mọi Headers (tránh bị chặn khi lỗi)
-        configuration.setAllowCredentials(true);       // Cho phép gửi kèm cookie/thông tin xác thực nếu cần
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

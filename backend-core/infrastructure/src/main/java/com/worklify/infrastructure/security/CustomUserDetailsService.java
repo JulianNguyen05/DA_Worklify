@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
 package com.worklify.infrastructure.security;
 
 import com.worklify.domain.auth.model.User;
@@ -20,11 +19,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // Tìm User thông qua Port của Domain
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
-        // Ánh xạ sang Spring Security UserDetails
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail().value(),
                 user.getPasswordHash(),

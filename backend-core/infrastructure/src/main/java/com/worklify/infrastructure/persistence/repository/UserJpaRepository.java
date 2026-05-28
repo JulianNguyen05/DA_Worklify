@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\UserJpaRepository.java
 package com.worklify.infrastructure.persistence.repository;
 
 import com.worklify.infrastructure.persistence.entity.UserJpaEntity;

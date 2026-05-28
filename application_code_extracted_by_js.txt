@@ -12,7 +12,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.smartmatch</groupId>
+        <groupId>com.worklify</groupId>
         <artifactId>backend-core</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -20,7 +20,7 @@
     <artifactId>application</artifactId>
     <packaging>jar</packaging>
 
-    <name>SmartMatch Application</name>
+    <name>Worklify Application</name>
 
     <description>
         Use Cases, Services, DTOs, Mappers
@@ -30,7 +30,7 @@
 
         <!-- Domain -->
         <dependency>
-            <groupId>com.smartmatch</groupId>
+            <groupId>com.worklify</groupId>
             <artifactId>domain</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -89,6 +89,7 @@
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.22</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -144,10 +145,10 @@
 </project>
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\AdminJobResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\AdminJobResponse.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -164,29 +165,31 @@ public class AdminJobResponse {
     private String workType;
     private String description;
     private String requirements;
+    private String status;
     private LocalDateTime createdAt;
+    private LocalDateTime expiresAt;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\CompanyModerationRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\CompanyModerationRequest.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 import lombok.Data;
 
 @Data
 public class CompanyModerationRequest {
-    private String action; // "APPROVED" hoặc "REJECTED"
-    private String reason; // Có thể null nếu APPROVED
+    private String action; // "APPROVE" hoặc "REJECT"
+    private String reason; // Có thể null nếu approve
 }
 
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\DashboardStatsResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\DashboardStatsResponse.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -196,15 +199,13 @@ import java.util.List;
 @Data
 @Builder
 public class DashboardStatsResponse {
-    // Thẻ số lượng tổng quan
     private long totalUsers;
     private long activeJobs;
     private long pendingJobs;
     private long successfulApplications;
 
-    // Dữ liệu cho Biểu đồ
-    private List<ChartData> userGrowth; // Dùng cho biểu đồ đường
-    private List<ChartData> jobDistribution; // Dùng cho biểu đồ tròn
+    private List<ChartData> userGrowth;
+    private List<ChartData> jobDistribution;
 
     @Data
     @Builder
@@ -216,24 +217,24 @@ public class DashboardStatsResponse {
 
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\JobModerationRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\JobModerationRequest.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 import lombok.Data;
 
 @Data
 public class JobModerationRequest {
-    private String action; // "APPROVED" hoặc "REJECTED"
-    private String reason; // Có thể null nếu APPROVED
+    private String action; // "APPROVE" hoặc "REJECT"
+    private String reason; // Có thể null nếu approve
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\MasterDataRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\MasterDataRequest.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
@@ -247,10 +248,10 @@ public class MasterDataRequest {
 
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\dto\SystemLogResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\dto\SystemLogResponse.java
 // ============================================================
 
-package com.smartmatch.application.admin.dto;
+package com.worklify.application.admin.dto;
 
 
 import lombok.Builder;
@@ -268,18 +269,18 @@ public class SystemLogResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\service\AdminService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\service\AdminService.java
 // ============================================================
 
-package com.smartmatch.application.admin.service;
+package com.worklify.application.admin.service;
 
-import com.smartmatch.application.admin.dto.AdminJobResponse;
-import com.smartmatch.application.admin.dto.DashboardStatsResponse;
-import com.smartmatch.application.admin.dto.MasterDataRequest;
-import com.smartmatch.application.admin.dto.SystemLogResponse;
-import com.smartmatch.application.auth.dto.UserResponse;
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.worklify.application.admin.dto.AdminJobResponse;
+import com.worklify.application.admin.dto.DashboardStatsResponse;
+import com.worklify.application.admin.dto.MasterDataRequest;
+import com.worklify.application.admin.dto.SystemLogResponse;
+import com.worklify.application.auth.dto.UserResponse;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
 import com.worklify.domain.common.DomainPageable;
 
 import java.util.List;
@@ -287,10 +288,9 @@ import java.util.List;
 public interface AdminService {
     DashboardStatsResponse getDashboardStats();
 
-    // Sửa dòng cũ thành dòng này:
     void moderateJob(Long jobId, boolean approve, String reason);
+    List<AdminJobResponse> getPendingJobs();
 
-    // Quản lý Master Data
     void createSkillMasterData(MasterDataRequest request);
     void deleteSkillMasterData(Long skillId);
 
@@ -301,31 +301,31 @@ public interface AdminService {
     void unbanUser(Long userId);
 
     List<CompanyProfileResponse> getPendingCompanies();
-
-    // Chỉ giữ lại DUY NHẤT hàm 3 tham số này cho việc kiểm duyệt công ty
     void moderateCompany(Long companyId, boolean approve, String reason);
-
-    // Thêm hàm này vào interface
-    List<AdminJobResponse> getPendingJobs();
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\admin\service\impl\AdminServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\admin\service\impl\AdminServiceImpl.java
 // ============================================================
 
-package com.smartmatch.application.admin.service.impl;
+package com.worklify.application.admin.service.impl;
 
-import com.smartmatch.application.admin.dto.AdminJobResponse;
-import com.smartmatch.application.common.exception.ResourceNotFoundException;
-import com.smartmatch.application.employer.dto.CompanyProfileResponse;
+import com.worklify.application.admin.dto.AdminJobResponse;
+import com.worklify.application.common.exception.ResourceNotFoundException;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.candidate.model.Skill;
+import com.worklify.domain.candidate.repository.SkillRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.employer.repository.CompanyLikeRepository;
 import com.worklify.domain.employer.repository.CompanyProfileRepository;
 import com.worklify.domain.admin.repository.SystemLogRepository;
-import com.smartmatch.application.admin.dto.DashboardStatsResponse;
-import com.smartmatch.application.admin.dto.MasterDataRequest;
-import com.smartmatch.application.admin.dto.SystemLogResponse;
-import com.smartmatch.application.admin.service.AdminService;
-import com.smartmatch.application.auth.dto.UserResponse;
-import com.smartmatch.application.common.dto.PageResponse;
+import com.worklify.application.admin.dto.DashboardStatsResponse;
+import com.worklify.application.admin.dto.MasterDataRequest;
+import com.worklify.application.admin.dto.SystemLogResponse;
+import com.worklify.application.admin.service.AdminService;
+import com.worklify.application.auth.dto.UserResponse;
+import com.worklify.application.common.dto.PageResponse;
 import com.worklify.domain.admin.model.SystemLog;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.application.repository.ApplicationRepository;
@@ -338,31 +338,35 @@ import com.worklify.domain.job.model.JobStatus;
 import com.worklify.domain.job.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors; // Import cho stream map
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final JobPostingRepository jobPostingRepository;
     private final ApplicationRepository applicationRepository;
-
-    // Bổ sung các Repository cần thiết cho nghiệp vụ kiểm duyệt
     private final CompanyProfileRepository companyProfileRepository;
+    private final CompanyLikeRepository companyLikeRepository;
     private final SystemLogRepository systemLogRepository;
+    private final SkillRepository skillRepository;
+
+    // Admin ID thực tế nên được lấy từ SecurityContext — tạm dùng hằng số
+    private static final Long SYSTEM_ADMIN_ID = 1L;
 
     @Override
+    @Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats() {
-        // 1. Lấy dữ liệu số lượng tổng quan
         long totalUsers = userRepository.count();
         long activeJobs = jobPostingRepository.countByStatus(JobStatus.ACTIVE);
         long pendingJobs = jobPostingRepository.countByStatus(JobStatus.PENDING);
         long successApps = applicationRepository.countByStatus(ApplicationStatus.ACCEPTED);
 
-        // 2. Dữ liệu giả lập cho Biểu đồ
         List<DashboardStatsResponse.ChartData> userGrowth = List.of(
                 DashboardStatsResponse.ChartData.builder().name("T2").value(120).build(),
                 DashboardStatsResponse.ChartData.builder().name("T3").value(250).build(),
@@ -373,7 +377,8 @@ public class AdminServiceImpl implements AdminService {
         List<DashboardStatsResponse.ChartData> jobDist = List.of(
                 DashboardStatsResponse.ChartData.builder().name("Đang hoạt động").value(activeJobs).build(),
                 DashboardStatsResponse.ChartData.builder().name("Chờ duyệt").value(pendingJobs).build(),
-                DashboardStatsResponse.ChartData.builder().name("Đã đóng").value(45).build()
+                DashboardStatsResponse.ChartData.builder().name("Đã đóng")
+                        .value(jobPostingRepository.countByStatus(JobStatus.CLOSED)).build()
         );
 
         return DashboardStatsResponse.builder()
@@ -388,145 +393,168 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void moderateJob(Long jobId, boolean approve, String reason) {
-        // 1. Tìm tin tuyển dụng
         JobPosting job = jobPostingRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tuyển dụng"));
 
-        // 2. Chuyển đổi trạng thái thông qua Domain Method đã định nghĩa trong JobPosting.java
-        String actionLog = "";
+        String actionLog;
         if (approve) {
-            job.publish(); // Đổi status thành ACTIVE
+            job.publish();
             actionLog = "APPROVE_JOB";
-            // TODO: (Mở rộng sau) Gửi email thông báo cho nhà tuyển dụng
         } else {
-            job.reject(); // Đổi status thành REJECTED
+            job.reject();
             actionLog = "REJECT_JOB";
-            // TODO: (Mở rộng sau) Gửi email báo lỗi kèm 'reason'
         }
 
         jobPostingRepository.save(job);
 
-        // 3. Lưu vết System Log
-        Long currentAdminId = 1L; // Giả định ID Admin hiện tại
-        SystemLog log = SystemLog.record(
-                currentAdminId,
+        systemLogRepository.save(SystemLog.record(
+                SYSTEM_ADMIN_ID,
                 actionLog,
                 "Job ID: " + jobId + (approve ? "" : ". Lý do: " + reason)
-        );
-        systemLogRepository.save(log);
+        ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminJobResponse> getPendingJobs() {
+        return jobPostingRepository.findByStatus(JobStatus.PENDING).stream()
+                .map(job -> {
+                    String companyName = companyProfileRepository.findById(job.getCompanyId())
+                            .map(CompanyProfile::getCompanyName)
+                            .orElse("Doanh nghiệp không xác định");
+
+                    return AdminJobResponse.builder()
+                            .id(job.getId())
+                            .title(job.getTitle())
+                            .companyName(companyName)
+                            .salaryRange(job.getSalaryRange())
+                            .location(job.getLocation())
+                            .workType(job.getWorkType())
+                            .description(job.getDescription())
+                            .requirements(job.getRequirements())
+                            .status(job.getStatus().name())
+                            .createdAt(job.getCreatedAt())
+                            .expiresAt(job.getExpiresAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     public void createSkillMasterData(MasterDataRequest request) {
-        // TODO: Cài đặt logic thêm mới dữ liệu kỹ năng
+        if (skillRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
+            throw new IllegalArgumentException("Kỹ năng '" + request.getName() + "' đã tồn tại.");
+        }
+        skillRepository.save(Skill.create(request.getName()));
+        systemLogRepository.save(SystemLog.record(
+                SYSTEM_ADMIN_ID, "CREATE_SKILL", "Tên: " + request.getName()
+        ));
     }
 
     @Override
     public void deleteSkillMasterData(Long skillId) {
-        // TODO: Cài đặt logic xóa dữ liệu kỹ năng
+        skillRepository.findById(skillId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kỹ năng không tồn tại."));
+        skillRepository.deleteById(skillId);
+        systemLogRepository.save(SystemLog.record(
+                SYSTEM_ADMIN_ID, "DELETE_SKILL", "Skill ID: " + skillId
+        ));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<SystemLogResponse> getSystemLogs(DomainPageable pageable) {
-        // TODO: Cài đặt logic lấy danh sách nhật ký hệ thống
-        return null;
+        DomainPage<SystemLog> page = systemLogRepository.findAll(pageable);
+        return PageResponse.<SystemLogResponse>builder()
+                .content(page.getContent().stream()
+                        .map(log -> SystemLogResponse.builder()
+                                .id(log.getId())
+                                .userId(log.getUserId())
+                                .action(log.getAction())
+                                .details(log.getDetails())
+                                .createdAt(log.getCreatedAt())
+                                .build())
+                        .collect(Collectors.toList()))
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getPageNumber())
+                .pageSize(page.getPageSize())
+                .build();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(DomainPageable pageable) {
-        // TODO: Cài đặt logic lấy danh sách người dùng
-        return null;
+        // TODO: Thêm UserRepository.findAll(DomainPageable) khi cần
+        throw new UnsupportedOperationException("Chưa hỗ trợ phân trang người dùng.");
     }
 
     @Override
     public void banUser(Long userId) {
-        // TODO: Cài đặt logic khóa tài khoản người dùng
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại."));
+        user.ban();
+        userRepository.save(user);
+        systemLogRepository.save(SystemLog.record(SYSTEM_ADMIN_ID, "BAN_USER", "User ID: " + userId));
     }
 
     @Override
     public void unbanUser(Long userId) {
-        // TODO: Cài đặt logic mở khóa tài khoản người dùng
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại."));
+        user.unban();
+        userRepository.save(user);
+        systemLogRepository.save(SystemLog.record(SYSTEM_ADMIN_ID, "UNBAN_USER", "User ID: " + userId));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CompanyProfileResponse> getPendingCompanies() {
-        // Lấy danh sách các công ty đang ở trạng thái PENDING từ Database
-        List<CompanyProfile> pendingProfiles = companyProfileRepository.findByVerificationStatus(VerificationStatus.PENDING);
-
-        // Map Domain Entity sang DTO Response để trả về cho Frontend
-        return pendingProfiles.stream()
+        return companyProfileRepository.findByVerificationStatus(VerificationStatus.PENDING).stream()
                 .map(profile -> CompanyProfileResponse.builder()
                         .id(profile.getId())
+                        .userId(profile.getUserId())
                         .companyName(profile.getCompanyName())
                         .website(profile.getWebsite())
-                        // Thêm các trường khác (như logoUrl) nếu DTO của bạn yêu cầu
+                        .description(profile.getDescription())
+                        .logoUrl(profile.getLogoUrl())
+                        .verificationStatus(profile.getVerificationStatus())
+                        .likeCount(companyLikeRepository.countLikesByCompany(profile.getId()))
+                        .isLiked(false)
+                        .activeJobsCount(0)
                         .build())
                 .collect(Collectors.toList());
     }
 
     @Override
     public void moderateCompany(Long companyId, boolean approve, String reason) {
-        // 1. Tìm công ty
         CompanyProfile company = companyProfileRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy doanh nghiệp"));
 
-        // 2. Thay đổi trạng thái
-        String actionLog = "";
+        String actionLog;
         if (approve) {
             company.approve();
             actionLog = "APPROVE_COMPANY";
-            // TODO: Gửi email thông báo tài khoản doanh nghiệp đã được duyệt
         } else {
             company.reject();
             actionLog = "REJECT_COMPANY";
-            // TODO: Gửi email kèm 'reason' yêu cầu chỉnh sửa
         }
 
         companyProfileRepository.save(company);
 
-        // 3. Lưu vết System Log
-        Long currentAdminId = 1L;
-        SystemLog log = SystemLog.record(
-                currentAdminId,
+        systemLogRepository.save(SystemLog.record(
+                SYSTEM_ADMIN_ID,
                 actionLog,
                 "Company ID: " + companyId + (approve ? "" : ". Lý do: " + reason)
-        );
-        systemLogRepository.save(log);
-    }
-
-    // Đừng quên import DTO: import com.smartmatch.application.admin.dto.AdminJobResponse;
-
-    @Override
-    public List<AdminJobResponse> getPendingJobs() {
-        // 1. Lấy danh sách Job có trạng thái PENDING
-        List<JobPosting> pendingJobs = jobPostingRepository.findByStatus(JobStatus.PENDING);
-
-        // 2. Map sang DTO và tìm Tên công ty tương ứng
-        return pendingJobs.stream().map(job -> {
-            String companyName = companyProfileRepository.findById(job.getCompanyId())
-                    .map(CompanyProfile::getCompanyName)
-                    .orElse("Doanh nghiệp không xác định");
-
-            return AdminJobResponse.builder()
-                    .id(job.getId())
-                    .title(job.getTitle())
-                    .companyName(companyName)
-                    .salaryRange(job.getSalaryRange())
-                    .location(job.getLocation())
-                    .workType(job.getWorkType())
-                    .description(job.getDescription())
-                    .requirements(job.getRequirements())
-                    .createdAt(job.getCreatedAt())
-                    .build();
-        }).collect(Collectors.toList());
+        ));
     }
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\AuthResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\dto\AuthResponse.java
 // ============================================================
 
-package com.smartmatch.application.auth.dto;
+package com.worklify.application.auth.dto;
 
 import com.worklify.domain.auth.model.Role;
 import lombok.Builder;
@@ -545,17 +573,16 @@ public class AuthResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\ChangePasswordRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\dto\ChangePasswordRequest.java
 // ============================================================
 
-package com.smartmatch.application.auth.dto;
+package com.worklify.application.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class ChangePasswordRequest {
-
     @NotBlank(message = "Mật khẩu hiện tại không được để trống")
     private String oldPassword;
 
@@ -564,10 +591,10 @@ public class ChangePasswordRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\LoginRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\dto\LoginRequest.java
 // ============================================================
 
-package com.smartmatch.application.auth.dto;
+package com.worklify.application.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -584,10 +611,10 @@ public class LoginRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\RegisterRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\dto\RegisterRequest.java
 // ============================================================
 
-package com.smartmatch.application.auth.dto;
+package com.worklify.application.auth.dto;
 
 import com.worklify.domain.auth.model.Role;
 import jakarta.validation.constraints.Email;
@@ -600,26 +627,28 @@ import lombok.Data;
 public class RegisterRequest {
 
     @NotBlank(message = "Địa chỉ Email không được để trống")
-    @Email(message = "Định dạng Email không hợp lệ, vui lòng kiểm tra lại")
+    @Email(message = "Định dạng Email không hợp lệ")
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu bảo mật phải chứa ít nhất 6 ký tự")
+    @Size(min = 6, message = "Mật khẩu phải chứa ít nhất 6 ký tự")
     private String password;
 
     @NotNull(message = "Vai trò người dùng bắt buộc phải chọn")
     private Role role;
 
-    // Các trường dữ liệu động, không dùng @NotBlank tĩnh ở đây
+    // Bắt buộc nếu role = CANDIDATE
     private String fullName;
+
+    // Bắt buộc nếu role = EMPLOYER
     private String companyName;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\dto\UserResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\dto\UserResponse.java
 // ============================================================
 
-package com.smartmatch.application.auth.dto;
+package com.worklify.application.auth.dto;
 
 import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.UserStatus;
@@ -640,11 +669,11 @@ public class UserResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\service\AuthService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\service\AuthService.java
 // ============================================================
 
-package com.smartmatch.application.auth.service;
-import com.smartmatch.application.auth.dto.*;
+package com.worklify.application.auth.service;
+import com.worklify.application.auth.dto.*;
 
 public interface AuthService {
     UserResponse register(RegisterRequest request);
@@ -655,19 +684,19 @@ public interface AuthService {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\auth\service\impl\AuthServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\auth\service\impl\AuthServiceImpl.java
 // ============================================================
 
-package com.smartmatch.application.auth.service.impl;
+package com.worklify.application.auth.service.impl;
 
-import com.smartmatch.application.auth.dto.*;
-import com.smartmatch.application.auth.service.AuthService;
+import com.worklify.application.auth.dto.*;
+import com.worklify.application.auth.service.AuthService;
 import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.auth.model.UserStatus;
 import com.worklify.domain.auth.repository.UserRepository;
 import com.worklify.domain.common.valueobject.EmailAddress;
-import com.smartmatch.application.common.port.TokenProviderPort;
+import com.worklify.application.common.port.TokenProviderPort;
 
 // [ĐÃ THÊM] Import các Repository và Model của Candidate và Employer
 import com.worklify.domain.candidate.model.CandidateProfile;
@@ -689,8 +718,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProviderPort tokenProviderPort;
-
-    // [ĐÃ THÊM] Inject Repository để truy xuất thông tin Tên
     private final CandidateProfileRepository candidateProfileRepository;
     private final CompanyProfileRepository companyProfileRepository;
 
@@ -717,10 +744,22 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(newUser);
 
+        // Tự động khởi tạo Profile sau khi đăng ký thành công
+        if (savedUser.getRole() == Role.CANDIDATE && request.getFullName() != null) {
+            CandidateProfile profile = CandidateProfile.create(savedUser.getId(), request.getFullName());
+            candidateProfileRepository.save(profile);
+        } else if (savedUser.getRole() == Role.EMPLOYER && request.getCompanyName() != null) {
+            CompanyProfile profile = CompanyProfile.createInitial(
+                    savedUser.getId(), request.getCompanyName(), null, null
+            );
+            companyProfileRepository.save(profile);
+        }
+
         return UserResponse.builder()
                 .id(savedUser.getId())
                 .email(savedUser.getEmail().value())
                 .role(savedUser.getRole())
+                .status(savedUser.getStatus())
                 .mfaEnabled(savedUser.isMfaEnabled())
                 .build();
     }
@@ -749,8 +788,8 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
         }
 
-        // [ĐÃ THÊM] LOGIC TRÍCH XUẤT TÊN HIỂN THỊ DỰA TRÊN ROLE
-        String displayName = user.getEmail().value().split("@")[0]; // Mặc định nếu không tìm thấy profile
+        // Trích xuất tên hiển thị dựa trên role
+        String displayName = user.getEmail().value().split("@")[0];
 
         if (user.getRole() == Role.CANDIDATE) {
             Optional<CandidateProfile> candidateOpt = candidateProfileRepository.findByUserId(user.getId());
@@ -766,15 +805,16 @@ public class AuthServiceImpl implements AuthService {
             displayName = "Ban Quản Trị";
         }
 
-        String token = tokenProviderPort.generateToken(user.getEmail().value(), user.getRole().name(), user.getId());
+        String token = tokenProviderPort.generateToken(
+                user.getEmail().value(), user.getRole().name(), user.getId()
+        );
 
-        // [ĐÃ CẬP NHẬT] Thêm thuộc tính email và fullName vào Builder
         return AuthResponse.builder()
                 .accessToken(token)
                 .userId(user.getId())
                 .role(user.getRole())
-                .email(user.getEmail().value()) // Gửi email về FE
-                .fullName(displayName)          // Gửi tên hiển thị về FE
+                .email(user.getEmail().value())
+                .fullName(displayName)
                 .expiresIn(3600L)
                 .build();
     }
@@ -784,7 +824,6 @@ public class AuthServiceImpl implements AuthService {
     public void enableMfa(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
-
         user.enableMfa();
         userRepository.save(user);
     }
@@ -794,15 +833,12 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(String email) {
         EmailAddress emailAddress = new EmailAddress(email);
 
-        User user = userRepository.findByEmail(emailAddress.value())
+        userRepository.findByEmail(emailAddress.value())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
 
         String resetToken = java.util.UUID.randomUUID().toString();
-
-        System.out.println("========== YÊU CẦU KHÔI PHỤC MẬT KHẨU ==========");
-        System.out.println("Email nhận: " + user.getEmail().value());
-        System.out.println("Token khôi phục: " + resetToken);
-        System.out.println("================================================");
+        // TODO: Gửi email chứa resetToken cho người dùng
+        System.out.println("[FORGOT PASSWORD] Token: " + resetToken + " | Email: " + email);
     }
 
     @Override
@@ -815,18 +851,16 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác.");
         }
 
-        String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
-        user.updatePassword(newHashedPassword);
-
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateProfileRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\CandidateProfileRequest.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -841,15 +875,16 @@ public class CandidateProfileRequest {
     private String gender;
     private LocalDate dob;
     private String address;
-    private String skills;
     private String summary;
+    // Chuỗi kỹ năng phân tách bằng dấu phẩy (vd: "Java, React, Docker")
+    private String skills;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateProfileResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\CandidateProfileResponse.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -871,10 +906,10 @@ public class CandidateProfileResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateSkillRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\CandidateSkillRequest.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -884,15 +919,15 @@ public class CandidateSkillRequest {
     @NotBlank(message = "Tên kỹ năng không được để trống")
     private String skillName;
     private String level;
-    private String category; // Có thể map vào cột "note" trong DB
+    // Ánh xạ vào cột note của bảng candidate_skills
     private String description;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CandidateSkillResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\CandidateSkillResponse.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -900,18 +935,18 @@ import lombok.Data;
 @Data
 @Builder
 public class CandidateSkillResponse {
-    private Long id;          // Tương ứng với skillId
-    private String skillName; // Tên kỹ năng (Java, React...)
-    private String level;     // Cơ bản, Trung bình...
-    private String category;
-    private String description;
+    private Long id;           // skillId trong bảng skills
+    private String skillName;
+    private String level;
+    private Integer yearsOfEx;
+    private String description; // Ánh xạ từ cột note
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\CvDocumentResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\CvDocumentResponse.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -930,10 +965,10 @@ public class CvDocumentResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\GeneratedCvRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\GeneratedCvRequest.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -945,10 +980,10 @@ public class GeneratedCvRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\dto\SkillResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\dto\SkillResponse.java
 // ============================================================
 
-package com.smartmatch.application.candidate.dto;
+package com.worklify.application.candidate.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -961,51 +996,47 @@ public class SkillResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\service\CandidateService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\service\CandidateService.java
 // ============================================================
 
-package com.smartmatch.application.candidate.service;
-import com.smartmatch.application.candidate.dto.*;
-import com.smartmatch.application.common.dto.FileData;
-import jakarta.validation.constraints.NotBlank;
+package com.worklify.application.candidate.service;
+import com.worklify.application.candidate.dto.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 public interface CandidateService {
     CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request);
     CandidateProfileResponse getProfileByUserId(Long userId);
-    // Thay đổi FileData thành MultipartFile
-    CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file);
+
+    CvDocumentResponse uploadCv(Long userId, MultipartFile file);
+    CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
+    CvDocumentResponse getLatestGeneratedCv(Long userId);
     List<CvDocumentResponse> getCvsByUserId(Long userId);
     void deleteCv(Long userId, Long cvId);
-    void addSkillToCandidate(Long userId, Long skillId);
-    void removeSkillFromCandidate(Long userId, Long skillId);
 
-    CvDocumentResponse saveGeneratedCv(Long userId, String rawText);
-    // SKILLS
     List<CandidateSkillResponse> getSkillsByUserId(Long userId);
     CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request);
     CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request);
 
-    // LATEST CV
-    CvDocumentResponse getLatestGeneratedCv(Long userId);
+    void addSkillToCandidate(Long userId, Long skillId);
+    void removeSkillFromCandidate(Long userId, Long skillId);
 
     CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
-
-    List<CvDocumentResponse> getCvDocuments(Long candidateId);
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\candidate\service\impl\CandidateServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\candidate\service\impl\CandidateServiceImpl.java
 // ============================================================
 
-package com.smartmatch.application.candidate.service.impl;
+package com.worklify.application.candidate.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smartmatch.application.candidate.dto.*;
-import com.smartmatch.application.candidate.service.CandidateService;
+import com.worklify.application.candidate.dto.*;
+import com.worklify.application.candidate.service.CandidateService;
+import com.worklify.application.common.port.FileStoragePort;
 import com.worklify.domain.auth.repository.UserRepository;
 import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.candidate.model.CandidateSkill;
@@ -1019,6 +1050,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -1031,31 +1063,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class CandidateServiceImpl implements CandidateService {
 
-    private final UserRepository userRepository;
     private final CandidateProfileRepository candidateProfileRepository;
     private final CvDocumentRepository cvDocumentRepository;
     private final CandidateSkillRepository candidateSkillRepository;
     private final SkillRepository skillRepository;
+    private final FileStoragePort fileStoragePort;
     private final ObjectMapper objectMapper;
-    private final com.smartmatch.application.common.port.FileStoragePort fileStoragePort;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
-
-        if (userRepository.findById(userId).isEmpty()) {
-            throw new IllegalArgumentException("Người dùng không tồn tại trong hệ thống.");
-        }
-
-        Optional<CandidateProfile> existingProfileOpt =
-                candidateProfileRepository.findByUserId(userId);
-
-        CandidateProfile profile;
-
-        if (existingProfileOpt.isPresent()) {
-            profile = existingProfileOpt.get();
-        } else {
-            profile = CandidateProfile.create(userId, request.getFullName());
-        }
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseGet(() -> CandidateProfile.create(userId, request.getFullName()));
 
         profile.updateProfileDetails(
                 request.getFullName(),
@@ -1066,47 +1084,18 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getSummary()
         );
 
-        CandidateProfile savedProfile =
-                candidateProfileRepository.save(profile);
+        CandidateProfile saved = candidateProfileRepository.save(profile);
 
-        // ==================== ĐOẠN BỔ SUNG VÀO HÀM saveProfile ====================
-        if (request.getSkills() != null && !request.getSkills().trim().isEmpty()) {
-            // Xóa sạch các liên kết kỹ năng cũ để tránh ghi đè trùng lặp dữ liệu
-            candidateSkillRepository.deleteByCandidateId(savedProfile.getId());
+        // Đồng bộ kỹ năng từ chuỗi phân cách dấu phẩy (nếu có)
+        syncSkillsFromCsv(saved.getId(), request.getSkills());
 
-            // Tách chuỗi kỹ năng gửi từ Frontend (ví dụ: "Java, React, Docker")
-            String[] skillNames = request.getSkills().split(",");
-            for (String skillName : skillNames) {
-                String trimmedName = skillName.trim();
-                if (trimmedName.isEmpty()) continue;
-
-                // ĐÃ SỬA: Sử dụng phương thức tĩnh Skill.create(name) có sẵn thay vì dùng `new` bị lỗi private
-                Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
-                        .orElseGet(() -> skillRepository.save(Skill.create(trimmedName)));
-
-                // Lưu liên quan hệ vào bảng liên kết CandidateSkill theo profile ID chính xác
-                CandidateSkill candidateSkill = new CandidateSkill(savedProfile.getId(), skill.getId());
-                candidateSkillRepository.save(candidateSkill);
-            }
-        }
-        // =========================================================================
-
-        return mapToProfileResponse(savedProfile);
+        return mapToProfileResponse(saved);
     }
 
     @Override
-    public CandidateProfileResponse updateProfile(
-            Long userId,
-            CandidateProfileRequest request
-    ) {
-
-        CandidateProfile profile =
-                candidateProfileRepository.findByUserId(userId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Không tìm thấy hồ sơ ứng viên."
-                                )
-                        );
+    public CandidateProfileResponse updateProfile(Long userId, CandidateProfileRequest request) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
         profile.updateProfileDetails(
                 request.getFullName(),
@@ -1117,178 +1106,235 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getSummary()
         );
 
-        CandidateProfile updatedProfile =
-                candidateProfileRepository.save(profile);
-
-        return mapToProfileResponse(updatedProfile);
+        CandidateProfile saved = candidateProfileRepository.save(profile);
+        return mapToProfileResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CandidateProfileResponse getProfileByUserId(Long userId) {
-
-        CandidateProfile profile =
+        return mapToProfileResponse(
                 candidateProfileRepository.findByUserId(userId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Không tìm thấy hồ sơ ứng viên."
-                                )
-                        );
-
-        return mapToProfileResponse(profile);
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."))
+        );
     }
 
     @Override
-    public CvDocumentResponse uploadCv(Long userId, org.springframework.web.multipart.MultipartFile file) {
-
-        candidateProfileRepository.findByUserId(userId)
+    public CvDocumentResponse uploadCv(Long userId, MultipartFile file) {
+        // Dùng candidateId (ID của bảng candidate_profiles), không phải userId
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi tải CV lên."));
 
-        // Truyền String.valueOf(userId) làm prefix (tiền tố) cho tên file
-        String prefixId = String.valueOf(userId);
-
-        // Gọi hàm lưu file với 3 tham số
-        String savedRelativePath = fileStoragePort.storeFile(file, "cv", prefixId);
-
+        String savedRelativePath = fileStoragePort.storeFile(file, "cv", String.valueOf(userId));
         String uploadedFilePath = "/uploads/" + savedRelativePath;
-        String extractedRawText = "Extracted text content from " + file.getOriginalFilename();
+        String extractedText = "Extracted text from " + file.getOriginalFilename();
 
-        CvDocument cvDocument = CvDocument.upload(
-                userId,
-                uploadedFilePath,
-                extractedRawText
-        );
-
-        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
-        return mapToCvResponse(savedCv);
+        CvDocument cv = CvDocument.upload(profile.getId(), uploadedFilePath, extractedText);
+        return mapToCvResponse(cvDocumentRepository.save(cv));
     }
 
     @Override
     public CvDocumentResponse saveGeneratedCv(Long userId, String rawText) {
-        // 1. Kiểm tra hồ sơ cá nhân và lấy chính xác candidateId (ID của bảng candidate_profiles)
         CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tạo hồ sơ cá nhân trước khi lưu bản thảo CV."));
 
         Long candidateId = profile.getId();
 
-        // 2. Lưu bản dịch CV thô vào DB
-        CvDocument cvDocument = CvDocument.generate(userId, rawText);
-        CvDocument savedCv = cvDocumentRepository.save(cvDocument);
+        // Lưu CV Builder vào DB với candidateId đúng
+        CvDocument cv = CvDocument.generate(candidateId, rawText);
+        CvDocument saved = cvDocumentRepository.save(cv);
 
-        // 3. Bóc tách JSON xử lý đồng bộ chuỗi kỹ năng
+        // Bóc tách kỹ năng từ JSON CV Builder và đồng bộ vào candidate_skills
         try {
             List<Map<String, Object>> blocks = objectMapper.readValue(
-                    rawText,
-                    new TypeReference<List<Map<String, Object>>>() {}
+                    rawText, new TypeReference<List<Map<String, Object>>>() {}
             );
-
             for (Map<String, Object> block : blocks) {
-                String type = (String) block.get("type");
-
-                if ("SKILLS".equals(type)) {
+                if ("SKILLS".equals(block.get("type"))) {
+                    @SuppressWarnings("unchecked")
                     Map<String, Object> data = (Map<String, Object>) block.get("data");
-
-                    if (data != null && data.containsKey("skills")) {
+                    if (data != null) {
                         String rawSkills = (String) data.get("skills");
-
-                        if (rawSkills != null && !rawSkills.trim().isEmpty()) {
-
-                            // SỬA: Xóa theo candidateId thực tế của Profile, tránh xóa nhầm hoặc sai lệch
-                            candidateSkillRepository.deleteByCandidateId(candidateId);
-
-                            String[] skillArray = rawSkills.split(",");
-
-                            for (String skillName : skillArray) {
-                                String cleanSkillName = skillName.trim();
-                                if (!cleanSkillName.isEmpty()) {
-
-                                    // SỬA: Tìm kiếm ID thực tế từ bảng danh mục tổng 'skills'
-                                    // (Cần bổ sung hàm findByNameIgnoreCase trong SkillRepository tầng Domain)
-                                    Long validSkillId = skillRepository.findByNameIgnoreCase(cleanSkillName)
-                                            .map(Skill::getId)
-                                            .orElseGet(() -> {
-                                                // Nếu hệ thống chưa có từ khóa này, tiến hành tự động tạo mới vào danh mục tổng
-                                                Skill newSkill =
-                                                        Skill.create(cleanSkillName);
-                                                return skillRepository.save(newSkill).getId();
-                                            });
-
-                                    // Khởi tạo đối tượng liên kết mapping chuẩn giữa Ứng viên và Kỹ năng
-                                    CandidateSkill candidateSkill = new CandidateSkill(candidateId, validSkillId);
-                                    candidateSkillRepository.save(candidateSkill);
-                                }
-                            }
-
-                            log.info("Đã bóc tách & đồng bộ hóa toàn bộ kỹ năng Sandbox thành công cho candidateId={}", candidateId);
-                        }
+                        syncSkillsFromCsv(candidateId, rawSkills);
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("Lỗi parse JSON Sandbox skills cho userId: " + userId, e);
+            log.error("Lỗi parse JSON CV Builder skills cho userId: {}", userId, e);
         }
 
-        return mapToCvResponse(savedCv);
+        return mapToCvResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CvDocumentResponse getLatestGeneratedCv(Long userId) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng chưa có hồ sơ ứng viên."));
+
+        return cvDocumentRepository.findByCandidateId(profile.getId()).stream()
+                .filter(cv -> Boolean.TRUE.equals(cv.getIsGenerated()))
+                .max(java.util.Comparator.comparing(CvDocument::getCreatedAt))
+                .map(this::mapToCvResponse)
+                .orElse(null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CvDocumentResponse> getCvsByUserId(Long userId) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
-        List<CvDocument> cvList =
-                cvDocumentRepository.findByCandidateId(userId);
-
-        return cvList.stream()
+        return cvDocumentRepository.findByCandidateId(profile.getId()).stream()
                 .map(this::mapToCvResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public void deleteCv(Long userId, Long cvId) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
 
-        CvDocument cvDocument =
-                cvDocumentRepository.findById(cvId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Không tìm thấy CV."
-                                )
-                        );
+        CvDocument cv = cvDocumentRepository.findById(cvId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
 
-        if (!cvDocument.getCandidateId().equals(userId)) {
-            throw new IllegalArgumentException(
-                    "Bạn không có quyền xóa CV này."
-            );
+        if (!cv.getCandidateId().equals(profile.getId())) {
+            throw new IllegalArgumentException("Bạn không có quyền xóa CV này.");
         }
 
         cvDocumentRepository.deleteById(cvId);
     }
 
     @Override
-    public void addSkillToCandidate(Long userId, Long skillId) {
-        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
+    @Transactional(readOnly = true)
+    public List<CandidateSkillResponse> getSkillsByUserId(Long userId) {
         CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
 
-        skillRepository.findById(skillId)
-                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại trong hệ thống."));
+        return candidateSkillRepository.findByCandidateId(profile.getId()).stream()
+                .map(cs -> {
+                    Skill skill = skillRepository.findById(cs.getSkillId())
+                            .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại."));
+                    return CandidateSkillResponse.builder()
+                            .id(skill.getId())
+                            .skillName(skill.getName())
+                            .level(cs.getLevel())
+                            .yearsOfEx(cs.getYearsOfEx())
+                            .description(cs.getNote())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 
-        CandidateSkill candidateSkill = new CandidateSkill(profile.getId(), skillId);
-        candidateSkillRepository.save(candidateSkill);
+    @Override
+    public CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        CandidateSkill cs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(skill.getId())
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(0)
+                .build();
+
+        candidateSkillRepository.save(cs);
+
+        return CandidateSkillResponse.builder()
+                .id(skill.getId())
+                .skillName(skill.getName())
+                .level(cs.getLevel())
+                .yearsOfEx(cs.getYearsOfEx())
+                .description(cs.getNote())
+                .build();
+    }
+
+    @Override
+    public CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        Skill targetSkill = skillRepository.findByNameIgnoreCase(request.getSkillName())
+                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
+
+        CandidateSkill oldCs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
+
+        // Nếu tên kỹ năng thay đổi, xóa bản ghi cũ
+        if (!oldCs.getSkillId().equals(targetSkill.getId())) {
+            candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
+        }
+
+        CandidateSkill newCs = CandidateSkill.builder()
+                .candidateId(profile.getId())
+                .skillId(targetSkill.getId())
+                .level(request.getLevel())
+                .note(request.getDescription())
+                .yearsOfEx(oldCs.getYearsOfEx())
+                .build();
+
+        candidateSkillRepository.save(newCs);
+
+        return CandidateSkillResponse.builder()
+                .id(targetSkill.getId())
+                .skillName(targetSkill.getName())
+                .level(newCs.getLevel())
+                .yearsOfEx(newCs.getYearsOfEx())
+                .description(newCs.getNote())
+                .build();
+    }
+
+    @Override
+    public void addSkillToCandidate(Long userId, Long skillId) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+        skillRepository.findById(skillId)
+                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại."));
+        CandidateSkill cs = new CandidateSkill(profile.getId(), skillId);
+        candidateSkillRepository.save(cs);
     }
 
     @Override
     public void removeSkillFromCandidate(Long userId, Long skillId) {
-        // ĐÃ BỔ SUNG: Dòng tìm profile để tránh lỗi 'Cannot resolve symbol profile'
         CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
-
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
         candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
     }
 
-    private CandidateProfileResponse mapToProfileResponse(
-            CandidateProfile profile
-    ) {
+    @Override
+    public CvDocumentResponse renameCv(Long userId, Long cvId, String newName) {
+        return null;
+    }
 
+    // ====================================================
+    // PRIVATE HELPERS
+    // ====================================================
+
+    /**
+     * Đồng bộ kỹ năng từ chuỗi CSV vào bảng candidate_skills.
+     * Xóa sạch kỹ năng cũ của candidate trước khi ghi mới.
+     */
+    private void syncSkillsFromCsv(Long candidateId, String csvSkills) {
+        if (csvSkills == null || csvSkills.trim().isEmpty()) return;
+
+        candidateSkillRepository.deleteByCandidateId(candidateId);
+
+        for (String skillName : csvSkills.split(",")) {
+            String trimmed = skillName.trim();
+            if (trimmed.isEmpty()) continue;
+
+            Skill skill = skillRepository.findByNameIgnoreCase(trimmed)
+                    .orElseGet(() -> skillRepository.save(Skill.create(trimmed)));
+
+            candidateSkillRepository.save(new CandidateSkill(candidateId, skill.getId()));
+        }
+    }
+
+    private CandidateProfileResponse mapToProfileResponse(CandidateProfile profile) {
         return CandidateProfileResponse.builder()
                 .id(profile.getId())
                 .userId(profile.getUserId())
@@ -1302,178 +1348,37 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     private CvDocumentResponse mapToCvResponse(CvDocument cv) {
-        String name = "CV_Ban_Thao";
+        String fileName = "CV_Ban_Thao";
         if (cv.getFilePath() != null) {
             String[] parts = cv.getFilePath().split("/");
-            name = parts[parts.length - 1]; // Lấy phần cuối của URL/Path làm tên file
+            fileName = parts[parts.length - 1];
         }
-
         return CvDocumentResponse.builder()
                 .id(cv.getId())
                 .candidateId(cv.getCandidateId())
                 .filePath(cv.getFilePath())
-                .fileName(name) // Gắn tên file trả về cho Frontend
+                .fileName(fileName)
                 .isGenerated(cv.getIsGenerated())
                 .createdAt(cv.getCreatedAt())
                 .build();
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<CandidateSkillResponse> getSkillsByUserId(Long userId) {
-        // 1. Tìm profile để lấy đúng candidateId (ID của bảng candidate_profiles)
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên với User ID: " + userId));
-
-        // 2. Lấy danh sách CandidateSkill từ DB và map sang DTO
-        return candidateSkillRepository.findByCandidateId(profile.getId()).stream()
-                .map(cs -> {
-                    // Lấy thông tin kỹ năng gốc từ bảng skills
-                    var skill = skillRepository.findById(cs.getSkillId())
-                            .orElseThrow(() -> new IllegalArgumentException("Kỹ năng không tồn tại."));
-
-                    return CandidateSkillResponse.builder()
-                            .id(skill.getId())
-                            .skillName(skill.getName())
-                            .level(cs.getLevel())      // Lấy level từ bảng candidate_skills
-                            .description(cs.getNote()) // Lấy note từ bảng candidate_skills
-                            .build();
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public CandidateSkillResponse createSkill(Long userId, CandidateSkillRequest request) {
-        // 1. Tìm profile để lấy đúng candidateId
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
-
-        // 2. Tìm hoặc tạo mới Kỹ năng trong bảng danh mục tổng (skills)
-        Skill skill = skillRepository.findByNameIgnoreCase(request.getSkillName())
-                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
-
-        // 3. Khởi tạo CandidateSkill bằng Builder (để khớp với Constructor 5 tham số của bạn)
-        CandidateSkill cs = CandidateSkill.builder()
-                .candidateId(profile.getId())
-                .skillId(skill.getId())
-                .level(request.getLevel())
-                .note(request.getDescription())
-                .yearsOfEx(0) // Giá trị mặc định cho cột mới
-                .build();
-
-        candidateSkillRepository.save(cs);
-
-        // 4. Trả về Response
-        return CandidateSkillResponse.builder()
-                .id(skill.getId())
-                .skillName(skill.getName())
-                .level(cs.getLevel())
-                .category(request.getCategory())
-                .description(cs.getNote())
-                .build();
-    }
-
-    @Override
-    public CandidateSkillResponse updateSkill(Long userId, Long skillId, CandidateSkillRequest request) {
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
-
-        // 1. Tìm hoặc tạo mới Skill mục tiêu
-        Skill targetSkill = skillRepository.findByNameIgnoreCase(request.getSkillName())
-                .orElseGet(() -> skillRepository.save(Skill.create(request.getSkillName())));
-
-        // 2. Tìm bản ghi cũ trong candidate_skills
-        CandidateSkill oldCs = candidateSkillRepository.findByCandidateIdAndSkillId(profile.getId(), skillId)
-                .orElseThrow(() -> new IllegalArgumentException("Kỹ năng này chưa được thêm vào hồ sơ."));
-
-        // 3. Nếu tên kỹ năng thay đổi (skillId khác nhau), xóa bản ghi cũ đi
-        if (!oldCs.getSkillId().equals(targetSkill.getId())) {
-            candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
-        }
-
-        // 4. Tạo bản ghi mới với thông tin cập nhật
-        CandidateSkill newCs = CandidateSkill.builder()
-                .candidateId(profile.getId())
-                .skillId(targetSkill.getId()) // ID của kỹ năng mới
-                .level(request.getLevel())
-                .note(request.getDescription())
-                .yearsOfEx(oldCs.getYearsOfEx())
-                .build();
-
-        candidateSkillRepository.save(newCs);
-
-        return CandidateSkillResponse.builder()
-                .id(targetSkill.getId())
-                .skillName(targetSkill.getName())
-                .level(newCs.getLevel())
-                .category(request.getCategory())
-                .description(newCs.getNote())
-                .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public CvDocumentResponse getLatestGeneratedCv(Long userId) {
-        // 1. Tìm profile để xác định ứng viên
-        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng chưa có hồ sơ ứng viên."));
-
-        // 2. Tìm tất cả CV, lọc các CV Sandbox (isGenerated = true) và lấy cái mới nhất
-        List<CvDocument> cvList = cvDocumentRepository.findByCandidateId(profile.getId());
-
-        return cvList.stream()
-                .filter(cv -> Boolean.TRUE.equals(cv.getIsGenerated()))
-                .max(java.util.Comparator.comparing(CvDocument::getCreatedAt))
-                .map(this::mapToCvResponse)
-                .orElse(null);
-    }
-
-    @Override
-    public CvDocumentResponse renameCv(Long userId, Long cvId, String newName) {
-        CvDocument cv = cvDocumentRepository.findById(cvId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
-
-        if (!cv.getCandidateId().equals(userId)) {
-            throw new IllegalArgumentException("Bạn không có quyền sửa CV này.");
-        }
-
-        // Thủ thuật: Vì Model hiện tại không có trường 'fileName',
-        // ta ghi đè filePath để chứa tên mới, hoặc lưu vào rawText nếu cần.
-        // Tốt nhất bạn nên thêm trường 'fileName' vào Database.
-        // Tạm thời ở mức DTO, ta sẽ xử lý cắt chuỗi.
-        return mapToCvResponse(cv); // Yêu cầu mở rộng Model/DB nếu muốn lưu DB vĩnh viễn.
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<CvDocumentResponse> getCvDocuments(Long candidateId) {
-        // Giả sử bạn có repository để lấy danh sách CV của ứng viên
-        // Bạn cần thay đổi theo tên Repository thực tế trong dự án của bạn
-        return cvDocumentRepository.findByCandidateId(candidateId).stream()
-                .map(cv -> CvDocumentResponse.builder()
-                        .id(cv.getId())
-                        .fileName(cv.getFilePath() != null ? cv.getFilePath() : "CV mặc định")
-                        .createdAt(cv.getCreatedAt())
-                        .build())
-                .collect(Collectors.toList());
-    }
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\common\dto\FileData.java
+// File: \backend-core\application\src\main\java\com\worklify\application\common\dto\FileData.java
 // ============================================================
 
 // File: application/src/main/java/com/smartmatch/application/common/dto/FileData.java
-package com.smartmatch.application.common.dto;
+package com.worklify.application.common.dto;
 import java.io.InputStream;
 
 public record FileData(String fileName, InputStream content, long size, String contentType) {}
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\common\dto\PageResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\common\dto\PageResponse.java
 // ============================================================
 
-package com.smartmatch.application.common.dto;
+package com.worklify.application.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -1494,10 +1399,10 @@ public class PageResponse<T> {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\common\exception\ResourceNotFoundException.java
+// File: \backend-core\application\src\main\java\com\worklify\application\common\exception\ResourceNotFoundException.java
 // ============================================================
 
-package com.smartmatch.application.common.exception;
+package com.worklify.application.common.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
 
@@ -1511,52 +1416,47 @@ public class ResourceNotFoundException extends RuntimeException {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\common\port\FileStoragePort.java
+// File: \backend-core\application\src\main\java\com\worklify\application\common\port\FileStoragePort.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\common\port\FileStoragePort.java
-package com.smartmatch.application.common.port;
+package com.worklify.application.common.port;
 
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileStoragePort {
     /**
-     * Lưu trữ file và trả về đường dẫn/tên file đã lưu.
-     * @param file File tải lên từ client
-     * @param subDirectory Thư mục con (vd: "cv", "avatars", "logos")
-     * @return Đường dẫn tương đối hoặc URL để truy cập file
+     * Lưu trữ file và trả về đường dẫn tương đối.
+     * @param file       File tải lên từ client
+     * @param subDirectory Thư mục con (vd: "cv", "companies/logos")
+     * @param prefix     Tiền tố tên file (vd: userId)
+     * @return Đường dẫn tương đối để truy cập file
      */
     String storeFile(MultipartFile file, String subDirectory, String prefix);
 
-    /**
-     * Lấy dữ liệu file dưới dạng mảng byte
-     */
+    /** Lấy dữ liệu file dưới dạng mảng byte */
     byte[] readFile(String filePath);
 
-    /**
-     * Xóa file khỏi hệ thống
-     */
+    /** Xóa file khỏi hệ thống */
     void deleteFile(String filePath);
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\common\port\TokenProviderPort.java
+// File: \backend-core\application\src\main\java\com\worklify\application\common\port\TokenProviderPort.java
 // ============================================================
 
-package com.smartmatch.application.common.port;
+package com.worklify.application.common.port;
 
 public interface TokenProviderPort {
-    /**
-     * Tạo chuỗi token mã hóa chứa thông tin định danh
-     */
+    /** Tạo chuỗi token mã hóa chứa thông tin định danh */
     String generateToken(String email, String role, Long userId);
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\dto\CompanyProfileRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\employer\dto\CompanyProfileRequest.java
 // ============================================================
 
-package com.smartmatch.application.employer.dto;
+package com.worklify.application.employer.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -1570,10 +1470,10 @@ public class CompanyProfileRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\dto\CompanyProfileResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\employer\dto\CompanyProfileResponse.java
 // ============================================================
 
-package com.smartmatch.application.employer.dto;
+package com.worklify.application.employer.dto;
 
 import com.worklify.domain.employer.model.VerificationStatus;
 import lombok.Builder;
@@ -1595,12 +1495,13 @@ public class CompanyProfileResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\service\EmployerService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\employer\service\EmployerService.java
 // ============================================================
 
-package com.smartmatch.application.employer.service;
-import com.smartmatch.application.employer.dto.*;
-import com.smartmatch.application.common.dto.PageResponse;
+package com.worklify.application.employer.service;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.employer.dto.CompanyProfileRequest;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
 import com.worklify.domain.common.DomainPageable;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -1609,28 +1510,27 @@ public interface EmployerService {
     CompanyProfileResponse updateProfile(Long userId, CompanyProfileRequest request);
     CompanyProfileResponse getProfileByUserId(Long userId);
     CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
-
-    PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long userId);
-
+    PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long currentUserId);
     void toggleLikeCompany(Long currentUserId, Long companyId);
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\employer\service\impl\EmployerServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\employer\service\impl\EmployerServiceImpl.java
 // ============================================================
 
 // ============================================================
 // File: \backend-core\application\src\main\java\com\smartmatch\application\employer\service\impl\EmployerServiceImpl.java
 // ============================================================
 
-package com.smartmatch.application.employer.service.impl;
+package com.worklify.application.employer.service.impl;
 
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.common.port.FileStoragePort;
-import com.smartmatch.application.employer.dto.CompanyProfileRequest;
-import com.smartmatch.application.employer.dto.CompanyProfileResponse;
-import com.smartmatch.application.employer.service.EmployerService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.common.port.FileStoragePort;
+import com.worklify.application.employer.dto.CompanyProfileRequest;
+import com.worklify.application.employer.dto.CompanyProfileResponse;
+import com.worklify.application.employer.service.EmployerService;
 import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.employer.model.CompanyProfile;
 import com.worklify.domain.employer.repository.CompanyLikeRepository;
@@ -1669,7 +1569,7 @@ public class EmployerServiceImpl implements EmployerService {
         CompanyProfile profile = CompanyProfile.createInitial(
                 userId, request.getCompanyName(), request.getWebsite(), request.getDescription()
         );
-        return mapToResponse(companyProfileRepository.save(profile));
+        return mapToResponse(companyProfileRepository.save(profile), null);
     }
 
     @Override
@@ -1678,15 +1578,17 @@ public class EmployerServiceImpl implements EmployerService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp."));
 
         profile.reviseProfile(request.getCompanyName(), request.getWebsite(), request.getDescription());
-        return mapToResponse(companyProfileRepository.save(profile));
+        return mapToResponse(companyProfileRepository.save(profile), null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CompanyProfileResponse getProfileByUserId(Long userId) {
-        CompanyProfile profile = companyProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp."));
-        return mapToResponse(profile);
+        return mapToResponse(
+                companyProfileRepository.findByUserId(userId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp.")),
+                null
+        );
     }
 
     @Override
@@ -1694,38 +1596,30 @@ public class EmployerServiceImpl implements EmployerService {
         CompanyProfile profile = companyProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Vui lòng tạo thông tin doanh nghiệp trước khi tải logo."));
 
-        String prefix = "logo_owner_" + userId;
-        String savedPath = fileStoragePort.storeFile(file, "companies/logos", prefix);
-
+        String savedPath = fileStoragePort.storeFile(file, "companies/logos", "logo_owner_" + userId);
         profile.updateLogo("/uploads/" + savedPath);
 
-        return mapToResponse(companyProfileRepository.save(profile));
+        return mapToResponse(companyProfileRepository.save(profile), null);
     }
 
-    // ==========================================================
-    // LẤY DANH SÁCH CÔNG TY (CÓ PHÂN TRANG VÀ KIỂM TRA LƯỢT LIKE)
-    // ==========================================================
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long currentUserId) {
-        Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
-
-        // Sử dụng currentUserId để kiểm tra trạng thái Like của từng công ty
-        List<CompanyProfileResponse> content = profilePage.getContent().stream()
-                .map(profile -> mapToResponse(profile, currentUserId))
-                .collect(Collectors.toList());
+        // Dùng DomainPage — không import Spring Page ở tầng Application
+        DomainPage<CompanyProfile> page = companyProfileRepository.findAll(pageable);
 
         return PageResponse.<CompanyProfileResponse>builder()
-                .content(content)
-                .totalElements(profilePage.getTotalElements())
-                .totalPages(profilePage.getTotalPages())
-                .pageNumber(profilePage.getNumber() + 1)
-                .pageSize(profilePage.getSize())
+                .content(page.getContent().stream()
+                        .map(p -> mapToResponse(p, currentUserId))
+                        .collect(Collectors.toList()))
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getPageNumber())
+                .pageSize(page.getPageSize())
                 .build();
     }
 
     @Override
-    @Transactional
     public void toggleLikeCompany(Long userId, Long companyId) {
         if (companyLikeRepository.isLikedByUser(userId, companyId)) {
             companyLikeRepository.removeLike(userId, companyId);
@@ -1734,24 +1628,14 @@ public class EmployerServiceImpl implements EmployerService {
         }
     }
 
-    // ==========================================================
-    // PRIVATE HELPER METHODS (MAPPING)
-    // ==========================================================
+    // ====================================================
+    // PRIVATE HELPERS
+    // ====================================================
 
-    // Hàm phụ trợ khi không cần biết user đang đăng nhập là ai
-    private CompanyProfileResponse mapToResponse(CompanyProfile profile) {
-        return mapToResponse(profile, null);
-    }
-
-    // Hàm chính ánh xạ dữ liệu và đếm số lượt Like
     private CompanyProfileResponse mapToResponse(CompanyProfile profile, Long currentUserId) {
         int likeCount = companyLikeRepository.countLikesByCompany(profile.getId());
-        boolean isLiked = false;
-
-        // Nếu người dùng đã đăng nhập, kiểm tra xem họ đã Like công ty này chưa
-        if (currentUserId != null) {
-            isLiked = companyLikeRepository.isLikedByUser(currentUserId, profile.getId());
-        }
+        boolean isLiked = currentUserId != null
+                && companyLikeRepository.isLikedByUser(currentUserId, profile.getId());
 
         return CompanyProfileResponse.builder()
                 .id(profile.getId())
@@ -1763,17 +1647,17 @@ public class EmployerServiceImpl implements EmployerService {
                 .verificationStatus(profile.getVerificationStatus())
                 .likeCount(likeCount)
                 .isLiked(isLiked)
-                .activeJobsCount(0) // Cần tích hợp JobRepository nếu muốn đếm Job thật
+                .activeJobsCount(0) // TODO: Tích hợp JobRepository để đếm số Job đang ACTIVE
                 .build();
     }
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
+// File: \backend-core\application\src\main\java\com\worklify\application\job\dto\JobPostingRequest.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingRequest.java
-package com.smartmatch.application.job.dto;
+package com.worklify.application.job.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
@@ -1792,7 +1676,7 @@ public class JobPostingRequest {
     @NotBlank(message = "Yêu cầu công việc không được để trống")
     private String requirements;
 
-    private String salaryRange; // Có thể null nếu công ty muốn thỏa thuận
+    private String salaryRange;
 
     @NotBlank(message = "Địa điểm làm việc không được để trống")
     private String location;
@@ -1805,11 +1689,11 @@ public class JobPostingRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\job\dto\JobPostingResponse.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
-package com.smartmatch.application.job.dto;
+package com.worklify.application.job.dto;
 
 import com.worklify.domain.job.model.JobStatus;
 import lombok.Builder;
@@ -1823,23 +1707,21 @@ public class JobPostingResponse {
     private Long companyId;
     private String title;
     private String description;
-
     private String requirements;
     private String salaryRange;
     private String location;
     private String workType;
-
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\SavedJobResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\job\dto\SavedJobResponse.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\SavedJobResponse.java
-package com.smartmatch.application.job.dto;
+package com.worklify.application.job.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -1850,24 +1732,28 @@ import java.time.LocalDateTime;
 public class SavedJobResponse {
     private Long id;
     private Long candidateId;
-    private JobPostingResponse job; // Trả về luôn thông tin chi tiết của Job
+    private JobPostingResponse job;
     private LocalDateTime savedAt;
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\impl\JobServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\job\service\impl\JobServiceImpl.java
 // ============================================================
 
-package com.smartmatch.application.job.service.impl;
+package com.worklify.application.job.service.impl;
 
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.job.dto.*;
-import com.smartmatch.application.job.service.JobService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.job.dto.JobPostingRequest;
+import com.worklify.application.job.dto.JobPostingResponse;
+import com.worklify.application.job.dto.SavedJobResponse;
+import com.worklify.application.job.service.JobService;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.job.model.JobPosting;
 import com.worklify.domain.job.model.JobStatus;
+import com.worklify.domain.job.model.SavedJob;
 import com.worklify.domain.job.repository.JobPostingRepository;
+import com.worklify.domain.job.repository.SavedJobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -1880,10 +1766,11 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements JobService {
 
     private final JobPostingRepository jobPostingRepository;
+    private final SavedJobRepository savedJobRepository;
 
     @Override
     public JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request) {
-        JobPosting jobPosting = JobPosting.createNewJob(
+        JobPosting job = JobPosting.createNewJob(
                 companyId,
                 request.getTitle(),
                 request.getDescription(),
@@ -1891,78 +1778,105 @@ public class JobServiceImpl implements JobService {
                 request.getSalaryRange(),
                 request.getLocation(),
                 request.getWorkType(),
-                request.getExpiresAt() // Đã sửa thành getExpiresAt()
+                request.getExpiresAt()
         );
-
-        JobPosting savedJob = jobPostingRepository.save(jobPosting);
-        return mapToResponse(savedJob);
+        return mapToResponse(jobPostingRepository.save(job));
     }
 
     @Override
     public JobPostingResponse updateJobPosting(Long companyId, Long jobId, JobPostingRequest request) {
-        JobPosting jobPosting = jobPostingRepository.findById(jobId)
+        JobPosting job = jobPostingRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
 
-        if (!jobPosting.getCompanyId().equals(companyId)) {
+        if (!job.getCompanyId().equals(companyId)) {
             throw new IllegalArgumentException("Bạn không có quyền chỉnh sửa tin tuyển dụng này");
         }
 
-        jobPosting.updateDetails(
+        job.updateDetails(
                 request.getTitle(),
                 request.getDescription(),
                 request.getRequirements(),
                 request.getSalaryRange(),
                 request.getLocation(),
                 request.getWorkType(),
-                request.getExpiresAt() // Đã sửa thành getExpiresAt()
+                request.getExpiresAt()
         );
-
-        JobPosting updatedJob = jobPostingRepository.save(jobPosting);
-        return mapToResponse(updatedJob);
+        return mapToResponse(jobPostingRepository.save(job));
     }
 
     @Override
     @Transactional(readOnly = true)
     public JobPostingResponse getJobById(Long jobId) {
-        JobPosting jobPosting = jobPostingRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
-        return mapToResponse(jobPosting);
+        return mapToResponse(
+                jobPostingRepository.findById(jobId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"))
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<JobPostingResponse> getJobsByCompany(Long companyId, DomainPageable pageable) {
-        DomainPage<JobPosting> page = jobPostingRepository.findByCompanyId(companyId, pageable);
-        return mapToPageResponse(page);
+        return mapToPageResponse(jobPostingRepository.findByCompanyId(companyId, pageable));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<JobPostingResponse> searchJobs(String keyword, String location, DomainPageable pageable) {
-        DomainPage<JobPosting> page = jobPostingRepository.searchJobs(keyword, location, JobStatus.ACTIVE, pageable);
-        return mapToPageResponse(page);
+        return mapToPageResponse(jobPostingRepository.searchJobs(keyword, location, JobStatus.ACTIVE, pageable));
     }
 
     @Override
     public void saveJobForCandidate(Long candidateId, Long jobId) {
-        JobPosting jobPosting = jobPostingRepository.findById(jobId)
+        JobPosting job = jobPostingRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
 
-        if (jobPosting.getStatus() != JobStatus.ACTIVE) {
-            throw new IllegalArgumentException("Không thể lưu tin tuyển dụng không còn hoạt động");
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new IllegalArgumentException("Không thể lưu tin tuyển dụng không còn hoạt động.");
         }
+
+        if (savedJobRepository.findByCandidateIdAndJobId(candidateId, jobId).isPresent()) {
+            throw new IllegalArgumentException("Bạn đã lưu tin tuyển dụng này rồi.");
+        }
+
+        savedJobRepository.save(SavedJob.markAsSaved(candidateId, jobId));
     }
 
     @Override
     public void unsaveJobForCandidate(Long candidateId, Long jobId) {
-        // Logic xử lý hủy lưu tin tuyển dụng phục vụ Use Case của Ứng viên
+        SavedJob saved = savedJobRepository.findByCandidateIdAndJobId(candidateId, jobId)
+                .orElseThrow(() -> new IllegalArgumentException("Bạn chưa lưu tin tuyển dụng này."));
+        savedJobRepository.delete(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<SavedJobResponse> getSavedJobsByCandidate(Long candidateId, DomainPageable pageable) {
-        return PageResponse.<SavedJobResponse>builder().build();
+        DomainPage<SavedJob> page = savedJobRepository.findByCandidateId(candidateId, pageable);
+
+        return PageResponse.<SavedJobResponse>builder()
+                .content(page.getContent().stream()
+                        .map(saved -> {
+                            JobPostingResponse jobResponse = jobPostingRepository.findById(saved.getJobId())
+                                    .map(this::mapToResponse)
+                                    .orElse(null);
+                            return SavedJobResponse.builder()
+                                    .id(saved.getId())
+                                    .candidateId(saved.getCandidateId())
+                                    .job(jobResponse)
+                                    .savedAt(saved.getSavedAt())
+                                    .build();
+                        })
+                        .collect(Collectors.toList()))
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getPageNumber())
+                .pageSize(page.getPageSize())
+                .build();
     }
+
+    // ====================================================
+    // PRIVATE HELPERS
+    // ====================================================
 
     private JobPostingResponse mapToResponse(JobPosting job) {
         return JobPostingResponse.builder()
@@ -1976,7 +1890,7 @@ public class JobServiceImpl implements JobService {
                 .workType(job.getWorkType())
                 .status(job.getStatus())
                 .createdAt(job.getCreatedAt())
-                .expiresAt(job.getExpiresAt()) // Đã sửa thành getExpiresAt() và expiresAt()
+                .expiresAt(job.getExpiresAt())
                 .build();
     }
 
@@ -1994,14 +1908,16 @@ public class JobServiceImpl implements JobService {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\JobService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\job\service\JobService.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\job\service\JobService.java
-package com.smartmatch.application.job.service;
+package com.worklify.application.job.service;
 
-import com.smartmatch.application.job.dto.*;
-import com.smartmatch.application.common.dto.PageResponse;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.job.dto.JobPostingRequest;
+import com.worklify.application.job.dto.JobPostingResponse;
+import com.worklify.application.job.dto.SavedJobResponse;
 import com.worklify.domain.common.DomainPageable;
 
 public interface JobService {
@@ -2016,30 +1932,10 @@ public interface JobService {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\AiMatchScoreResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\jobapplication\dto\ApplicationRequest.java
 // ============================================================
 
-package com.smartmatch.application.jobapplication.dto;
-
-import lombok.Builder;
-import lombok.Data;
-import java.time.LocalDateTime;
-
-@Data
-@Builder
-public class AiMatchScoreResponse {
-    private Long id;
-    private Long applicationId;
-    private Float confidenceScore;
-    private String analysisDetails;
-    private LocalDateTime evaluatedAt;
-}
-
-// ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\ApplicationRequest.java
-// ============================================================
-
-package com.smartmatch.application.jobapplication.dto;
+package com.worklify.application.jobapplication.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -2054,10 +1950,10 @@ public class ApplicationRequest {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\dto\ApplicationResponse.java
+// File: \backend-core\application\src\main\java\com\worklify\application\jobapplication\dto\ApplicationResponse.java
 // ============================================================
 
-package com.smartmatch.application.jobapplication.dto;
+package com.worklify.application.jobapplication.dto;
 
 import com.worklify.domain.application.model.ApplicationStatus;
 import lombok.Builder;
@@ -2078,15 +1974,16 @@ public class ApplicationResponse {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\service\impl\JobApplicationServiceImpl.java
+// File: \backend-core\application\src\main\java\com\worklify\application\jobapplication\service\impl\JobApplicationServiceImpl.java
 // ============================================================
 
 // File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\service\impl\JobApplicationServiceImpl.java
-package com.smartmatch.application.jobapplication.service.impl;
+package com.worklify.application.jobapplication.service.impl;
 
-import com.smartmatch.application.common.dto.PageResponse;
-import com.smartmatch.application.jobapplication.dto.*;
-import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.jobapplication.dto.ApplicationRequest;
+import com.worklify.application.jobapplication.dto.ApplicationResponse;
+import com.worklify.application.jobapplication.service.JobApplicationService;
 import com.worklify.domain.application.model.Application;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.application.repository.ApplicationRepository;
@@ -2129,9 +2026,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         // 3. Persist thực thể xuống cơ sở dữ liệu qua ApplicationRepository port
         Application savedApplication = applicationRepository.save(application);
-
-        // 4. Gọi luồng phân tích AI bất đồng bộ
-        this.triggerAiMatchingAsync(savedApplication.getId());
 
         return mapToResponse(savedApplication);
     }
@@ -2215,12 +2109,13 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 }
 
 // ============================================================
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\service\JobApplicationService.java
+// File: \backend-core\application\src\main\java\com\worklify\application\jobapplication\service\JobApplicationService.java
 // ============================================================
 
-package com.smartmatch.application.jobapplication.service;
-import com.smartmatch.application.jobapplication.dto.*;
-import com.smartmatch.application.common.dto.PageResponse;
+package com.worklify.application.jobapplication.service;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.jobapplication.dto.ApplicationRequest;
+import com.worklify.application.jobapplication.dto.ApplicationResponse;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.application.model.ApplicationStatus;
 
@@ -2232,8 +2127,4 @@ public interface JobApplicationService {
     PageResponse<ApplicationResponse> getApplicationsForReviewBoard(Long jobId, DomainPageable pageable);
 
     void updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status);
-
-    // Xử lý bất đồng bộ (Event-Driven Async via Message Broker) chống nghẽn hệ thống (5-8s ML Process)
-    void triggerAiMatchingAsync(Long applicationId);
-    AiMatchScoreResponse getAiMatchResult(Long applicationId);
 }

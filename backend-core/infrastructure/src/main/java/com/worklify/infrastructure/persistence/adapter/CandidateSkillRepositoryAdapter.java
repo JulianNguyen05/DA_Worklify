@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional; // Đừng quên import Optional
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -29,7 +29,6 @@ public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository
                 .collect(Collectors.toList());
     }
 
-    // BỔ SUNG PHƯƠNG THỨC NÀY để khớp với CandidateService
     @Override
     public Optional<CandidateSkill> findByCandidateIdAndSkillId(Long candidateId, Long skillId) {
         return jpaRepository.findByCandidateIdAndSkillId(candidateId, skillId)

@@ -24,8 +24,11 @@ public class CandidateProfileRepositoryAdapter implements CandidateProfileReposi
         return jpaRepository.findByUserId(userId).map(mapper::toDomain);
     }
 
+    /**
+     * [ĐÃ SỬA] Trước đây hardcode trả về Optional.empty(). Nay delegate sang JPA repository thực sự.
+     */
     @Override
     public Optional<CandidateProfile> findById(Long id) {
-        return Optional.empty();
+        return jpaRepository.findById(id).map(mapper::toDomain);
     }
 }

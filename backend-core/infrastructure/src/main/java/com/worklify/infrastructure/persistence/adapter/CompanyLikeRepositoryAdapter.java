@@ -21,7 +21,6 @@ public class CompanyLikeRepositoryAdapter implements CompanyLikeRepository {
     @Override
     @Transactional
     public void addLike(Long userId, Long companyId) {
-        // Kiểm tra an toàn để tránh lỗi Duplicate Key
         if (!isLikedByUser(userId, companyId)) {
             CompanyLikeJpaEntity entity = CompanyLikeJpaEntity.builder()
                     .userId(userId)

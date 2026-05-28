@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtAuthenticationFilter.java
 package com.worklify.infrastructure.security;
 
 import jakarta.servlet.FilterChain;
@@ -35,23 +34,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
 
-        // Bỏ qua nếu không có header Authorization hoặc không bắt đầu bằng "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Cắt bỏ chữ "Bearer " (7 ký tự) để lấy token
         jwt = authHeader.substring(7);
         userEmail = jwtService.extractUsername(jwt);
 
-        // Nếu có email trong token và context hiện tại chưa được xác thực
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // Kiểm tra token có hợp lệ không
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
@@ -64,12 +58,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 .buildDetails(request)
                 );
 
-                // Cập nhật SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
-        // Tiếp tục chuỗi filter
         filterChain.doFilter(request, response);
     }
 }

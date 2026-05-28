@@ -10,10 +10,8 @@ import com.worklify.infrastructure.persistence.entity.CvDocumentJpaEntity;
 import com.worklify.infrastructure.persistence.entity.SkillJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.stereotype.Component;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-@Component
 public interface CandidateEntityMapper {
 
     CandidateProfileJpaEntity toEntity(CandidateProfile profile);
@@ -25,7 +23,6 @@ public interface CandidateEntityMapper {
     SkillJpaEntity toEntity(Skill skill);
     Skill toDomain(SkillJpaEntity entity);
 
-    // XÓA DÒNG @Mapping(target = "id", ignore = true) vì Entity không còn 'id'
     CandidateSkillJpaEntity toEntity(CandidateSkill candidateSkill);
     CandidateSkill toDomain(CandidateSkillJpaEntity entity);
 }

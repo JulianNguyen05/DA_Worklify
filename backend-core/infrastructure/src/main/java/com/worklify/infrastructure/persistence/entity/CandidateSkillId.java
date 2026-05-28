@@ -1,4 +1,5 @@
 package com.worklify.infrastructure.persistence.entity;
+
 import java.io.Serializable;
 import lombok.*;
 

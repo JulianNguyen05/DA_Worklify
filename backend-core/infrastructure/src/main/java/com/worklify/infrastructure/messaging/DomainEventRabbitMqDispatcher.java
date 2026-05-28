@@ -1,4 +1,3 @@
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
 package com.worklify.infrastructure.messaging;
 
 import com.worklify.domain.application.event.ApplicationSubmittedEvent;
@@ -28,7 +27,7 @@ public class DomainEventRabbitMqDispatcher {
 
         rabbitTemplate.convertAndSend(
                 RabbitMqConfig.EXCHANGE_NAME,
-                "ai.match.request.event",
+                RabbitMqConfig.ROUTING_KEY_AI_SUBMIT,
                 event
         );
     }

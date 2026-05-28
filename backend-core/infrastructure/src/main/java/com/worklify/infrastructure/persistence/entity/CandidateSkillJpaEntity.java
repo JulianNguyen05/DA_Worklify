@@ -5,7 +5,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "candidate_skills")
-@IdClass(CandidateSkillId.class) // Sử dụng khóa chính kép
+@IdClass(CandidateSkillId.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,12 +21,12 @@ public class CandidateSkillJpaEntity {
     @Column(name = "skill_id", nullable = false)
     private Long skillId;
 
-    @Column(name = "level")
+    @Column(name = "level", length = 50)
     private String level;
 
     @Column(name = "years_of_ex")
     private Integer yearsOfEx;
 
-    @Column(name = "note")
+    @Column(name = "note", length = 255)
     private String note;
 }

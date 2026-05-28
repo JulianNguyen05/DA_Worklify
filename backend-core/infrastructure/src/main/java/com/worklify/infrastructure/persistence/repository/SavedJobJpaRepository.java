@@ -11,6 +11,5 @@ import java.util.Optional;
 @Repository
 public interface SavedJobJpaRepository extends JpaRepository<SavedJobJpaEntity, Long> {
     Optional<SavedJobJpaEntity> findByCandidateIdAndJobId(Long candidateId, Long jobId);
-
     Page<SavedJobJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
 }

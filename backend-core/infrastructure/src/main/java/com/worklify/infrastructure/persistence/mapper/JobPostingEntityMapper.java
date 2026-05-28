@@ -1,17 +1,12 @@
 package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.job.model.JobPosting;
-import com.worklify.domain.job.model.SavedJob;
 import com.worklify.infrastructure.persistence.entity.JobPostingJpaEntity;
-import com.worklify.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface JobPostingEntityMapper {
-    // MapStruct sẽ tự hiểu khi tên trường và kiểu dữ liệu khớp nhau
     JobPostingJpaEntity toEntity(JobPosting jobPosting);
     JobPosting toDomain(JobPostingJpaEntity entity);
-
-    SavedJobJpaEntity toEntity(SavedJob savedJob);
-    SavedJob toDomain(SavedJobJpaEntity entity);
 }

@@ -25,11 +25,9 @@ public class UserJpaEntity {
     @Column(unique = true, nullable = false, length = 191)
     private String email;
 
-    // [ĐÃ BỔ SUNG] Thêm trường phone để khớp với Database (init.sql)
     @Column(length = 20)
     private String phone;
 
-    // [ĐÃ SỬA] Ép tên cột thành password_hash để khớp với Database
     @Column(name = "password_hash", nullable = false)
     private String password;
 
@@ -41,7 +39,6 @@ public class UserJpaEntity {
     @Column(nullable = false, length = 50)
     private UserStatus status;
 
-    // [ĐÃ SỬA] Ép tên cột thành is_mfa_enabled để khớp với Database
     @Column(name = "is_mfa_enabled", nullable = false)
     private boolean mfaEnabled;
 
