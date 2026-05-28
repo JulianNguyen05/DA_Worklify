@@ -70,7 +70,7 @@
                 </executions>
                 <!-- Thêm cấu hình mainClass để trỏ đến file chạy chính của bạn -->
                 <configuration>
-                    <mainClass>com.worklify.api.SmartMatchApplication</mainClass>
+                    <mainClass>com.worklify.api.WorklifyApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

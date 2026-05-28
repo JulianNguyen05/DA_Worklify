@@ -1,9 +1,8 @@
 spring:
   datasource:
-    # Kết nối qua cổng 3306 của MySQL Local, tự tạo DB nếu chưa có
-    url: jdbc:mysql://localhost:3306/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: root
-    password: 1234 # <-- LƯU Ý: Đảm bảo khớp với mật khẩu MySQL trên máy bạn
+    url: jdbc:mysql://localhost:3307/worklify_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: worklify
+    password: worklify_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -16,5 +15,5 @@ spring:
 
 logging:
   level:
-    com.smartmatch: DEBUG
+    com.worklify: DEBUG
     org.hibernate.SQL: DEBUG

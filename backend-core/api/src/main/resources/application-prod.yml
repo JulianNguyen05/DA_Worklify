@@ -1,20 +1,16 @@
 spring:
   datasource:
     # Ở môi trường Prod trong Docker, các service gọi nhau bằng tên container và port nội bộ (3306)
-    url: jdbc:mysql://mysql:3306/smartmatch_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: root123
+    url: jdbc:mysql://mysql:3306/worklify_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: worklify
+    password: worklify_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  rabbitmq:
-    host: rabbitmq  # Gọi bằng tên service RabbitMQ
-    port: 5672
-    username: guest
-    password: guest
+  # ĐÃ XÓA RABBITMQ
 
   jpa:
     hibernate:
-      # [ĐÃ SỬA LỖI NGHIÊM TRỌNG] Không bao giờ để "update" trên Production để tránh làm mất dữ liệu
+      # Validate để đảm bảo an toàn dữ liệu trên Production
       ddl-auto: validate
     show-sql: false
     properties:
@@ -23,5 +19,5 @@ spring:
 
 logging:
   level:
-    com.smartmatch: INFO
+    com.worklify: INFO
     org.hibernate.SQL: WARN

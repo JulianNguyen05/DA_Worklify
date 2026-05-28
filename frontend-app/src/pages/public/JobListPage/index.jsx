@@ -1,28 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search, MapPin, Briefcase, Filter, Loader2, Frown } from 'lucide-react';
 import jobService from '../../../features/job/jobService';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
-import JobCard from '../../../components/shared/JobCard'; // Import JobCard vừa tạo
+import JobCard from '../../../components/shared/JobCard';
+import Pagination from '../../../components/common/Pagination'; // Giả định bạn có component này
 
 export default function JobListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const keywordParam = searchParams.get('keyword') || '';
   const locationParam = searchParams.get('location') || '';
+  const pageParam = parseInt(searchParams.get('page')) || 1;
 
-  const [filterForm, setFilterForm] = useState({ keyword: keywordParam, location: locationParam });
+  // States
+  const [filterForm, setFilterForm] = useState({ 
+    keyword: keywordParam, 
+    location: locationParam 
+  });
+  const [activeWorkType, setActiveWorkType] = useState('ALL');
+  
   const [jobs, setJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pageData, setPageData] = useState({
+    totalElements: 0,
+    totalPages: 0,
+    currentPage: 1
+  });
 
-  const fetchJobs = async (kw, loc) => {
+  const fetchJobs = async (kw, loc, page) => {
     setIsLoading(true);
     try {
-      // Gọi API thật từ Backend
-      const res = await jobService.searchJobs(kw, loc, 0, 10);
+      // Gọi API (page - 1 vì Spring Boot đếm trang từ 0)
+      const res = await jobService.searchJobs(kw, loc, page - 1, 10);
       
-      // AxiosClient bóc tách data 1 lần, ta truy cập vào .data.content của PageResponse
       if (res && res.data) {
-        setJobs(res.data.content || []);
+        // Trích xuất data từ PageResponse của Spring Boot
+        const content = res.data.content || res.data.items || [];
+        
+        // Lọc Frontend tạm thời cho Work Type (Nếu Backend chưa hỗ trợ filter theo workType)
+        const filteredContent = activeWorkType === 'ALL' 
+          ? content 
+          : content.filter(job => job.workType === activeWorkType);
+
+        setJobs(filteredContent);
+        setPageData({
+          totalElements: res.data.totalElements || 0,
+          totalPages: res.data.totalPages || 0,
+          currentPage: page
+        });
       }
     } catch (error) {
       console.error("Lỗi lấy danh sách việc làm:", error);
@@ -32,59 +58,182 @@ export default function JobListPage() {
   };
 
   useEffect(() => {
-    fetchJobs(keywordParam, locationParam);
-  }, [keywordParam, locationParam]);
+    fetchJobs(keywordParam, locationParam, pageParam);
+  }, [keywordParam, locationParam, pageParam, activeWorkType]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
-    setSearchParams(filterForm); // Cập nhật URL, kích hoạt lại useEffect
+    setSearchParams({ 
+      keyword: filterForm.keyword, 
+      location: filterForm.location,
+      page: 1 // Reset về trang 1 khi search mới
+    });
+  };
+
+  const handlePageChange = (newPage) => {
+    setSearchParams({ 
+      keyword: keywordParam, 
+      location: locationParam,
+      page: newPage
+    });
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Tìm kiếm việc làm</h1>
-
-      {/* Form lọc */}
-      <form onSubmit={handleFilterSubmit} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 w-full">
-          <Input 
-            label="Từ khóa" 
-            value={filterForm.keyword} 
-            onChange={(e) => setFilterForm({ ...filterForm, keyword: e.target.value })} 
-            placeholder="Tên công việc..." 
-          />
+    <div className="bg-slate-50 min-h-screen font-sans">
+      
+      {/* ================= HERO BANNER ================= */}
+      <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 py-16 lg:py-24 px-4 relative overflow-hidden">
+        {/* Abstract shapes for background decoration */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
+          <div className="absolute bottom-0 right-10 w-80 h-80 rounded-full bg-blue-300 blur-3xl"></div>
         </div>
-        <div className="flex-1 w-full">
-          <Input 
-            label="Địa điểm" 
-            value={filterForm.location} 
-            onChange={(e) => setFilterForm({ ...filterForm, location: e.target.value })} 
-            placeholder="Tỉnh/Thành phố..." 
-          />
-        </div>
-        <Button type="submit" isLoading={isLoading} className="w-full md:w-32 bg-blue-600 hover:bg-blue-700 text-white">
-          Tìm kiếm
-        </Button>
-      </form>
 
-      {/* Kết quả */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Kết quả tìm kiếm ({jobs.length})</h2>
+        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
+            Tìm Kiếm Công Việc Ước Mơ Của Bạn
+          </h1>
+          <p className="text-lg text-blue-100 max-w-2xl mx-auto font-light">
+            Khám phá hàng ngàn cơ hội việc làm từ các công ty hàng đầu. Kết nối đam mê với sự nghiệp ngay hôm nay.
+          </p>
+
+          {/* MAIN SEARCH FORM */}
+          <form 
+            onSubmit={handleFilterSubmit} 
+            className="mt-10 bg-white p-2 rounded-2xl shadow-2xl max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-2"
+          >
+            <div className="flex-1 flex items-center w-full px-4 py-2 border-b md:border-b-0 md:border-r border-gray-100">
+              <Search className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
+              <input 
+                type="text"
+                className="w-full focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                placeholder="Tên công việc, kỹ năng, công ty..."
+                value={filterForm.keyword}
+                onChange={(e) => setFilterForm({ ...filterForm, keyword: e.target.value })}
+              />
+            </div>
+            
+            <div className="flex-1 flex items-center w-full px-4 py-2">
+              <MapPin className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
+              <input 
+                type="text"
+                className="w-full focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                placeholder="Tỉnh/Thành phố..."
+                value={filterForm.location}
+                onChange={(e) => setFilterForm({ ...filterForm, location: e.target.value })}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full md:w-auto h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg transition-all"
+            >
+              Tìm Việc
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* ================= MAIN CONTENT ================= */}
+      <div className="max-w-6xl mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">
         
-        {isLoading ? (
-          <div className="text-center text-gray-500 py-10">Đang tìm kiếm việc làm phù hợp...</div>
-        ) : jobs.length === 0 ? (
-          <div className="text-center text-gray-500 py-10 bg-white rounded-lg border border-gray-100">
-            Không tìm thấy công việc nào phù hợp với tiêu chí của bạn.
+        {/* SIDEBAR FILTERS (Dính trên màn hình khi cuộn) */}
+        <aside className="w-full lg:w-1/4 shrink-0">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+            <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
+              <Filter className="w-5 h-5 text-gray-700" />
+              <h2 className="text-lg font-bold text-gray-800">Bộ Lọc Mở Rộng</h2>
+            </div>
+
+            {/* Lọc theo Hình thức làm việc */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-gray-400" /> Hình thức làm việc
+              </h3>
+              <div className="space-y-2">
+                {['ALL', 'FULL_TIME', 'PART_TIME'].map((type) => (
+                  <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="workType" 
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      checked={activeWorkType === type}
+                      onChange={() => setActiveWorkType(type)}
+                    />
+                    <span className="text-gray-600 group-hover:text-blue-600 transition-colors">
+                      {type === 'ALL' ? 'Tất cả hình thức' : type === 'FULL_TIME' ? 'Toàn thời gian' : 'Bán thời gian'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <p className="text-sm text-blue-800 text-center font-medium">
+                Sử dụng các bộ lọc để tìm kiếm công việc chính xác nhất với nhu cầu của bạn!
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {/* Sử dụng Component JobCard */}
-            {jobs.map(job => (
-              <JobCard key={job.id} job={job} />
-            ))}
+        </aside>
+
+        {/* JOB LIST AREA */}
+        <main className="w-full lg:w-3/4 flex flex-col min-h-[500px]">
+          
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">
+              {isLoading ? 'Đang tìm kiếm...' : `Tìm thấy ${pageData.totalElements} việc làm phù hợp`}
+            </h2>
+            {/* Chỗ này có thể làm Sort dropdown sau (Mới nhất, Cũ nhất) */}
           </div>
-        )}
+
+          {/* Rendering Logic */}
+          {isLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-blue-600 py-20">
+              <Loader2 className="w-12 h-12 animate-spin mb-4" />
+              <p className="text-gray-500 font-medium">Đang tải danh sách công việc...</p>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 border-dashed py-20 px-4 text-center shadow-sm">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <Frown className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Chưa tìm thấy công việc phù hợp</h3>
+              <p className="text-gray-500 max-w-md">
+                Thử thay đổi từ khóa, xóa bớt các bộ lọc hoặc kiểm tra lỗi chính tả để xem thêm các cơ hội khác nhé.
+              </p>
+              <Button 
+                onClick={() => {
+                  setFilterForm({ keyword: '', location: '' });
+                  setActiveWorkType('ALL');
+                  setSearchParams({});
+                }} 
+                className="mt-6 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100"
+              >
+                Xóa tất cả bộ lọc
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 flex-1">
+              {jobs.map(job => (
+                <div key={job.id} className="transition-all hover:-translate-y-1 hover:shadow-lg rounded-2xl">
+                  <JobCard job={job} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* PAGINATION */}
+          {!isLoading && pageData.totalPages > 1 && (
+            <div className="mt-10 flex justify-center border-t border-gray-200 pt-8">
+              <Pagination 
+                currentPage={pageData.currentPage} 
+                totalPages={pageData.totalPages} 
+                onPageChange={handlePageChange} 
+              />
+            </div>
+          )}
+
+        </main>
       </div>
     </div>
   );

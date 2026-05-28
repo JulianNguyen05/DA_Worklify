@@ -1,17 +1,18 @@
 spring:
   application:
-    name: smartmatch-api
+    name: worklify-api
 
   datasource:
     # Chạy trên IDE gọi vào MySQL Docker qua cổng 3307
-    url: jdbc:mysql://localhost:3307/smartmatch_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
-    username: root
-    password: root123 # Khớp với biến môi trường trong docker-compose
+    url: jdbc:mysql://localhost:3307/worklify_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: worklify
+    password: worklify_password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # Để none vì chúng ta đã dùng file init.sql để tạo bảng từ đầu
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -19,16 +20,10 @@ spring:
         format_sql: true
     open-in-view: false
 
-  # [ĐÃ THÊM] Cấu hình RabbitMQ
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+  # ĐÃ XÓA CẤU HÌNH RABBITMQ VÌ KHÔNG CÒN DÙNG AI NỮA
 
   security:
     jwt:
-      # [ĐÃ SỬA] Chuỗi secret key đã được mã hóa chuẩn Base64 để tránh lỗi của jjwt library
       secret: c21hcnRtYXRjaC1zdXBlci1zZWNyZXQta2V5LTIwMjYtbWluaW11bS0yNTYtYml0cyE=
       expiration: 86400000
       refresh-expiration: 604800000
@@ -45,5 +40,5 @@ server:
 
 logging:
   level:
-    com.smartmatch: DEBUG
+    com.worklify: DEBUG
     org.hibernate.SQL: DEBUG
