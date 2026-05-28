@@ -5,17 +5,17 @@ import com.worklify.domain.common.valueobject.EmailAddress;
 import com.worklify.domain.common.valueobject.PhoneNumber;
 import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping; // [ĐÃ THÊM] Import annotation Mapping
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserEntityMapper {
 
-    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến passwordHash thành password khi chuyển sang Entity để lưu DB
     @Mapping(source = "passwordHash", target = "password")
+    @Mapping(source = "isMfaEnabled", target = "mfaEnabled") // MapStruct sẽ tự tìm hàm isMfaEnabled()
     UserJpaEntity toEntity(User user);
 
-    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến password thành passwordHash khi lấy từ DB lên
     @Mapping(source = "password", target = "passwordHash")
+    @Mapping(source = "mfaEnabled", target = "isMfaEnabled") // MapStruct sẽ gọi setter setIsMfaEnabled()
     User toDomain(UserJpaEntity entity);
 
     default String mapEmail(EmailAddress emailAddress) {
@@ -31,6 +31,6 @@ public interface UserEntityMapper {
     }
 
     default PhoneNumber mapPhoneString(String phone) {
-        return phone != null ? new PhoneNumber(phone) : null;
+        return phone != null && !phone.isBlank() ? new PhoneNumber(phone) : null;
     }
 }

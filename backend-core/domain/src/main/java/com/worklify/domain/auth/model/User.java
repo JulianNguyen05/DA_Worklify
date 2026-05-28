@@ -2,12 +2,10 @@ package com.worklify.domain.auth.model;
 
 import com.worklify.domain.common.valueobject.EmailAddress;
 import com.worklify.domain.common.valueobject.PhoneNumber;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
