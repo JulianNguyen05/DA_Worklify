@@ -145,10 +145,8 @@ public class JobServiceImpl implements JobService {
     // ====================================================
 
     private JobPostingResponse mapToResponse(JobPosting job) {
-        // 2. QUERY LẤY THÔNG TIN CÔNG TY TỪ DATABASE
-        // Dựa vào log SQL cũ của bạn, id công ty có thể map với bảng company_profiles thông qua id hoặc user_id.
-        // Thay .findByUserId bằng hàm tương ứng trong Repository của bạn nếu khác.
-        CompanyProfile companyProfile = companyProfileRepository.findByUserId(job.getCompanyId())
+        // ✅ CHỈ CẦN ĐỔI DÒNG NÀY: Dùng findById để tìm theo đúng mã ID của công ty
+        CompanyProfile companyProfile = companyProfileRepository.findById(job.getCompanyId())
                 .orElse(null);
 
         // Lấy dữ liệu an toàn tránh lỗi NullPointer
@@ -159,7 +157,7 @@ public class JobServiceImpl implements JobService {
                 .id(job.getId())
                 .companyId(job.getCompanyId())
 
-                // 3. SET 2 TRƯỜNG VỪA TÌM ĐƯỢC VÀO RESPONSE
+                // SET 2 TRƯỜNG VỪA TÌM ĐƯỢC VÀO RESPONSE
                 .companyName(companyName)
                 .logoUrl(logoUrl)
 

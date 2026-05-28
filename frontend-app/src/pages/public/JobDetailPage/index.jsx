@@ -42,7 +42,6 @@ export default function JobDetailPage() {
     try {
       const res = await jobService.getJobDetail(id);
       setJob(res.data);
-      // Bạn có thể call API check xem ứng viên đã lưu Job này chưa để set isSaved
     } catch (error) {
       console.error(error);
     } finally {
@@ -91,7 +90,6 @@ export default function JobDetailPage() {
   };
 
   const toggleSaveJob = () => {
-    // Gọi API lưu tin tuyển dụng tại đây
     setIsSaved(!isSaved);
     setStatusMsg({ type: 'success', message: isSaved ? 'Đã bỏ lưu tin.' : 'Đã lưu tin tuyển dụng!' });
   };
@@ -110,6 +108,34 @@ export default function JobDetailPage() {
   // Render format text có xuống dòng
   const formatText = (text) => text?.split('\n').map((str, index) => <p key={index} className="mb-2">{str}</p>);
 
+  // =================================================================
+  // ĐÃ CẬP NHẬT: XỬ LÝ ĐỒNG BỘ JSON (HỖ TRỢ ĐA DẠNG CẤU TRÚC BACKEND)
+  // =================================================================
+  const actualCompanyName = 
+    job.company?.companyName || 
+    job.company?.name || 
+    job.companyName || 
+    job.company_name || 
+    `Công ty ID: ${job.companyId || job.company_id}`;
+
+  const actualLogoUrl = 
+    job.company?.logoUrl || 
+    job.company?.logo_url || 
+    job.companyLogo || 
+    job.company_logo || 
+    job.logoUrl || 
+    job.logo_url;
+
+  const actualSalaryRange = job.salaryRange || job.salary_range;
+  const actualCreatedAt = job.createdAt || job.created_at;
+
+  let displayLogo = null;
+  if (actualLogoUrl) {
+    displayLogo = actualLogoUrl.startsWith('http') 
+      ? actualLogoUrl 
+      : `http://localhost:8080${actualLogoUrl.startsWith('/') ? '' : '/'}${actualLogoUrl}`;
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen pb-20 font-sans">
       {statusMsg.type && (
@@ -122,10 +148,18 @@ export default function JobDetailPage() {
       <div className="bg-white border-b border-gray-200 pt-8 pb-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex gap-6 items-center w-full lg:w-2/3">
-            {/* Logo */}
+            {/* KHUNG HIỂN THỊ LOGO */}
             <div className="w-24 h-24 shrink-0 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
-              {job.companyLogoUrl ? (
-                <img src={job.companyLogoUrl} alt={job.companyName} className="w-full h-full object-contain" />
+              {displayLogo ? (
+                <img 
+                  src={displayLogo} 
+                  alt={actualCompanyName} 
+                  className="w-full h-full object-contain" 
+                  onError={(e) => { 
+                    e.target.onerror = null; 
+                    e.target.src = 'https://via.placeholder.com/150?text=Logo'; 
+                  }}
+                />
               ) : (
                 <Building2 className="w-10 h-10 text-gray-300" />
               )}
@@ -133,10 +167,10 @@ export default function JobDetailPage() {
             {/* Title & Tags */}
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{job.title}</h1>
-              <p className="text-lg text-blue-700 font-semibold mb-4 hover:underline cursor-pointer">{job.companyName}</p>
+              <p className="text-lg text-blue-700 font-semibold mb-4 hover:underline cursor-pointer">{actualCompanyName}</p>
               <div className="flex flex-wrap gap-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-200">
-                  <DollarSign className="w-4 h-4" /> {job.salaryRange || 'Thỏa thuận'}
+                  <DollarSign className="w-4 h-4" /> {actualSalaryRange || 'Thỏa thuận'}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-medium border border-gray-200">
                   <MapPin className="w-4 h-4" /> {job.location || 'Chưa cập nhật'}
@@ -240,7 +274,7 @@ export default function JobDetailPage() {
                 <div>
                   <p className="text-sm text-gray-500">Ngày đăng tin</p>
                   <p className="font-semibold text-gray-800">
-                    {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : 'Mới đây'}
+                    {actualCreatedAt ? new Date(actualCreatedAt).toLocaleDateString('vi-VN') : 'Mới đây'}
                   </p>
                 </div>
               </div>
@@ -251,8 +285,8 @@ export default function JobDetailPage() {
             {/* Thông tin cty nhỏ */}
             <div className="text-center">
                <p className="text-sm text-gray-500 mb-2">Được đăng bởi</p>
-               <h4 className="font-bold text-gray-800">{job.companyName}</h4>
-               <Button variant="link" className="text-blue-600 text-sm mt-1" onClick={() => navigate(`/companies/${job.companyId}`)}>Xem trang công ty &rarr;</Button>
+               <h4 className="font-bold text-gray-800">{actualCompanyName}</h4>
+               <Button variant="link" className="text-blue-600 text-sm mt-1" onClick={() => navigate(`/companies/${job.companyId || job.company_id || job.company?.id}`)}>Xem trang công ty &rarr;</Button>
             </div>
           </div>
         </div>
@@ -264,7 +298,7 @@ export default function JobDetailPage() {
           <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-sm text-blue-800">
-              Bạn đang ứng tuyển vị trí <span className="font-bold">{job.title}</span> tại <span className="font-bold">{job.companyName}</span>.
+              Bạn đang ứng tuyển vị trí <span className="font-bold">{job.title}</span> tại <span className="font-bold">{actualCompanyName}</span>.
             </p>
           </div>
 

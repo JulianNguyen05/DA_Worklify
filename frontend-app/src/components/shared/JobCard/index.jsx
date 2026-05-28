@@ -4,16 +4,23 @@ import { Building2, MapPin, DollarSign, Clock } from 'lucide-react';
 import Button from '../../common/Button';
 
 export default function JobCard({ job }) {
-  // 1. Xử lý đồng bộ key JSON (Phòng trường hợp Spring Boot trả về snake_case hoặc camelCase)
+  // 1. Xử lý đồng bộ key JSON
   const actualCompanyName = job.companyName || job.company_name;
   const actualCompanyId = job.companyId || job.company_id;
   const actualLogoUrl = job.logoUrl || job.logo_url;
   const actualSalaryRange = job.salaryRange || job.salary_range;
   const actualCreatedAt = job.createdAt || job.created_at;
 
-  // 2. Format dữ liệu để hiển thị
   const displayName = actualCompanyName || `Công ty ID: ${actualCompanyId}`;
-  const displayLogo = actualLogoUrl ? `http://localhost:8080${actualLogoUrl}` : null;
+
+  // 2. Xử lý URL Logo an toàn tuyệt đối (Đã nâng cấp)
+  let displayLogo = null;
+  if (actualLogoUrl) {
+    // Nếu URL đã có sẵn http thì giữ nguyên, nếu chưa có thì mới nối thêm localhost:8080
+    displayLogo = actualLogoUrl.startsWith('http') 
+      ? actualLogoUrl 
+      : `http://localhost:8080${actualLogoUrl.startsWith('/') ? '' : '/'}${actualLogoUrl}`;
+  }
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group">
@@ -25,7 +32,12 @@ export default function JobCard({ job }) {
             <img 
               src={displayLogo} 
               alt={displayName} 
-              className="w-full h-full object-contain p-1.5 bg-white" 
+              className="w-full h-full object-contain p-1 bg-white" 
+              // Bắt lỗi: Nếu load ảnh thất bại, thay bằng ảnh placeholder
+              onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src = 'https://via.placeholder.com/150?text=Logo'; 
+              }}
             />
           ) : (
             <Building2 className="w-8 h-8 text-gray-300" />
