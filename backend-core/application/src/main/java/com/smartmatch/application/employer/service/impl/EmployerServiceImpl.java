@@ -12,6 +12,7 @@ import com.smartmatch.application.employer.service.EmployerService;
 import com.smartmatch.domain.auth.repository.UserRepository;
 import com.smartmatch.domain.common.DomainPageable;
 import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.domain.employer.repository.CompanyLikeRepository;
 import com.smartmatch.domain.employer.repository.CompanyProfileRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class EmployerServiceImpl implements EmployerService {
     private final UserRepository userRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final FileStoragePort fileStoragePort;
+    private final CompanyLikeRepository companyLikeRepository;
 
     @Override
     public CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request) {
@@ -80,15 +82,16 @@ public class EmployerServiceImpl implements EmployerService {
     }
 
     // ==========================================================
-    // LẤY DANH SÁCH CÔNG TY (CÓ PHÂN TRANG)
+    // LẤY DANH SÁCH CÔNG TY (CÓ PHÂN TRANG VÀ KIỂM TRA LƯỢT LIKE)
     // ==========================================================
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable) {
+    public PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long currentUserId) {
         Page<CompanyProfile> profilePage = companyProfileRepository.findAll(pageable.toSpringPageable());
 
+        // Sử dụng currentUserId để kiểm tra trạng thái Like của từng công ty
         List<CompanyProfileResponse> content = profilePage.getContent().stream()
-                .map(this::mapToResponse)
+                .map(profile -> mapToResponse(profile, currentUserId))
                 .collect(Collectors.toList());
 
         return PageResponse.<CompanyProfileResponse>builder()
@@ -100,10 +103,35 @@ public class EmployerServiceImpl implements EmployerService {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public void toggleLikeCompany(Long userId, Long companyId) {
+        if (companyLikeRepository.isLikedByUser(userId, companyId)) {
+            companyLikeRepository.removeLike(userId, companyId);
+        } else {
+            companyLikeRepository.addLike(userId, companyId);
+        }
+    }
+
     // ==========================================================
     // PRIVATE HELPER METHODS (MAPPING)
     // ==========================================================
+
+    // Hàm phụ trợ khi không cần biết user đang đăng nhập là ai
     private CompanyProfileResponse mapToResponse(CompanyProfile profile) {
+        return mapToResponse(profile, null);
+    }
+
+    // Hàm chính ánh xạ dữ liệu và đếm số lượt Like
+    private CompanyProfileResponse mapToResponse(CompanyProfile profile, Long currentUserId) {
+        int likeCount = companyLikeRepository.countLikesByCompany(profile.getId());
+        boolean isLiked = false;
+
+        // Nếu người dùng đã đăng nhập, kiểm tra xem họ đã Like công ty này chưa
+        if (currentUserId != null) {
+            isLiked = companyLikeRepository.isLikedByUser(currentUserId, profile.getId());
+        }
+
         return CompanyProfileResponse.builder()
                 .id(profile.getId())
                 .userId(profile.getUserId())
@@ -112,6 +140,9 @@ public class EmployerServiceImpl implements EmployerService {
                 .website(profile.getWebsite())
                 .description(profile.getDescription())
                 .verificationStatus(profile.getVerificationStatus())
+                .likeCount(likeCount)
+                .isLiked(isLiked)
+                .activeJobsCount(0) // Cần tích hợp JobRepository nếu muốn đếm Job thật
                 .build();
     }
 }

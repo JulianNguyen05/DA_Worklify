@@ -14,4 +14,7 @@ public class CompanyProfileResponse {
     private String website;
     private String description;
     private VerificationStatus verificationStatus;
+    private Integer likeCount;
+    private Boolean isLiked;
+    private Integer activeJobsCount;
 }

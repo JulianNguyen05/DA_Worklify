@@ -39,6 +39,10 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
 
     </dependencies>
 
@@ -301,6 +305,7 @@ public interface ApplicationRepository {
     DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable);
     DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable);
     long countAll();
+    long countByStatus(ApplicationStatus status);
 }
 
 // ============================================================
@@ -417,6 +422,7 @@ public interface UserRepository {
     Optional<User> findById(Long id);
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+    long count();
 }
 
 // ============================================================
@@ -704,11 +710,50 @@ public class DomainPage<T> {
 
 package com.smartmatch.domain.common;
 
+import org.springframework.data.domain.Pageable;
+
 public interface DomainPageable {
     int getPageNumber();
     int getPageSize();
+
+    Pageable toSpringPageable();
 }
 
+
+// ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\SearchPageable.java
+// ============================================================
+
+package com.smartmatch.domain.common;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+public class SearchPageable implements DomainPageable {
+    private final int page;
+    private final int size;
+
+    public SearchPageable(int page, int size) {
+        this.page = page;
+        this.size = size;
+    }
+
+    @Override
+    public int getPageNumber() {
+        return this.page;
+    }
+
+    @Override
+    public int getPageSize() {
+        return this.size;
+    }
+
+    @Override
+    public Pageable toSpringPageable() {
+        // Trừ 1 nếu client truyền vào page bắt đầu từ 1, giữ nguyên nếu bắt đầu từ 0
+        return PageRequest.of(this.page, this.size);
+    }
+}
 
 // ============================================================
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\common\valueobject\EmailAddress.java
@@ -753,6 +798,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Objects; // BỔ SUNG IMPORT NÀY
+
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -782,11 +829,15 @@ public class CompanyProfile {
     public void reject() { this.verificationStatus = VerificationStatus.REJECTED; }
 
     public void reviseProfile(String newCompanyName, String newWebsite, String newDescription) {
-        boolean requiresReverification = !this.companyName.equals(newCompanyName) ||
-                (this.website != null && !this.website.equals(newWebsite));
+        // [NÂNG CẤP]: Bắt lỗi thay đổi ở cả Mô tả (Description)
+        boolean requiresReverification = !Objects.equals(this.companyName, newCompanyName) ||
+                !Objects.equals(this.website, newWebsite) ||
+                !Objects.equals(this.description, newDescription);
+
         this.companyName = newCompanyName;
         this.website = newWebsite;
         this.description = newDescription;
+
         if (requiresReverification) {
             this.verificationStatus = VerificationStatus.PENDING;
         }
@@ -796,7 +847,13 @@ public class CompanyProfile {
         if (newLogoUrl == null || newLogoUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("URL Logo không hợp lệ.");
         }
+        // [NÂNG CẤP]: Cập nhật logo cũng phải chờ duyệt lại
+        boolean requiresReverification = !Objects.equals(this.logoUrl, newLogoUrl);
         this.logoUrl = newLogoUrl;
+
+        if (requiresReverification) {
+            this.verificationStatus = VerificationStatus.PENDING;
+        }
     }
 }
 
@@ -813,16 +870,41 @@ public enum VerificationStatus {
 }
 
 // ============================================================
+// File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\repository\CompanyLikeRepository.java
+// ============================================================
+
+package com.smartmatch.domain.employer.repository;
+
+public interface CompanyLikeRepository {
+    boolean isLikedByUser(Long userId, Long companyId);
+    void addLike(Long userId, Long companyId);
+    void removeLike(Long userId, Long companyId);
+    int countLikesByCompany(Long companyId);
+}
+
+
+// ============================================================
 // File: \backend-core\domain\src\main\java\com\smartmatch\domain\employer\repository\CompanyProfileRepository.java
 // ============================================================
 
 package com.smartmatch.domain.employer.repository;
+
 import com.smartmatch.domain.employer.model.CompanyProfile;
+import com.smartmatch.domain.employer.model.VerificationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable; // ĐÃ SỬA THÀNH: org.springframework.data.domain.Pageable
+
+import java.util.List;
 import java.util.Optional;
+
 public interface CompanyProfileRepository {
     CompanyProfile save(CompanyProfile companyProfile);
     Optional<CompanyProfile> findByUserId(Long userId);
     Optional<CompanyProfile> findById(Long id);
+    List<CompanyProfile> findByVerificationStatus(VerificationStatus status);
+
+    // Bây giờ hàm này đã sử dụng đúng Pageable của Spring
+    Page<CompanyProfile> findAll(Pageable pageable);
 }
 
 // ============================================================
@@ -995,6 +1077,8 @@ package com.smartmatch.domain.job.repository;
 import com.smartmatch.domain.job.model.*;
 import com.smartmatch.domain.common.DomainPage;
 import com.smartmatch.domain.common.DomainPageable;
+
+import java.util.List;
 import java.util.Optional;
 public interface JobPostingRepository {
     JobPosting save(JobPosting jobPosting);
@@ -1002,6 +1086,8 @@ public interface JobPostingRepository {
     DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable);
     DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable);
     long countByStatus(JobStatus status);
+
+    List<JobPosting> findByStatus(JobStatus jobStatus);
 }
 
 // ============================================================

@@ -4,6 +4,7 @@ import authService from '../../../features/auth/authService';
 import candidateService from '../../../features/candidate/candidateService';
 import jobService from '../../../features/job/jobService';
 import employerService from '../../../features/employer/employerService';
+import { Globe, Heart } from 'lucide-react';
 
 const DashboardPage = () => {
   const [uiState, setUiState] = useState({ isLoading: true, error: null });
@@ -171,14 +172,37 @@ const DashboardPage = () => {
                 <Link key={company.id} to={`/companies/${company.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {company.logoUrl ? (
-                      <img src={`http://localhost:8080${company.logoUrl}`} alt={company.name} className="w-full h-full object-cover" />
+                      <img src={`http://localhost:8080${company.logoUrl}`} alt={company.companyName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-gray-400 font-bold">{company.name?.charAt(0) || 'C'}</span>
+                      <span className="text-gray-400 font-bold">{company.companyName?.charAt(0) || 'C'}</span>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">{company.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1 truncate">{company.industry || 'Đa lĩnh vực'}</p>
+                  
+                  {/* Chuyển flex-1 thành flex container để dàn đều nội dung và nút Like sang 2 bên */}
+                  <div className="flex-1 min-w-0 flex justify-between items-center gap-3">
+                    
+                    {/* Phần thông tin công ty */}
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                        {company.companyName || 'Công ty chưa cập nhật tên'}
+                      </h3>
+                      
+                      {company.website ? (
+                        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-600 font-medium bg-slate-100 w-fit px-2.5 py-1 rounded-md group-hover:bg-blue-50 group-hover:text-blue-700 transition-colors">
+                          <Globe className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                          <span className="truncate max-w-[150px]">{company.website.replace(/^https?:\/\//, '')}</span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 mt-1.5 truncate italic">Chưa cập nhật website</p>
+                      )}
+                    </div>
+
+                    {/* Phần hiển thị lượt Like */}
+                    <div className="flex items-center gap-1.5 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100 flex-shrink-0 transition-transform group-hover:scale-105">
+                      <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                      <span className="text-xs font-bold text-rose-700">{company.likeCount || 0}</span>
+                    </div>
+
                   </div>
                 </Link>
               ))

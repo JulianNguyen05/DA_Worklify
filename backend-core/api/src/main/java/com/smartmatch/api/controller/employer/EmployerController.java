@@ -5,6 +5,7 @@ import com.smartmatch.application.common.dto.PageResponse;
 import com.smartmatch.application.employer.dto.CompanyProfileRequest;
 import com.smartmatch.application.employer.dto.CompanyProfileResponse;
 import com.smartmatch.application.employer.service.EmployerService;
+import com.smartmatch.domain.auth.model.User;
 import com.smartmatch.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest; // BỔ SUNG IMPORT
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -57,31 +59,37 @@ public class EmployerController {
         return ApiResponse.success(employerService.uploadLogo(userId, file), "Tải lên logo thành công");
     }
 
+    @PostMapping("/{companyId}/like")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
+    @Operation(summary = "Thích / Bỏ thích công ty")
+    public ApiResponse<Void> toggleLikeCompany(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam("userId") Long userId) { // ĐÃ SỬA: Nhận trực tiếp userId từ Frontend
+
+        employerService.toggleLikeCompany(userId, companyId);
+        return ApiResponse.success(null, "Thao tác thả tim thành công");
+    }
+
     @GetMapping
     @Operation(summary = "Lấy danh sách tất cả doanh nghiệp (Công ty nổi bật)")
     public ApiResponse<PageResponse<CompanyProfileResponse>> getAllEmployers(
-            @RequestParam(value = "page", defaultValue = "0") int page, // ĐÃ SỬA: Thêm value chỉ định tên tham số
-            @RequestParam(value = "size", defaultValue = "5") int size) {  // ĐÃ SỬA: Thêm value chỉ định tên tham số
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "5") int size,
+            // THÊM DÒNG DƯỚI ĐÂY (required = false để khách vãng lai không đăng nhập vẫn xem được)
+            @RequestParam(value = "userId", required = false) Long userId) {
 
-        // ĐÃ SỬA: Bổ sung override phương thức toSpringPageable() còn thiếu
         DomainPageable pageable = new DomainPageable() {
             @Override
-            public int getPageNumber() {
-                return page;
-            }
-
+            public int getPageNumber() { return page; }
             @Override
-            public int getPageSize() {
-                return size;
-            }
-
+            public int getPageSize() { return size; }
             @Override
             public org.springframework.data.domain.Pageable toSpringPageable() {
-                // Trực tiếp map sang cấu trúc PageRequest của Spring Data
                 return PageRequest.of(page, size);
             }
         };
 
-        return ApiResponse.success(employerService.getAllProfiles(pageable));
+        // TRUYỀN THÊM userId VÀO SERVICE
+        return ApiResponse.success(employerService.getAllProfiles(pageable, userId));
     }
 }

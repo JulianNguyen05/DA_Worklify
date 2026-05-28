@@ -66,8 +66,20 @@ const employerService = {
     return response.data;
   },
 
-  getAllCompanies: async (page = 0, size = 5) => {
-    const response = await axiosClient.get(`/employers?page=${page}&size=${size}`);
+// File: frontend-app/src/features/employer/employerService.js
+  getAllCompanies: async (page = 0, size = 5, userId = null) => {
+    let url = `/employers?page=${page}&size=${size}`;
+    if (userId) {
+      url += `&userId=${userId}`; // Truyền userId lên BE nếu có đăng nhập
+    }
+    const response = await axiosClient.get(url);
+    return response.data;
+  },
+
+// API Like công ty
+  likeCompany: async (companyId, userId) => {
+    // Truyền userId lên BE thông qua query string (?userId=...)
+    const response = await axiosClient.post(`/employers/${companyId}/like?userId=${userId}`);
     return response.data;
   },
 
