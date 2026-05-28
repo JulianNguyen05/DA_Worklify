@@ -12,7 +12,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.smartmatch</groupId>
+        <groupId>com.worklify</groupId>
         <artifactId>backend-core</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -20,7 +20,7 @@
     <artifactId>infrastructure</artifactId>
     <packaging>jar</packaging>
 
-    <name>SmartMatch Infrastructure</name>
+    <name>Worklify Infrastructure</name>
 
     <description>
         Persistence, Security, Config, External Services
@@ -29,13 +29,13 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.smartmatch</groupId>
+            <groupId>com.worklify</groupId>
             <artifactId>domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.smartmatch</groupId>
+            <groupId>com.worklify</groupId>
             <artifactId>application</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -103,6 +103,12 @@
             <version>0.12.6</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>com.worklify</groupId>
+            <artifactId>domain</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 
@@ -150,13 +156,13 @@
 </project>
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\AuthConfig.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\config\AuthConfig.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\AuthConfig.java
-package com.smartmatch.infrastructure.config;
+package com.worklify.infrastructure.config;
 
-import com.smartmatch.infrastructure.security.CustomUserDetailsService;
+import com.worklify.infrastructure.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -193,10 +199,10 @@ public class AuthConfig {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\RabbitMqConfig.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\config\RabbitMqConfig.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.config;
+package com.worklify.infrastructure.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -266,15 +272,16 @@ public class RabbitMqConfig {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\SecurityConfig.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\config\SecurityConfig.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.config;
+package com.worklify.infrastructure.config;
 
-import com.smartmatch.infrastructure.security.JwtAuthenticationFilter;
+import com.worklify.infrastructure.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -309,6 +316,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+
+                        // [BỔ SUNG QUAN TRỌNG]: Cho phép khách vãng lai xem việc làm và công ty
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/employers/**").permitAll()
+
+                        // Mọi request còn lại đều phải có Token
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -335,11 +348,11 @@ public class SecurityConfig {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\WebConfig.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\config\WebConfig.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\config\WebConfig.java
-package com.smartmatch.infrastructure.config;
+package com.worklify.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -378,13 +391,13 @@ public class WebConfig implements WebMvcConfigurer {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchEventPublisherImpl.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\messaging\AiMatchEventPublisherImpl.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchEventPublisherImpl.java
-package com.smartmatch.infrastructure.messaging;
+package com.worklify.infrastructure.messaging;
 
-import com.smartmatch.infrastructure.config.RabbitMqConfig;
+import com.worklify.infrastructure.config.RabbitMqConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -425,12 +438,12 @@ public class AiMatchEventPublisherImpl { // Implements AiMatchEventPublisher (In
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultConsumer.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\messaging\AiMatchResultConsumer.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.messaging;
+package com.worklify.infrastructure.messaging;
 
-import com.smartmatch.application.jobapplication.service.JobApplicationService;
+import com.worklify.application.jobapplication.service.JobApplicationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -461,10 +474,10 @@ public class AiMatchResultConsumer {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\AiMatchResultPayload.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\messaging\AiMatchResultPayload.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.messaging;
+package com.worklify.infrastructure.messaging;
 
 /**
  * DTO đại diện cho dữ liệu cấu trúc JSON trả về từ AI Server.
@@ -476,14 +489,14 @@ public record AiMatchResultPayload(
 ) {}
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\messaging\DomainEventRabbitMqDispatcher.java
-package com.smartmatch.infrastructure.messaging;
+package com.worklify.infrastructure.messaging;
 
 import com.worklify.domain.application.event.ApplicationSubmittedEvent;
-import com.smartmatch.infrastructure.config.RabbitMqConfig;
+import com.worklify.infrastructure.config.RabbitMqConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -516,50 +529,20 @@ public class DomainEventRabbitMqDispatcher {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\AiMatchScoreRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\ApplicationRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
-
-import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.AiMatchScoreJpaRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
-import java.util.Optional;
-
-@Component
-@RequiredArgsConstructor
-public class AiMatchScoreRepositoryAdapter implements AiMatchScoreRepository {
-    private final AiMatchScoreJpaRepository jpaRepository;
-    private final ApplicationEntityMapper mapper;
-
-    @Override
-    public AiMatchScore save(AiMatchScore score) {
-        return mapper.toDomain(jpaRepository.save(mapper.toEntity(score)));
-    }
-
-    @Override
-    public Optional<AiMatchScore> findByApplicationId(Long applicationId) {
-        return jpaRepository.findByApplicationId(applicationId).map(mapper::toDomain);
-    }
-}
-
-// ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\ApplicationRepositoryAdapter.java
-// ======================================================================
-
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.application.model.Application;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.application.repository.ApplicationRepository;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
-import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
-import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.ApplicationEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.ApplicationJpaRepository;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.worklify.infrastructure.persistence.entity.ApplicationJpaEntity;
+import com.worklify.infrastructure.persistence.mapper.ApplicationEntityMapper;
+import com.worklify.infrastructure.persistence.repository.ApplicationJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -594,6 +577,11 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
     }
 
     @Override
+    public boolean existsByCandidateIdAndJobId(Long candidateId, Long jobId) {
+        return false;
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }
@@ -606,15 +594,15 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CandidateProfileRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\CandidateProfileRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.candidate.repository.CandidateProfileRepository;
-import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.CandidateProfileJpaRepository;
+import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.worklify.infrastructure.persistence.repository.CandidateProfileJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
@@ -634,18 +622,23 @@ public class CandidateProfileRepositoryAdapter implements CandidateProfileReposi
     public Optional<CandidateProfile> findByUserId(Long userId) {
         return jpaRepository.findByUserId(userId).map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<CandidateProfile> findById(Long id) {
+        return Optional.empty();
+    }
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CandidateSkillRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\CandidateSkillRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.candidate.model.CandidateSkill;
 import com.worklify.domain.candidate.repository.CandidateSkillRepository;
-import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.CandidateSkillJpaRepository;
+import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.worklify.infrastructure.persistence.repository.CandidateSkillJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -690,14 +683,14 @@ public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CompanyLikeRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\CompanyLikeRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.employer.repository.CompanyLikeRepository;
-import com.smartmatch.infrastructure.persistence.entity.CompanyLikeJpaEntity;
-import com.smartmatch.infrastructure.persistence.repository.CompanyLikeJpaRepository;
+import com.worklify.infrastructure.persistence.entity.CompanyLikeJpaEntity;
+import com.worklify.infrastructure.persistence.repository.CompanyLikeJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -739,16 +732,18 @@ public class CompanyLikeRepositoryAdapter implements CompanyLikeRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CompanyProfileRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\CompanyProfileRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.employer.model.CompanyProfile;
 import com.worklify.domain.employer.model.VerificationStatus;
 import com.worklify.domain.employer.repository.CompanyProfileRepository;
-import com.smartmatch.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.CompanyProfileJpaRepository;
+import com.worklify.infrastructure.persistence.mapper.CompanyProfileEntityMapper;
+import com.worklify.infrastructure.persistence.repository.CompanyProfileJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page; // BỔ SUNG IMPORT
 import org.springframework.data.domain.Pageable; // BỔ SUNG IMPORT
@@ -787,6 +782,11 @@ public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public DomainPage<CompanyProfile> findAll(DomainPageable pageable) {
+        return null;
+    }
+
     // ==========================================================
     // BỔ SUNG: Triển khai hàm findAll phục vụ phân trang cho DDD
     // ==========================================================
@@ -800,15 +800,15 @@ public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\CvDocumentRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\CvDocumentRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.candidate.model.CvDocument;
 import com.worklify.domain.candidate.repository.CvDocumentRepository;
-import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.CvDocumentJpaRepository;
+import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.worklify.infrastructure.persistence.repository.CvDocumentJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -846,20 +846,20 @@ public class CvDocumentRepositoryAdapter implements CvDocumentRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\JobPostingRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\JobPostingRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.job.model.JobPosting;
 import com.worklify.domain.job.model.JobStatus;
 import com.worklify.domain.job.repository.JobPostingRepository;
-import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
-import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.JobPostingEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.JobPostingJpaRepository;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.worklify.infrastructure.persistence.entity.JobPostingJpaEntity;
+import com.worklify.infrastructure.persistence.mapper.JobPostingEntityMapper;
+import com.worklify.infrastructure.persistence.repository.JobPostingJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -910,19 +910,19 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SavedJobRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\SavedJobRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.job.model.SavedJob;
 import com.worklify.domain.job.repository.SavedJobRepository;
-import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
-import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.SavedJobEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.SavedJobJpaRepository;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.worklify.infrastructure.persistence.entity.SavedJobJpaEntity;
+import com.worklify.infrastructure.persistence.mapper.SavedJobEntityMapper;
+import com.worklify.infrastructure.persistence.repository.SavedJobJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -958,15 +958,15 @@ public class SavedJobRepositoryAdapter implements SavedJobRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SkillRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\SkillRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.candidate.model.Skill;
 import com.worklify.domain.candidate.repository.SkillRepository;
-import com.smartmatch.infrastructure.persistence.mapper.CandidateEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.SkillJpaRepository;
+import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.worklify.infrastructure.persistence.repository.SkillJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -1017,19 +1017,19 @@ public class SkillRepositoryAdapter implements SkillRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\SystemLogRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\SystemLogRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.admin.model.SystemLog;
 import com.worklify.domain.admin.repository.SystemLogRepository;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
-import com.smartmatch.infrastructure.persistence.adapter.util.PaginationMapper;
-import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.SystemLogEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.SystemLogJpaRepository;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.worklify.infrastructure.persistence.entity.SystemLogJpaEntity;
+import com.worklify.infrastructure.persistence.mapper.SystemLogEntityMapper;
+import com.worklify.infrastructure.persistence.repository.SystemLogJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -1053,16 +1053,16 @@ public class SystemLogRepositoryAdapter implements SystemLogRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\UserRepositoryAdapter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\UserRepositoryAdapter.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter;
+package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.auth.repository.UserRepository;
-import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
-import com.smartmatch.infrastructure.persistence.mapper.UserEntityMapper;
-import com.smartmatch.infrastructure.persistence.repository.UserJpaRepository;
+import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
+import com.worklify.infrastructure.persistence.mapper.UserEntityMapper;
+import com.worklify.infrastructure.persistence.repository.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
@@ -1103,10 +1103,10 @@ public class UserRepositoryAdapter implements UserRepository {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\adapter\util\PaginationMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\adapter\util\PaginationMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.adapter.util;
+package com.worklify.infrastructure.persistence.adapter.util;
 
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
@@ -1144,12 +1144,12 @@ public class PaginationMapper {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\AiMatchScoreJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\AiMatchScoreJpaEntity.java
 // ======================================================================
 
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\AiMatchScoreJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1184,12 +1184,12 @@ public class AiMatchScoreJpaEntity {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\ApplicationJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\ApplicationJpaEntity.java
 // ======================================================================
 
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\ApplicationJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import com.worklify.domain.application.model.ApplicationStatus;
 import jakarta.persistence.*;
@@ -1235,11 +1235,11 @@ public class ApplicationJpaEntity {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateProfileJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CandidateProfileJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateProfileJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1282,10 +1282,10 @@ public class CandidateProfileJpaEntity {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillId.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CandidateSkillId.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 import java.io.Serializable;
 import lombok.*;
 
@@ -1298,10 +1298,10 @@ public class CandidateSkillId implements Serializable {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CandidateSkillJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CandidateSkillJpaEntity.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1335,10 +1335,10 @@ public class CandidateSkillJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CompanyLikeJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CompanyLikeJpaEntity.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1374,11 +1374,11 @@ public class CompanyLikeJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CompanyProfileJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CompanyProfileJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CompanyProfileJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import com.worklify.domain.employer.model.VerificationStatus;
 import jakarta.persistence.*;
@@ -1417,11 +1417,11 @@ public class CompanyProfileJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\CvDocumentJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\\java\com\smartmatch\infrastructure\persistence\entity\CvDocumentJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1461,11 +1461,11 @@ public class CvDocumentJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\JobPostingJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\JobPostingJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\JobPostingJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import com.worklify.domain.job.model.JobStatus;
 import jakarta.persistence.*;
@@ -1517,11 +1517,11 @@ public class JobPostingJpaEntity {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SavedJobJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\SavedJobJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SavedJobJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1552,11 +1552,11 @@ public class SavedJobJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SkillJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\SkillJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SkillJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1578,11 +1578,11 @@ public class SkillJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SystemLogJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\SystemLogJpaEntity.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\SystemLogJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -1615,17 +1615,15 @@ public class SystemLogJpaEntity {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\entity\UserJpaEntity.java
 // ======================================================================
 
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\entity\UserJpaEntity.java
-package com.smartmatch.infrastructure.persistence.entity;
+package com.worklify.infrastructure.persistence.entity;
 
 import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
-// [ĐÃ THÊM] Import thư viện tự động tạo thời gian của Hibernate
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -1644,43 +1642,46 @@ public class UserJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(unique = true, nullable = false, length = 191)
     private String email;
 
-    @Column(nullable = false)
+    // [ĐÃ BỔ SUNG] Thêm trường phone để khớp với Database (init.sql)
+    @Column(length = 20)
+    private String phone;
+
+    // [ĐÃ SỬA] Ép tên cột thành password_hash để khớp với Database
+    @Column(name = "password_hash", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private UserStatus status;
 
-    @Column(name = "mfa_enabled", nullable = false)
+    // [ĐÃ SỬA] Ép tên cột thành is_mfa_enabled để khớp với Database
+    @Column(name = "is_mfa_enabled", nullable = false)
     private boolean mfaEnabled;
 
-    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại khi Insert lần đầu
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // [ĐÃ THÊM] Tự động lấy thời gian hiện tại mỗi khi record bị Update
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\ApplicationEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\ApplicationEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.application.model.Application;
-import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
+import com.worklify.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.stereotype.Component;
@@ -1692,22 +1693,22 @@ public interface ApplicationEntityMapper {
 
     ApplicationJpaEntity toEntity(Application application);
     Application toDomain(ApplicationJpaEntity entity);
-
-    AiMatchScoreJpaEntity toEntity(AiMatchScore aiMatchScore);
-    AiMatchScore toDomain(AiMatchScoreJpaEntity entity);
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CandidateEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\CandidateEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
-import com.smartmatch.infrastructure.persistence.entity.*;
 import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.candidate.model.CandidateSkill;
 import com.worklify.domain.candidate.model.CvDocument;
 import com.worklify.domain.candidate.model.Skill;
+import com.worklify.infrastructure.persistence.entity.CandidateProfileJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CandidateSkillJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CvDocumentJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SkillJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.stereotype.Component;
@@ -1731,13 +1732,13 @@ public interface CandidateEntityMapper {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\CompanyProfileEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\CompanyProfileEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.employer.model.CompanyProfile;
-import com.smartmatch.infrastructure.persistence.entity.CompanyProfileJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CompanyProfileJpaEntity;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -1750,15 +1751,15 @@ public interface CompanyProfileEntityMapper {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\JobPostingEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\JobPostingEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.job.model.JobPosting;
 import com.worklify.domain.job.model.SavedJob;
-import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import com.worklify.infrastructure.persistence.entity.JobPostingJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -1772,13 +1773,13 @@ public interface JobPostingEntityMapper {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SavedJobEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\SavedJobEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.job.model.SavedJob;
-import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -1788,13 +1789,13 @@ public interface SavedJobEntityMapper {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\SystemLogEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\SystemLogEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.admin.model.SystemLog;
-import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SystemLogJpaEntity;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -1807,27 +1808,27 @@ public interface SystemLogEntityMapper {
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\mapper\UserEntityMapper.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\mapper\UserEntityMapper.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.mapper;
+package com.worklify.infrastructure.persistence.mapper;
 
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.common.valueobject.EmailAddress;
 import com.worklify.domain.common.valueobject.PhoneNumber;
-import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
+import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping; // [ĐÃ THÊM] Import annotation Mapping
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserEntityMapper {
 
-    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến passwordHash thành password khi chuyển sang Entity để lưu DB
     @Mapping(source = "passwordHash", target = "password")
+    @Mapping(source = "isMfaEnabled", target = "mfaEnabled") // MapStruct sẽ tự tìm hàm isMfaEnabled()
     UserJpaEntity toEntity(User user);
 
-    // [ĐÃ SỬA] Chỉ định rõ ánh xạ biến password thành passwordHash khi lấy từ DB lên
     @Mapping(source = "password", target = "passwordHash")
+    @Mapping(source = "mfaEnabled", target = "isMfaEnabled") // MapStruct sẽ gọi setter setIsMfaEnabled()
     User toDomain(UserJpaEntity entity);
 
     default String mapEmail(EmailAddress emailAddress) {
@@ -1843,17 +1844,17 @@ public interface UserEntityMapper {
     }
 
     default PhoneNumber mapPhoneString(String phone) {
-        return phone != null ? new PhoneNumber(phone) : null;
+        return phone != null && !phone.isBlank() ? new PhoneNumber(phone) : null;
     }
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\AiMatchScoreJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\AiMatchScoreJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
+import com.worklify.infrastructure.persistence.entity.AiMatchScoreJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
@@ -1865,13 +1866,13 @@ public interface AiMatchScoreJpaRepository extends JpaRepository<AiMatchScoreJpa
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\ApplicationJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\ApplicationJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
 import com.worklify.domain.application.model.ApplicationStatus;
-import com.smartmatch.infrastructure.persistence.entity.ApplicationJpaEntity;
+import com.worklify.infrastructure.persistence.entity.ApplicationJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -1889,12 +1890,12 @@ public interface ApplicationJpaRepository extends JpaRepository<ApplicationJpaEn
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CandidateProfileJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\CandidateProfileJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.CandidateProfileJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CandidateProfileJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -1907,13 +1908,13 @@ public interface CandidateProfileJpaRepository extends JpaRepository<CandidatePr
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CandidateSkillJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\CandidateSkillJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.CandidateSkillJpaEntity;
-import com.smartmatch.infrastructure.persistence.entity.CandidateSkillId; // Import class IdClass
+import com.worklify.infrastructure.persistence.entity.CandidateSkillJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CandidateSkillId; // Import class IdClass
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -1934,12 +1935,12 @@ public interface CandidateSkillJpaRepository extends JpaRepository<CandidateSkil
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CompanyLikeJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\CompanyLikeJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.CompanyLikeJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CompanyLikeJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -1952,13 +1953,13 @@ public interface CompanyLikeJpaRepository extends JpaRepository<CompanyLikeJpaEn
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CompanyProfileJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\CompanyProfileJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
 import com.worklify.domain.employer.model.VerificationStatus;
-import com.smartmatch.infrastructure.persistence.entity.CompanyProfileJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CompanyProfileJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -1974,12 +1975,12 @@ public interface CompanyProfileJpaRepository extends JpaRepository<CompanyProfil
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\CvDocumentJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\CvDocumentJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.CvDocumentJpaEntity;
+import com.worklify.infrastructure.persistence.entity.CvDocumentJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -1992,13 +1993,13 @@ public interface CvDocumentJpaRepository extends JpaRepository<CvDocumentJpaEnti
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\JobPostingJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\JobPostingJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
 import com.worklify.domain.job.model.JobStatus;
-import com.smartmatch.infrastructure.persistence.entity.JobPostingJpaEntity;
+import com.worklify.infrastructure.persistence.entity.JobPostingJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -2031,18 +2032,17 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SavedJobJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\SavedJobJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.SavedJobJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SavedJobJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -2054,12 +2054,12 @@ public interface SavedJobJpaRepository extends JpaRepository<SavedJobJpaEntity, 
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SkillJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\SkillJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.SkillJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SkillJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -2074,12 +2074,12 @@ public interface SkillJpaRepository extends JpaRepository<SkillJpaEntity, Long> 
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\SystemLogJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\SystemLogJpaRepository.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.SystemLogJpaEntity;
+import com.worklify.infrastructure.persistence.entity.SystemLogJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -2091,13 +2091,13 @@ public interface SystemLogJpaRepository extends JpaRepository<SystemLogJpaEntity
 
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\UserJpaRepository.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\persistence\repository\UserJpaRepository.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\persistence\repository\UserJpaRepository.java
-package com.smartmatch.infrastructure.persistence.repository;
+package com.worklify.infrastructure.persistence.repository;
 
-import com.smartmatch.infrastructure.persistence.entity.UserJpaEntity;
+import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -2110,11 +2110,11 @@ public interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\security\CustomUserDetailsService.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\CustomUserDetailsService.java
-package com.smartmatch.infrastructure.security;
+package com.worklify.infrastructure.security;
 
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.auth.repository.UserRepository;
@@ -2149,11 +2149,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtAuthenticationFilter.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\security\JwtAuthenticationFilter.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtAuthenticationFilter.java
-package com.smartmatch.infrastructure.security;
+package com.worklify.infrastructure.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -2229,10 +2229,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\security\JwtService.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\security\JwtService.java
 // ======================================================================
 
-package com.smartmatch.infrastructure.security;
+package com.worklify.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -2246,7 +2246,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import com.smartmatch.application.common.port.TokenProviderPort;
+import com.worklify.application.common.port.TokenProviderPort;
 
 @Service
 public class JwtService implements TokenProviderPort {
@@ -2316,13 +2316,13 @@ public class JwtService implements TokenProviderPort {
 }
 
 // ======================================================================
-// File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
+// File: \backend-core\infrastructure\src\main\java\com\worklify\infrastructure\storage\LocalFileStorageService.java
 // ======================================================================
 
 // File: \backend-core\infrastructure\src\main\java\com\smartmatch\infrastructure\storage\LocalFileStorageService.java
-package com.smartmatch.infrastructure.storage;
+package com.worklify.infrastructure.storage;
 
-import com.smartmatch.application.common.port.FileStoragePort;
+import com.worklify.application.common.port.FileStoragePort;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -2333,10 +2333,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.util.Objects;
-import java.util.UUID;
 
 @Slf4j
 @Service
