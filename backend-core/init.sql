@@ -90,6 +90,7 @@ CREATE TABLE cv_documents (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     candidate_id BIGINT NOT NULL,
     file_path VARCHAR(500),
+    file_name VARCHAR(500),
     raw_text LONGTEXT COMMENT 'Lưu dữ liệu JSON nếu ứng viên dùng công cụ tạo CV (CV Builder)',
     is_generated BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

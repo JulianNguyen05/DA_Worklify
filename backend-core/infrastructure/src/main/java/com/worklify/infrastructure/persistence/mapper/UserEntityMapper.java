@@ -6,19 +6,19 @@ import com.worklify.domain.common.valueobject.PhoneNumber;
 import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 /**
  * [ĐÃ SỬA] Loại bỏ @Component thừa. @Mapper(componentModel = "spring") là đủ.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserEntityMapper {
 
     @Mapping(source = "passwordHash", target = "password")
-    @Mapping(target = "mfaEnabled", expression = "java(user.isMfaEnabled())")
+        // MapStruct tự hiểu boolean mfaEnabled (Domain) <-> boolean mfaEnabled (Entity)
     UserJpaEntity toEntity(User user);
 
     @Mapping(source = "password", target = "passwordHash")
-    @Mapping(target = "isMfaEnabled", expression = "java(entity.isMfaEnabled())")
     User toDomain(UserJpaEntity entity);
 
     default String mapEmail(EmailAddress emailAddress) {

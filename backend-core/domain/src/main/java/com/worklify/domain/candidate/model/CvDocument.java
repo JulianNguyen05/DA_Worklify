@@ -13,15 +13,17 @@ public class CvDocument {
     private Long id;
     private Long candidateId;
     private String filePath;
+    private String fileName; // [ĐÃ BỔ SUNG] Trường lưu tên hiển thị
     private String rawText;
     private Boolean isGenerated;
     private LocalDateTime createdAt;
 
     // Factory Method: Ứng viên tải CV file lên
-    public static CvDocument upload(Long candidateId, String filePath, String rawText) {
+    public static CvDocument upload(Long candidateId, String filePath, String fileName, String rawText) {
         return CvDocument.builder()
                 .candidateId(candidateId)
                 .filePath(filePath)
+                .fileName(fileName)
                 .rawText(rawText)
                 .isGenerated(false)
                 .createdAt(LocalDateTime.now())
@@ -29,24 +31,34 @@ public class CvDocument {
     }
 
     // Factory Method: Ứng viên tạo CV từ template có file đính kèm
-    public static CvDocument generateFromTemplate(Long candidateId, String filePath, String rawText) {
+    public static CvDocument generateFromTemplate(Long candidateId, String filePath, String fileName, String rawText) {
         return CvDocument.builder()
                 .candidateId(candidateId)
                 .filePath(filePath)
+                .fileName(fileName)
                 .rawText(rawText)
                 .isGenerated(true)
                 .createdAt(LocalDateTime.now())
                 .build();
     }
 
-    // Factory Method: Ứng viên tạo CV từ CV Builder (không có file cứng, lưu JSON vào raw_text)
-    public static CvDocument generate(Long candidateId, String rawText) {
+    // Factory Method: Ứng viên tạo CV từ CV Builder
+    public static CvDocument generate(Long candidateId, String fileName, String rawText) {
         return CvDocument.builder()
                 .candidateId(candidateId)
                 .filePath(null)
+                .fileName(fileName)
                 .rawText(rawText)
                 .isGenerated(true)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+
+    // [ĐÃ SỬA] Logic đổi tên
+    public void rename(String newName) {
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên CV không được để trống.");
+        }
+        this.fileName = newName;
     }
 }
