@@ -1,0 +1,48 @@
+package com.worklify.infrastructure.persistence.adapter;
+
+import com.worklify.domain.candidate.model.CandidateSkill;
+import com.worklify.domain.candidate.repository.CandidateSkillRepository;
+import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
+import com.worklify.infrastructure.persistence.repository.CandidateSkillJpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional; // Đừng quên import Optional
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class CandidateSkillRepositoryAdapter implements CandidateSkillRepository {
+    private final CandidateSkillJpaRepository jpaRepository;
+    private final CandidateEntityMapper mapper;
+
+    @Override
+    public CandidateSkill save(CandidateSkill candidateSkill) {
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(candidateSkill)));
+    }
+
+    @Override
+    public List<CandidateSkill> findByCandidateId(Long candidateId) {
+        return jpaRepository.findByCandidateId(candidateId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    // BỔ SUNG PHƯƠNG THỨC NÀY để khớp với CandidateService
+    @Override
+    public Optional<CandidateSkill> findByCandidateIdAndSkillId(Long candidateId, Long skillId) {
+        return jpaRepository.findByCandidateIdAndSkillId(candidateId, skillId)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public void deleteByCandidateIdAndSkillId(Long candidateId, Long skillId) {
+        jpaRepository.deleteByCandidateIdAndSkillId(candidateId, skillId);
+    }
+
+    @Override
+    public void deleteByCandidateId(Long candidateId) {
+        jpaRepository.deleteByCandidateId(candidateId);
+    }
+}

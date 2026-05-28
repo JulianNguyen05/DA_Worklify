@@ -16,4 +16,9 @@ public interface CompanyProfileRepository {
     Optional<CompanyProfile> findById(Long id);
     List<CompanyProfile> findByVerificationStatus(VerificationStatus status);
     DomainPage<CompanyProfile> findAll(DomainPageable pageable);
+
+    // ==========================================================
+    // BỔ SUNG: Triển khai hàm findAll phục vụ phân trang cho DDD
+    // ==========================================================
+    Page<CompanyProfile> findAll(Pageable pageable);
 }

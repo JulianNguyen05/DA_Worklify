@@ -273,6 +273,11 @@ public class CandidateServiceImpl implements CandidateService {
         candidateSkillRepository.deleteByCandidateIdAndSkillId(profile.getId(), skillId);
     }
 
+    @Override
+    public CvDocumentResponse renameCv(Long userId, Long cvId, String newName) {
+        return null;
+    }
+
     // ====================================================
     // PRIVATE HELPERS
     // ====================================================

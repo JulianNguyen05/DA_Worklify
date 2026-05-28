@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.smartmatch</groupId>
+        <groupId>com.worklify</groupId>
         <artifactId>backend-core</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -15,7 +15,7 @@
     <artifactId>infrastructure</artifactId>
     <packaging>jar</packaging>
 
-    <name>SmartMatch Infrastructure</name>
+    <name>Worklify Infrastructure</name>
 
     <description>
         Persistence, Security, Config, External Services

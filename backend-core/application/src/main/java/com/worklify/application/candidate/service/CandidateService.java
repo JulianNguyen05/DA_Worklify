@@ -1,5 +1,4 @@
 package com.worklify.application.candidate.service;
-import com.smartmatch.application.candidate.dto.*;
 import com.worklify.application.candidate.dto.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,4 +21,6 @@ public interface CandidateService {
 
     void addSkillToCandidate(Long userId, Long skillId);
     void removeSkillFromCandidate(Long userId, Long skillId);
+
+    CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
 }

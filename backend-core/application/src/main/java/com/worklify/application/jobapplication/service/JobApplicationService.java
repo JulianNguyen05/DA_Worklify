@@ -1,5 +1,4 @@
 package com.worklify.application.jobapplication.service;
-import com.smartmatch.application.jobapplication.dto.*;
 import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.jobapplication.dto.ApplicationRequest;
 import com.worklify.application.jobapplication.dto.ApplicationResponse;
