@@ -20,4 +20,6 @@ public class JobPostingResponse {
     private JobStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
+    private String companyName;
+    private String logoUrl;
 }

@@ -12,6 +12,11 @@ import com.worklify.domain.job.model.JobStatus;
 import com.worklify.domain.job.model.SavedJob;
 import com.worklify.domain.job.repository.JobPostingRepository;
 import com.worklify.domain.job.repository.SavedJobRepository;
+
+// IMPORT THÊM REPOSITORY CỦA CÔNG TY VÀO ĐÂY (Điều chỉnh lại package nếu cần)
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +30,9 @@ public class JobServiceImpl implements JobService {
 
     private final JobPostingRepository jobPostingRepository;
     private final SavedJobRepository savedJobRepository;
+
+    // 1. INJECT THÊM REPOSITORY LẤY THÔNG TIN CÔNG TY
+    private final CompanyProfileRepository companyProfileRepository;
 
     @Override
     public JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request) {
@@ -137,9 +145,24 @@ public class JobServiceImpl implements JobService {
     // ====================================================
 
     private JobPostingResponse mapToResponse(JobPosting job) {
+        // 2. QUERY LẤY THÔNG TIN CÔNG TY TỪ DATABASE
+        // Dựa vào log SQL cũ của bạn, id công ty có thể map với bảng company_profiles thông qua id hoặc user_id.
+        // Thay .findByUserId bằng hàm tương ứng trong Repository của bạn nếu khác.
+        CompanyProfile companyProfile = companyProfileRepository.findByUserId(job.getCompanyId())
+                .orElse(null);
+
+        // Lấy dữ liệu an toàn tránh lỗi NullPointer
+        String companyName = companyProfile != null ? companyProfile.getCompanyName() : null;
+        String logoUrl = companyProfile != null ? companyProfile.getLogoUrl() : null;
+
         return JobPostingResponse.builder()
                 .id(job.getId())
                 .companyId(job.getCompanyId())
+
+                // 3. SET 2 TRƯỜNG VỪA TÌM ĐƯỢC VÀO RESPONSE
+                .companyName(companyName)
+                .logoUrl(logoUrl)
+
                 .title(job.getTitle())
                 .description(job.getDescription())
                 .requirements(job.getRequirements())
@@ -155,7 +178,7 @@ public class JobServiceImpl implements JobService {
     private PageResponse<JobPostingResponse> mapToPageResponse(DomainPage<JobPosting> page) {
         return PageResponse.<JobPostingResponse>builder()
                 .content(page.getContent().stream()
-                        .map(this::mapToResponse)
+                        .map(this::mapToResponse) // Gọi qua helper đã được nâng cấp ở trên
                         .collect(Collectors.toList()))
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
