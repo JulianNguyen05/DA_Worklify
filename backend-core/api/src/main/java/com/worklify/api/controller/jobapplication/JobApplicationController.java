@@ -18,39 +18,37 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/applications")
 @RequiredArgsConstructor
-@Tag(name = "5. Applications & AI", description = "Quản lý nộp hồ sơ và Chấm điểm AI")
+@Tag(name = "5. Applications", description = "Quản lý nộp hồ sơ")
 public class JobApplicationController {
 
     private final JobApplicationService applicationService;
 
     @PostMapping("/candidates/{candidateId}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @Operation(summary = "Nộp hồ sơ ứng tuyển (Tự động kích hoạt AI chấm điểm)")
+    @Operation(summary = "Nộp hồ sơ ứng tuyển")
     public ApiResponse<ApplicationResponse> apply(
             @PathVariable("candidateId") Long candidateId,
             @Valid @RequestBody ApplicationRequest request) {
         return ApiResponse.success(applicationService.applyJob(candidateId, request), "Nộp hồ sơ thành công");
     }
 
-    // ==================== ĐOẠN CODE BỔ SUNG THIẾU SÓT Ở ĐÂY ====================
     @GetMapping("/candidates/{candidateId}")
     @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
     @Operation(summary = "Ứng viên xem lịch sử danh sách đơn ứng tuyển của chính mình")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsByCandidate(
             @PathVariable("candidateId") Long candidateId,
-            @RequestParam(value = "page", defaultValue = "0") int page, // Thêm value = "page"
-            @RequestParam(value = "size", defaultValue = "10") int size) { // Thêm value = "size"
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ApiResponse.success(applicationService.getApplicationsByCandidate(candidateId, createPageable(page, size)), "Tải danh sách đơn ứng tuyển thành công");
     }
-    // =========================================================================
 
     @GetMapping("/jobs/{jobId}/review-board")
     @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
     @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
             @PathVariable("jobId") Long jobId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ApiResponse.success(applicationService.getApplicationsForReviewBoard(jobId, createPageable(page, size)));
     }
 
@@ -60,7 +58,7 @@ public class JobApplicationController {
     public ApiResponse<Void> updateStatus(
             @PathVariable("companyId") Long companyId,
             @PathVariable("applicationId") Long applicationId,
-            @RequestParam ApplicationStatus status) {
+            @RequestParam(name = "status") ApplicationStatus status) {
         applicationService.updateApplicationStatus(companyId, applicationId, status);
         return ApiResponse.success(null, "Cập nhật trạng thái thành công");
     }

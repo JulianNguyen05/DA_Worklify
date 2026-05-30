@@ -16,4 +16,10 @@ public class ApplicationResponse {
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
     private String blindTestUrl;
+
+    private String jobTitle;
+    private String companyName;
+    private String companyLogo;
+    private String cvFileName;
+    private String candidateName;
 }

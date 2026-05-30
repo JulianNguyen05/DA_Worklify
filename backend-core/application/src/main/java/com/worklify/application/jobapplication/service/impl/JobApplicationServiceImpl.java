@@ -1,4 +1,3 @@
-// File: \backend-core\application\src\main\java\com\smartmatch\application\jobapplication\service\impl\JobApplicationServiceImpl.java
 package com.worklify.application.jobapplication.service.impl;
 
 import com.worklify.application.common.dto.PageResponse;
@@ -8,8 +7,14 @@ import com.worklify.application.jobapplication.service.JobApplicationService;
 import com.worklify.domain.application.model.Application;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.candidate.model.CandidateProfile;
+import com.worklify.domain.candidate.model.CvDocument;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.candidate.repository.CvDocumentRepository;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.employer.model.CompanyProfile;
+import com.worklify.domain.employer.repository.CompanyProfileRepository;
 import com.worklify.domain.job.model.JobPosting;
 import com.worklify.domain.job.model.JobStatus;
 import com.worklify.domain.job.repository.JobPostingRepository;
@@ -26,6 +31,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final JobPostingRepository jobPostingRepository;
+    private final CompanyProfileRepository companyProfileRepository;
+    private final CvDocumentRepository cvDocumentRepository;
+
+    // BỔ SUNG: Inject CandidateProfileRepository thay vì UserRepository
+    private final CandidateProfileRepository candidateProfileRepository;
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, ApplicationRequest request) {
@@ -63,14 +73,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     public PageResponse<ApplicationResponse> getApplicationsForReviewBoard(Long jobId, DomainPageable pageable) {
         DomainPage<Application> page = applicationRepository.findByJobId(jobId, pageable);
 
-        // Trả về dữ liệu ẩn danh (Khử định danh danh tính để phục vụ tính minh bạch của hội đồng sơ tuyển)
-        return PageResponse.<ApplicationResponse>builder()
-                .content(page.getContent().stream()
-                        .map(this::mapToBlindResponse)
-                        .collect(Collectors.toList()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .build();
+        return mapToPageResponse(page);
     }
 
     @Override
@@ -93,6 +96,33 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
     // Mapper helper: Ánh xạ đầy đủ thông tin dành cho Ứng viên hoặc Nhà tuyển dụng sở hữu
     private ApplicationResponse mapToResponse(Application app) {
+
+        // 1. Tìm thông tin Job
+        JobPosting job = jobPostingRepository.findById(app.getJobId()).orElse(null);
+        String jobTitle = (job != null) ? job.getTitle() : null;
+
+        // 2. Tìm thông tin Công ty (Dựa vào companyId của Job)
+        String companyName = null;
+        String companyLogo = null;
+        if (job != null) {
+            CompanyProfile company = companyProfileRepository.findById(job.getCompanyId()).orElse(null);
+            if (company != null) {
+                companyName = company.getCompanyName();
+                companyLogo = company.getLogoUrl();
+            }
+        }
+
+        // 3. Tìm thông tin file CV
+        CvDocument cv = cvDocumentRepository.findById(app.getCvId()).orElse(null);
+        String cvFileName = (cv != null) ? cv.getFileName() : null;
+
+        // 4. BỔ SUNG: Lấy thông tin Tên ứng viên từ CandidateProfile
+        String candidateName = null;
+        if (app.getCandidateId() != null) {
+            CandidateProfile candidate = candidateProfileRepository.findByUserId(app.getCandidateId()).orElse(null);
+            candidateName = (candidate != null) ? candidate.getFullName() : null;
+        }
+
         return ApplicationResponse.builder()
                 .id(app.getId())
                 .jobId(app.getJobId())
@@ -100,20 +130,13 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .candidateId(app.getCandidateId())
                 .coverLetter(app.getCoverLetter())
                 .status(app.getStatus())
-                .appliedAt(app.getAppliedAt())// Đồng bộ Token định danh ẩn danh
-                .build();
-    }
-
-    // Mapper helper: Ẩn danh hóa thông tin (Gán null cho cvId, candidateId) phục vụ Review Board
-    private ApplicationResponse mapToBlindResponse(Application app) {
-        return ApplicationResponse.builder()
-                .id(app.getId())
-                .jobId(app.getJobId())
-                .cvId(null)          // Khử liên kết đến CV gốc
-                .candidateId(null)   // Khử định danh Ứng viên
-                .coverLetter(app.getCoverLetter())
-                .status(app.getStatus())
-                .appliedAt(app.getAppliedAt())// Chỉ cung cấp mã Token kiểm tra ẩn danh
+                .appliedAt(app.getAppliedAt())
+                .blindTestUrl(null)
+                .jobTitle(jobTitle)
+                .companyName(companyName)
+                .companyLogo(companyLogo)
+                .cvFileName(cvFileName)
+                .candidateName(candidateName) // TRUYỀN TÊN VÀO DTO
                 .build();
     }
 

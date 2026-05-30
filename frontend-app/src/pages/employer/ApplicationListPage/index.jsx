@@ -1,181 +1,246 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import employerService from '../../../features/employer/employerService';
-import authService from '../../../features/auth/authService'; // Khai báo authService
+import authService from '../../../features/auth/authService';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
+// BỔ SUNG: Import thêm icon Eye
+import { Briefcase, Users, FileText, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
 
 export default function ApplicationListPage() {
-  const [searchParams] = useSearchParams();
-  const jobId = searchParams.get('jobId') || 101; 
-  
-  // LẤY COMPANY ID ĐỘNG: Trích xuất từ nhà tuyển dụng đang đăng nhập thay vì gán cứng bằng 10
-  const currentUser = authService.getCurrentUser();
-  const companyId = currentUser?.companyId || 10;
+  const navigate = useNavigate();
+  const [companyId, setCompanyId] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [activeJobId, setActiveJobId] = useState(null);
   
   const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingScore, setIsLoadingScore] = useState(null);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  // 1. LẤY DANH SÁCH ĐƠN TUYỂN DỤNG THẬT TỪ BACKEND
+  // 1. LẤY THÔNG TIN CÔNG TY VÀ DANH SÁCH CÔNG VIỆC LÀM TABS
   useEffect(() => {
-    const fetchApplications = async () => {
-      setIsLoading(true);
+    const fetchInitialData = async () => {
+      const user = authService.getCurrentUser();
+      if (!user?.userId) {
+        navigate('/auth/login');
+        return;
+      }
+
       try {
-        const res = await employerService.getApplicationsForJob(jobId);
-        // Backend bóc tách ApiResponse wrapped PageResponse, danh sách bản ghi nằm ở res.data.content
-        const appList = res.data?.content || [];
+        setIsLoadingJobs(true);
+        const profileRes = await employerService.getCompanyProfile(user.userId);
+        const compId = profileRes.data?.id;
         
-        // Gắn thêm thuộc tính aiScore cục bộ để theo dõi tiến trình Quét AI trên UI
-        const mappedList = appList.map(app => ({
-          ...app,
-          aiScore: app.aiScore || null 
-        }));
-        setApplications(mappedList);
+        if (!compId) {
+          setStatusMsg({ type: 'error', message: 'Bạn chưa tạo hồ sơ doanh nghiệp!' });
+          return;
+        }
+        setCompanyId(compId);
+
+        const jobsRes = await employerService.getMyJobs(compId, 0, 50); 
+        const jobsData = jobsRes.data?.content || jobsRes.data || [];
+        setJobs(jobsData);
+
+        if (jobsData.length > 0) {
+          setActiveJobId(jobsData[0].id);
+        }
       } catch (error) {
-        console.error("Lỗi lấy danh sách hồ sơ tuyển dụng từ máy chủ:", error);
-        setStatusMsg({ type: 'error', message: 'Không thể kết nối đến máy chủ lấy dữ liệu hồ sơ!' });
+        setStatusMsg({ type: 'error', message: 'Không thể tải danh sách công việc.' });
       } finally {
-        setIsLoading(false);
+        setIsLoadingJobs(false);
       }
     };
 
-    if (jobId) {
-      fetchApplications();
-    }
-  }, [jobId]);
+    fetchInitialData();
+  }, [navigate]);
 
-  // 2. KẾT NỐI AI MATCH SCORE THỰC TẾ (Quét NLP và Học máy từ backend)
-  const handleAiScan = async (appId) => {
-    setIsLoadingScore(appId);
-    try {
-      const res = await employerService.getAiScore(appId);
-      // Kết quả trả về cấu trúc AiMatchScoreResponse { confidenceScore: float }
-      const aiData = res.data;
-      const scorePercentage = aiData?.confidenceScore ? Math.round(aiData.confidenceScore) : 0;
+  // 2. KHI CHUYỂN TAB, TẢI DANH SÁCH ỨNG VIÊN
+  useEffect(() => {
+    if (!activeJobId) return;
 
-      setStatusMsg({ type: 'success', message: `Phân tích AI Matcher hoàn tất! Độ trùng khớp: ${scorePercentage}%` });
-      
-      // Đồng bộ điểm số phân tích NLP thật vào danh sách hiển thị
-      setApplications(prev => prev.map(app => 
-        app.id === appId ? { ...app, aiScore: scorePercentage } : app
-      ));
-    } catch (error) {
-      console.error("Lỗi đồng bộ hoặc xử lý tiến trình AI:", error);
-      setStatusMsg({ type: 'error', message: 'Hệ thống AI đang xử lý bất đồng bộ hoặc gặp sự cố!' });
-    } finally {
-      setIsLoadingScore(null);
-    }
-  };
+    const fetchApplications = async () => {
+      setIsLoadingApps(true);
+      try {
+        const res = await employerService.getApplicationsForJob(activeJobId, 0, 50);
+        const appList = res.data?.content || res.data || [];
+        setApplications(appList);
+      } catch (error) {
+        setStatusMsg({ type: 'error', message: 'Lỗi tải danh sách hồ sơ ứng tuyển!' });
+      } finally {
+        setIsLoadingApps(false);
+      }
+    };
 
-  // 3. CẬP NHẬT TRẠNG THÁI HỒ SƠ THẬT QUA ENDPOINT PATCH
+    fetchApplications();
+  }, [activeJobId]);
+
+  // 3. CẬP NHẬT TRẠNG THÁI HỒ SƠ
   const handleUpdateStatus = async (appId, newStatus) => {
     try {
       await employerService.updateApplicationStatus(companyId, appId, newStatus);
-      setStatusMsg({ type: 'success', message: `Đã chuyển đổi trạng thái hồ sơ thành công sang: ${newStatus}` });
+      setStatusMsg({ type: 'success', message: `Đã cập nhật trạng thái thành: ${newStatus}` });
       
-      // Cập nhật State tức thời trên View UI
       setApplications(prev => prev.map(app => 
         app.id === appId ? { ...app, status: newStatus } : app
       ));
     } catch (error) {
-      console.error("Lỗi thực thi cập nhật trạng thái đơn ứng tuyển:", error);
-      setStatusMsg({ type: 'error', message: 'Thao tác phê duyệt/loại lên hệ thống thất bại!' });
+      setStatusMsg({ type: 'error', message: 'Thao tác cập nhật thất bại!' });
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'ACCEPTED': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Chấp nhận</span>;
+      case 'REJECTED': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Từ chối</span>;
+      case 'REVIEWED': return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Đã xem</span>;
+      default: return <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">Chờ duyệt</span>;
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[70vh]">
       {statusMsg.message && (
         <Toast type={statusMsg.type} message={statusMsg.message} onClose={() => setStatusMsg({ type: null, message: '' })} />
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Danh sách đơn ứng tuyển</h2>
-          <p className="text-sm text-gray-500 mt-1">Cơ chế Tuyển dụng Ẩn danh (Blind Recruitment) đảm bảo tính công bằng (Mã Job: #{jobId})</p>
-        </div>
+      {/* HEADER */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+          <Users className="w-6 h-6 text-indigo-600" />
+          Quản lý Đơn ứng tuyển
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">Xem và xử lý hồ sơ ứng viên theo từng chiến dịch tuyển dụng.</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="p-3 font-medium text-gray-600">Ứng viên (Hệ thống ẩn danh)</th>
-              <th className="p-3 font-medium text-gray-600">Ngày nộp đơn</th>
-              <th className="p-3 font-medium text-gray-600">Đánh giá độ phù hợp AI</th>
-              <th className="p-3 font-medium text-gray-600 text-center">Trạng thái hiện tại</th>
-              <th className="p-3 font-medium text-gray-600 text-center">Hành động</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading ? (
-              <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-500">Đang tải dữ liệu thực tế từ máy chủ SmartMatch...</td>
-              </tr>
-            ) : applications.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-500">Chưa có ứng viên nào nộp hồ sơ cho vị trí này.</td>
-              </tr>
-            ) : (
-              applications.map((app) => (
-                <tr key={app.id} className="hover:bg-gray-50">
-                  <td className="p-3 font-medium text-blue-600 cursor-pointer">
-                    {/* Sử dụng blindTestUrl trung lập từ Domain Entity phục vụ đánh giá khách quan */}
-                    <a href={app.blindTestUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                      {app.candidateName || `Hồ sơ ứng viên ẩn danh #${app.id}`}
-                    </a>
-                  </td>
-                  <td className="p-3 text-gray-500">
-                    {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : 'Vừa mới nộp'}
-                  </td>
-                  <td className="p-3">
-                    {app.aiScore !== null ? (
-                      <span className="font-bold text-green-600">🎯 {app.aiScore}% Phù hợp</span>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleAiScan(app.id)} 
-                        isLoading={isLoadingScore === app.id}
-                        className="px-2 py-1 text-xs border-purple-500 text-purple-600 hover:bg-purple-50"
-                      >
-                        🤖 Quét AI Match
-                      </Button>
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      app.status === 'ACCEPTED' || app.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                      app.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {app.status}
-                    </span>
-                  </td>
-                  <td className="p-3 flex gap-2 justify-center">
-                    <Button 
-                      variant="primary" 
-                      onClick={() => handleUpdateStatus(app.id, 'ACCEPTED')} 
-                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
-                      disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
-                    >
-                      Duyệt
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleUpdateStatus(app.id, 'REJECTED')} 
-                      className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 text-xs rounded"
-                      disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
-                    >
-                      Loại
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {isLoadingJobs ? (
+        <div className="py-10 text-center text-gray-500">Đang tải dữ liệu chiến dịch...</div>
+      ) : jobs.length === 0 ? (
+        <div className="py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+          <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">Bạn chưa đăng tin tuyển dụng nào.</p>
+        </div>
+      ) : (
+        <>
+          {/* TABS CÔNG VIỆC */}
+          <div className="flex overflow-x-auto border-b border-gray-200 mb-6 custom-scrollbar">
+            <div className="flex gap-2 pb-2">
+              {jobs.map(job => (
+                <button
+                  key={job.id}
+                  onClick={() => setActiveJobId(job.id)}
+                  className={`px-5 py-2.5 font-medium text-sm whitespace-nowrap rounded-lg transition-all duration-200 ${
+                    activeJobId === job.id 
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm' 
+                      : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  {job.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* KHU VỰC DANH SÁCH ỨNG VIÊN */}
+          <div className="bg-gray-50/50 rounded-xl border border-gray-100 p-1">
+            <div className="px-5 py-4 flex justify-between items-center border-b border-gray-200 bg-white rounded-t-lg">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                Danh sách hồ sơ
+                <span className="bg-indigo-100 text-indigo-700 py-0.5 px-2.5 rounded-full text-xs">
+                  {applications.length} ứng viên
+                </span>
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto bg-white rounded-b-lg">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-gray-50/80 border-b border-gray-100">
+                    <th className="p-4 font-bold text-gray-600 w-1/3">Ứng viên</th>
+                    <th className="p-4 font-bold text-gray-600">Ngày nộp</th>
+                    <th className="p-4 font-bold text-gray-600 text-center">Trạng thái</th>
+                    <th className="p-4 font-bold text-gray-600 text-right">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {isLoadingApps ? (
+                    <tr>
+                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                        <Clock className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-300" />
+                        Đang tải danh sách hồ sơ...
+                      </td>
+                    </tr>
+                  ) : applications.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                        Chưa có ứng viên nào nộp hồ sơ cho vị trí này.
+                      </td>
+                    </tr>
+                  ) : (
+                    applications.map((app) => (
+                      <tr key={app.id} className="hover:bg-indigo-50/30 transition-colors">
+                        <td className="p-4">
+                          <div className="font-bold text-gray-900">
+                            {/* Hiển thị Tên Ứng viên */}
+                            {app.candidateName || `Ứng viên ID: ${app.candidateId}`}
+                          </div>
+                          {app.cvFileName && (
+                            <div className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium">
+                              <FileText className="w-3 h-3" /> {app.cvFileName}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-gray-500 font-medium">
+                          {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : 'Vừa mới nộp'}
+                        </td>
+                        <td className="p-4 text-center">
+                          {getStatusBadge(app.status)}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            {/* NÚT XEM CHI TIẾT */}
+                            <Button 
+                              variant="outline" 
+                              onClick={() => navigate(`/employer/applications/${app.id}`)}
+                              className="px-3 py-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 text-xs rounded-md flex items-center gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Chi tiết
+                            </Button>
+
+                            <Button 
+                              variant="primary" 
+                              onClick={() => handleUpdateStatus(app.id, 'ACCEPTED')} 
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-md shadow-sm flex items-center gap-1"
+                              disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" /> Duyệt
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => handleUpdateStatus(app.id, 'REJECTED')} 
+                              className="px-3 py-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 text-xs rounded-md flex items-center gap-1"
+                              disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Loại
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      `}} />
     </div>
   );
 }

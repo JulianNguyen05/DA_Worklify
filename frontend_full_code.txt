@@ -203,38 +203,37 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
   // Không hiển thị thanh phân trang nếu chỉ có 1 hoặc 0 trang
   if (totalPages <= 1) return null;
 
-  const renderPageNumbers = () => {
+  // Thuật toán tạo danh sách trang thông minh (Có dấu ...)
+  const getPageNumbers = () => {
     const pages = [];
-    for (let i = 0; i < totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => onPageChange(i)}
-          className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
-            currentPage === i
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          {i + 1}
-        </button>
-      );
+    if (totalPages <= 7) {
+      // Nếu tổng số trang ít, hiển thị tất cả
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Nếu nhiều trang, xử lý rút gọn bằng '...'
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
     }
     return pages;
   };
 
   return (
-    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 px-2">
-      <div className="text-sm text-gray-500">
-        Trang <span className="font-semibold text-gray-700">{currentPage + 1}</span> trên <span className="font-semibold text-gray-700">{totalPages}</span>
-      </div>
-      
+    // Bỏ text thừa, căn giữa thanh phân trang cho đẹp mắt
+    <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100">
       <div className="flex items-center gap-1.5">
-        {/* Nút lùi trang */}
+        
+        {/* Nút Lùi (Prev) */}
         <button
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 0}
-          className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+          disabled={currentPage === 1} // Đã fix logic: Trang đầu tiên là 1
+          className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer disabled:cursor-not-allowed"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -242,18 +241,35 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         </button>
         
         {/* Danh sách số trang */}
-        {renderPageNumbers()}
+        {getPageNumbers().map((page, index) => (
+          page === '...' ? (
+            <span key={`dots-${index}`} className="px-2 text-gray-400 font-medium">...</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => onPageChange(page)}
+              className={`min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-all ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white shadow-md cursor-default'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 cursor-pointer'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        ))}
 
-        {/* Nút tiến trang */}
+        {/* Nút Tiến (Next) */}
         <button
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages - 1}
-          className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-colors"
+          disabled={currentPage === totalPages}
+          className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer disabled:cursor-not-allowed"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
+        
       </div>
     </div>
   );
@@ -1598,47 +1614,82 @@ export const SkillEditorPanel = ({
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Building2, MapPin, DollarSign, Clock } from 'lucide-react';
 import Button from '../../common/Button';
 
 export default function JobCard({ job }) {
+  // 1. Xử lý đồng bộ key JSON
+  const actualCompanyName = job.companyName || job.company_name;
+  const actualCompanyId = job.companyId || job.company_id;
+  const actualLogoUrl = job.logoUrl || job.logo_url;
+  const actualSalaryRange = job.salaryRange || job.salary_range;
+  const actualCreatedAt = job.createdAt || job.created_at;
+
+  const displayName = actualCompanyName || `Công ty ID: ${actualCompanyId}`;
+
+  // 2. Xử lý URL Logo an toàn tuyệt đối (Đã nâng cấp)
+  let displayLogo = null;
+  if (actualLogoUrl) {
+    // Nếu URL đã có sẵn http thì giữ nguyên, nếu chưa có thì mới nối thêm localhost:8080
+    displayLogo = actualLogoUrl.startsWith('http') 
+      ? actualLogoUrl 
+      : `http://localhost:8080${actualLogoUrl.startsWith('/') ? '' : '/'}${actualLogoUrl}`;
+  }
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group">
       
-      <div className="flex items-start gap-4">
-        {/* Khung hiển thị Logo công ty */}
-        <div className="w-16 h-16 bg-white border border-gray-200 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
-          {job.logoUrl ? (
-            <img src={`http://localhost:8080${job.logoUrl}`} alt="Logo" className="w-full h-full object-contain p-1" />
+      <div className="flex items-start gap-5">
+        {/* KHUNG HIỂN THỊ LOGO */}
+        <div className="w-16 h-16 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
+          {displayLogo ? (
+            <img 
+              src={displayLogo} 
+              alt={displayName} 
+              className="w-full h-full object-contain p-1 bg-white" 
+              // Bắt lỗi: Nếu load ảnh thất bại, thay bằng ảnh placeholder
+              onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src = 'https://via.placeholder.com/150?text=Logo'; 
+              }}
+            />
           ) : (
-            <span className="text-xs text-gray-400 font-medium">No Logo</span>
+            <Building2 className="w-8 h-8 text-gray-300" />
           )}
         </div>
 
-        {/* Thông tin chính của công việc */}
+        {/* THÔNG TIN CÔNG VIỆC & CÔNG TY */}
         <div>
           <Link to={`/jobs/${job.id}`}>
-            <h3 className="text-lg font-bold text-blue-700 hover:text-blue-800 hover:underline transition-colors">
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
               {job.title}
             </h3>
           </Link>
           
-          {/* Lưu ý: Tạm thời hiển thị companyId, tôi sẽ hướng dẫn bạn hiển thị Tên công ty ở phần dưới */}
-          <p className="text-gray-600 font-medium mt-1">
-            {job.companyName || `Công ty ID: ${job.companyId}`}
+          <p className="text-gray-600 font-medium mt-1 text-sm flex items-center gap-2">
+            {displayName}
           </p>
           
-          <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
-            <span className="flex items-center gap-1">📍 {job.location}</span>
-            <span className="flex items-center gap-1 font-medium text-green-600">💰 {job.salaryRange || 'Thỏa thuận'}</span>
-            <span className="flex items-center gap-1">🕒 {new Date(job.createdAt).toLocaleDateString('vi-VN')}</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-sm text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-gray-400" /> 
+              {job.location || 'Chưa cập nhật'}
+            </span>
+            <span className="flex items-center gap-1.5 font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+              <DollarSign className="w-4 h-4 text-emerald-500" /> 
+              {actualSalaryRange || 'Thỏa thuận'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-gray-400" /> 
+              {actualCreatedAt ? new Date(actualCreatedAt).toLocaleDateString('vi-VN') : 'Mới nhất'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Nút hành động */}
-      <div className="w-full md:w-auto mt-4 md:mt-0">
+      <div className="w-full md:w-auto mt-4 md:mt-0 shrink-0">
         <Link to={`/jobs/${job.id}`} className="block w-full">
-          <Button variant="outline" className="w-full md:w-auto border-blue-600 text-blue-600 hover:bg-blue-50">
+          <Button variant="outline" className="w-full md:w-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-600 transition-all">
             Xem chi tiết
           </Button>
         </Link>
@@ -2037,7 +2088,12 @@ const jobService = {
     const response = await axiosClient.get(`/jobs/${jobId}`);
     return response.data;
   },
-  
+
+  getPublicJobsByCompany: async (companyId, page = 0, size = 10) => {
+    const response = await axiosClient.get(`/jobs/public/employers/${companyId}?page=${page}&size=${size}`);
+    return response.data;
+  },
+
   // Xem hồ sơ doanh nghiệp (Public)
   getCompanyProfile: async (companyId) => {
     // Đã xóa tiền tố /api/v1
@@ -2204,6 +2260,7 @@ export default function CategoryManagementPage() {
 // ==========================================================================
 
 import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Eye, Building2, Globe, FileText, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import adminService from '../../../features/admin/adminService';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
@@ -2247,11 +2304,11 @@ export default function CompanyModerationPage() {
   const handleApprove = async (companyId) => {
     try {
       await adminService.moderateCompany(companyId, 'APPROVED');
-      setStatusMsg({ type: 'success', message: 'Đã duyệt hồ sơ doanh nghiệp.' });
+      setStatusMsg({ type: 'success', message: 'Đã duyệt hồ sơ doanh nghiệp thành công.' });
       setCompanies(companies.filter(c => c.id !== companyId));
-      setIsDetailModalOpen(false); // Đóng modal chi tiết
+      setIsDetailModalOpen(false);
     } catch (err) {
-      setStatusMsg({ type: 'error', message: 'Thao tác thất bại.' });
+      setStatusMsg({ type: 'error', message: 'Thao tác thất bại. Vui lòng thử lại.' });
     }
   };
 
@@ -2262,7 +2319,7 @@ export default function CompanyModerationPage() {
 
   const handleConfirmReject = async () => {
     if (!rejectReason.trim()) {
-      setStatusMsg({ type: 'error', message: 'Vui lòng nhập lý do từ chối.' });
+      setStatusMsg({ type: 'error', message: 'Vui lòng nhập lý do từ chối để thông báo cho doanh nghiệp.' });
       return;
     }
     
@@ -2270,23 +2327,50 @@ export default function CompanyModerationPage() {
       await adminService.moderateCompany(selectedCompany.id, 'REJECTED', rejectReason);
       setStatusMsg({ type: 'success', message: 'Đã từ chối hồ sơ doanh nghiệp.' });
       setCompanies(companies.filter(c => c.id !== selectedCompany.id));
-      setIsRejectModalOpen(false); // Đóng modal từ chối
-      setIsDetailModalOpen(false); // Đóng luôn modal chi tiết
+      setIsRejectModalOpen(false); 
+      setIsDetailModalOpen(false); 
     } catch (err) {
       setStatusMsg({ type: 'error', message: 'Thao tác thất bại.' });
     }
   };
 
   const columns = [
-    { header: 'Tên doanh nghiệp', accessor: 'companyName', render: (row) => <span className="font-medium text-gray-800">{row.companyName}</span> },
-    { header: 'Website', accessor: 'website', render: (row) => <a href={row.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{row.website || 'N/A'}</a> },
+    { 
+      header: 'Doanh nghiệp', 
+      accessor: 'companyName', 
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+            {row.logoUrl ? (
+              <img src={`http://localhost:8080${row.logoUrl}`} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Building2 className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+          <span className="font-semibold text-gray-900">{row.companyName}</span>
+        </div>
+      ) 
+    },
+    { 
+      header: 'Website', 
+      accessor: 'website', 
+      render: (row) => row.website ? (
+        <a href={row.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors font-medium">
+          <Globe className="w-4 h-4" />
+          {row.website.replace(/^https?:\/\//, '')}
+        </a>
+      ) : (
+        <span className="text-gray-400 italic">Chưa cập nhật</span>
+      )
+    },
     { 
       header: 'Hành động', 
-      className: 'text-center',
+      className: 'text-center w-32',
       render: (row) => (
-        <div className="flex gap-2 justify-center">
-          <Button variant="outline" onClick={() => handleViewDetails(row)} className="px-3 py-1 border-blue-600 text-blue-600 hover:bg-blue-50">
-            Xem chi tiết
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => handleViewDetails(row)} className="flex items-center gap-2 px-3 py-1.5 text-sm border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all">
+            <Eye className="w-4 h-4" />
+            Chi tiết
           </Button>
         </div>
       )
@@ -2294,47 +2378,88 @@ export default function CompanyModerationPage() {
   ];
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">Kiểm duyệt Hồ sơ Doanh nghiệp</h2>
+    <div className="max-w-6xl mx-auto pb-10">
       
-      {statusMsg.type && <div className="mb-4"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
+      {/* Header Section */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-2">
+          <ShieldCheck className="w-7 h-7 text-blue-600" />
+          Kiểm Duyệt Doanh Nghiệp
+        </h1>
+        <p className="text-gray-500 text-sm">Quản lý và phê duyệt hồ sơ đăng ký từ các nhà tuyển dụng mới trên hệ thống.</p>
+      </div>
+      
+      {statusMsg.type && (
+        <div className="mb-6">
+          <Toast type={statusMsg.type} message={statusMsg.message} />
+        </div>
+      )}
 
-      <Table 
-        columns={columns} 
-        data={companies} 
-        isLoading={isLoading} 
-        emptyMessage="Không có hồ sơ doanh nghiệp nào chờ duyệt." 
-      />
+      {/* Main Table Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <Table 
+          columns={columns} 
+          data={companies} 
+          isLoading={isLoading} 
+          emptyMessage={
+            <div className="py-12 flex flex-col items-center justify-center text-gray-500">
+              <ShieldCheck className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="text-lg font-medium text-gray-600">Không có hồ sơ chờ duyệt</p>
+              <p className="text-sm">Tất cả hồ sơ doanh nghiệp đã được xử lý.</p>
+            </div>
+          } 
+        />
+      </div>
 
       {/* --- MODAL 1: XEM CHI TIẾT --- */}
-      <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title="Chi tiết hồ sơ doanh nghiệp">
+      <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title="Chi tiết hồ sơ đăng ký">
         {selectedCompany && (
-          <div className="flex flex-col gap-4 text-sm text-gray-700">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-16 h-16 bg-gray-100 border rounded flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col gap-6">
+            
+            {/* Header Modal - Thông tin cơ bản */}
+            <div className="flex items-start gap-5">
+              <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                 {selectedCompany.logoUrl ? (
-                  <img src={`http://localhost:8080${selectedCompany.logoUrl}`} alt="Logo" className="w-full h-full object-contain" />
+                  <img src={`http://localhost:8080${selectedCompany.logoUrl}`} alt="Logo" className="w-full h-full object-contain p-1" />
                 ) : (
-                  <span className="text-xs text-gray-400">No Logo</span>
+                  <Building2 className="w-8 h-8 text-gray-300" />
                 )}
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">{selectedCompany.companyName}</h3>
-                <p>Website: <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="text-blue-600">{selectedCompany.website || 'Không có'}</a></p>
+              <div className="flex-1 pt-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{selectedCompany.companyName}</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Globe className="w-4 h-4" />
+                  {selectedCompany.website ? (
+                    <a href={selectedCompany.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                      {selectedCompany.website}
+                    </a>
+                  ) : (
+                    <span className="italic text-gray-400">Không có website</span>
+                  )}
+                </div>
               </div>
             </div>
             
-            <div className="bg-gray-50 p-3 rounded border">
-              <span className="font-semibold block mb-1">Giới thiệu công ty:</span>
-              <p className="whitespace-pre-wrap">{selectedCompany.description || 'Doanh nghiệp chưa cập nhật phần giới thiệu.'}</p>
+            {/* Phân thân Modal - Giới thiệu */}
+            <div>
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wider">
+                <FileText className="w-4 h-4 text-gray-500" />
+                Giới thiệu công ty
+              </h4>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+                {selectedCompany.description || <span className="italic text-gray-400">Doanh nghiệp chưa cập nhật phần giới thiệu chi tiết.</span>}
+              </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-4 border-t pt-4">
-              <Button variant="outline" onClick={handleOpenRejectModal} className="text-red-600 border-red-600 hover:bg-red-50">
+            {/* Footer Modal - Hành động */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-2">
+              <Button variant="outline" onClick={handleOpenRejectModal} className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                <XCircle className="w-4 h-4" />
                 Từ chối hồ sơ
               </Button>
-              <Button variant="primary" onClick={() => handleApprove(selectedCompany.id)}>
-                Duyệt hồ sơ
+              <Button onClick={() => handleApprove(selectedCompany.id)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                <CheckCircle className="w-4 h-4" />
+                Duyệt & Kích hoạt
               </Button>
             </div>
           </div>
@@ -2342,21 +2467,35 @@ export default function CompanyModerationPage() {
       </Modal>
 
       {/* --- MODAL 2: NHẬP LÝ DO TỪ CHỐI --- */}
-      <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Lý do từ chối">
-        <div className="flex flex-col gap-4">
-          <textarea
-            className="w-full border rounded p-2 text-sm focus:outline-none focus:ring focus:border-blue-300"
-            rows="4"
-            placeholder="Nhập lý do vi phạm hoặc yêu cầu chỉnh sửa gửi đến nhà tuyển dụng..."
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-          ></textarea>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsRejectModalOpen(false)}>Hủy</Button>
-            <Button variant="primary" onClick={handleConfirmReject} className="bg-red-600 hover:bg-red-700 text-white">Xác nhận từ chối</Button>
+      <Modal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} title="Từ chối hồ sơ">
+        <div className="flex flex-col gap-5">
+          
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg flex gap-3 text-sm border border-red-100">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <p>Hành động này sẽ gửi thông báo yêu cầu doanh nghiệp <strong>{selectedCompany?.companyName}</strong> cập nhật lại thông tin. Vui lòng ghi rõ lý do.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Lý do từ chối (Bắt buộc)</label>
+            <textarea
+              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-colors"
+              rows="4"
+              placeholder="Ví dụ: Tên công ty không hợp lệ, hình ảnh logo vi phạm bản quyền..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              autoFocus
+            ></textarea>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <Button variant="outline" onClick={() => setIsRejectModalOpen(false)}>Hủy bỏ</Button>
+            <Button onClick={handleConfirmReject} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
+              Xác nhận từ chối
+            </Button>
           </div>
         </div>
       </Modal>
+
     </div>
   );
 }
@@ -3906,6 +4045,10 @@ const DashboardPage = () => {
         const jobs = jobsRes.status === 'fulfilled' ? jobsRes.value?.data : { content: [], totalElements: 0 };
         const companies = companiesRes.status === 'fulfilled' ? companiesRes.value?.data : { content: [], totalElements: 0 };
 
+        const sortedCompanies = (companies?.content || []).sort((a, b) => 
+            (b.likeCount || 0) - (a.likeCount || 0)
+        );
+
         setData({
           user: currentUser,
           stats: {
@@ -3915,7 +4058,7 @@ const DashboardPage = () => {
             companyCount: companies?.totalElements || 0,
           },
           latestJobs: jobs?.content || [],
-          topCompanies: companies?.content || []
+          topCompanies: sortedCompanies // Sử dụng mảng đã được sắp xếp
         });
 
       } catch (err) {
@@ -4036,7 +4179,7 @@ const DashboardPage = () => {
           <div className="divide-y divide-gray-100">
             {data.topCompanies.length > 0 ? (
               data.topCompanies.map(company => (
-                <Link key={company.id} to={`/companies/${company.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
+                <Link key={company.id} to={`/companies/${company.userId}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {company.logoUrl ? (
                       <img src={`http://localhost:8080${company.logoUrl}`} alt={company.companyName} className="w-full h-full object-cover" />
@@ -4111,148 +4254,448 @@ export default DashboardPage;
 // File: frontend-app/src/pages/candidate/MyApplicationsPage/index.jsx
 // ==========================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import candidateService from '../../../features/candidate/candidateService';
-import authService from '../../../features/auth/authService'; // 1. BỔ SUNG: Import authService (Hãy điều chỉnh lại đường dẫn cho đúng với dự án của bạn)
-import Table from '../../../components/common/Table'; 
-import SearchBar from '../../../components/common/SearchBar';
+import authService from '../../../features/auth/authService';
 import Pagination from '../../../components/common/Pagination';
-import ApplicationStatusBadge from '../../../components/shared/ApplicationStatusBadge';
+import {
+  Briefcase, Building2, Calendar, FileText,
+  ChevronRight, Search, Clock, CheckCircle2,
+  XCircle, Eye, Users, Filter, SlidersHorizontal,
+  ArrowUpRight, Inbox
+} from 'lucide-react';
 
-const MyApplicationsPage = () => {
-  // 2. CẬP NHẬT: Lấy thông tin user động từ localStorage thay vì hardcode số 1
-  const user = authService.getCurrentUser();
-  const userId = user?.id || user?.userId; // Lấy trường định danh (id hoặc userId tùy theo cấu trúc Backend trả về lúc login)
-  
-  // States quản lý dữ liệu và phân trang
-  const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(5); // Số lượng bản ghi trên một trang
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-  // States quản lý tìm kiếm
-  const [searchText, setSearchText] = useState("");
-  const [filteredData, setFilteredData] = useState([]);
+const STATUS_CONFIG = {
+  PENDING: {
+    label: 'Chờ phản hồi',
+    color: 'amber',
+    icon: Clock,
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#F59E0B',
+  },
+  REVIEWED: {
+    label: 'Đã xem',
+    color: 'blue',
+    icon: Eye,
+    bg: '#DBEAFE',
+    text: '#1E40AF',
+    dot: '#3B82F6',
+  },
+  INTERVIEW_SCHEDULED: {
+    label: 'Phỏng vấn',
+    color: 'purple',
+    icon: Users,
+    bg: '#EDE9FE',
+    text: '#5B21B6',
+    dot: '#7C3AED',
+  },
+  ACCEPTED: {
+    label: 'Trúng tuyển',
+    color: 'green',
+    icon: CheckCircle2,
+    bg: '#D1FAE5',
+    text: '#065F46',
+    dot: '#10B981',
+  },
+  REJECTED: {
+    label: 'Từ chối',
+    color: 'red',
+    icon: XCircle,
+    bg: '#FEE2E2',
+    text: '#991B1B',
+    dot: '#EF4444',
+  },
+};
 
-  // Gọi API tải danh sách từ Backend
-  useEffect(() => {
-    // 3. BỔ SUNG: Phòng vệ nếu chưa đăng nhập hoặc chưa load xong thông tin user để tránh gọi API lỗi
-    if (!userId) {
-      setIsLoading(false);
-      return;
-    }
+const STATUS_TABS = [
+  { key: 'ALL', label: 'Tất cả' },
+  ...Object.entries(STATUS_CONFIG).map(([key, val]) => ({ key, label: val.label })),
+];
 
-    const fetchApplications = async () => {
-      setIsLoading(true);
-      try {
-        const res = await candidateService.getMyApplications(userId, currentPage, pageSize);
-        // Map theo cấu trúc PageResponse chuẩn của Spring Boot
-        setApplications(res.data.content || []);
-        setFilteredData(res.data.content || []);
-        setTotalPages(res.data.totalPages || 0);
-      } catch (error) {
-        console.error("Lỗi khi tải danh sách đơn ứng tuyển:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchApplications();
-  }, [userId, currentPage, pageSize]);
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
-  // Xử lý tìm kiếm Local Client-side
-  const handleSearch = (term) => {
-    if (!term.trim()) {
-      setFilteredData(applications);
-    } else {
-      const lowerTerm = term.toLowerCase();
-      const filtered = applications.filter(app => 
-        app.jobTitle?.toLowerCase().includes(lowerTerm) || 
-        app.companyName?.toLowerCase().includes(lowerTerm)
-      );
-      setFilteredData(filtered);
-    }
-  };
+const StatusBadge = ({ status }) => {
+  const cfg = STATUS_CONFIG[status];
+  if (!cfg) return null;
+  const Icon = cfg.icon;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+      background: cfg.bg, color: cfg.text, whiteSpace: 'nowrap',
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
+    </span>
+  );
+};
 
-  // Định nghĩa các cột cho Component Table dùng chung
-  const columns = [
-    {
-      header: 'Vị trí công việc',
-      render: (row) => (
-        <span className="font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors">
-          {row.jobTitle}
-        </span>
-      )
-    },
-    {
-      header: 'Công ty',
-      accessor: 'companyName',
-    },
-    {
-      header: 'Ngày nộp',
-      render: (row) => new Date(row.appliedAt).toLocaleDateString('vi-VN')
-    },
-    {
-      header: 'Trạng thái ứng tuyển',
-      className: 'text-center',
-      render: (row) => (
-        <div className="text-center">
-          <ApplicationStatusBadge status={row.status} />
-        </div>
-      )
-    }
-  ];
+const CompanyAvatar = ({ logo, name, size = 52 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = name ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
 
-  // Giao diện xử lý nếu người dùng chưa đăng nhập
-  if (!userId && !isLoading) {
+  if (logo && !imgError) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center py-12">
-        <p className="text-gray-500 text-sm">Vui lòng đăng nhập để xem lịch sử ứng tuyển của bạn.</p>
+      <div style={{
+        width: size, height: size, borderRadius: 12, overflow: 'hidden',
+        border: '1px solid #E5E7EB', flexShrink: 0, background: '#F9FAFB',
+      }}>
+        <img
+          src={logo} alt={name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setImgError(true)}
+        />
       </div>
     );
   }
 
+  const colors = ['#EDE9FE', '#DBEAFE', '#D1FAE5', '#FEF3C7', '#FCE7F3'];
+  const textColors = ['#5B21B6', '#1E40AF', '#065F46', '#92400E', '#9D174D'];
+  const idx = name ? name.charCodeAt(0) % colors.length : 0;
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      {/* Tiêu đề & Thanh tìm kiếm */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Lịch sử ứng tuyển</h2>
-          <p className="text-xs text-gray-500 mt-1">Theo dõi trạng thái các hồ sơ vị trí bạn đã nộp</p>
+    <div style={{
+      width: size, height: size, borderRadius: 12, flexShrink: 0,
+      background: colors[idx], color: textColors[idx],
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 15, fontWeight: 700, letterSpacing: 1,
+      border: `1px solid ${colors[idx]}`,
+    }}>
+      {initials}
+    </div>
+  );
+};
+
+const SkeletonCard = () => (
+  <div style={{
+    background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
+    padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center',
+  }}>
+    <div style={{ width: 52, height: 52, borderRadius: 12, background: '#F3F4F6', flexShrink: 0 }} />
+    <div style={{ flex: 1 }}>
+      <div style={{ height: 16, borderRadius: 8, background: '#F3F4F6', width: '40%', marginBottom: 10 }} />
+      <div style={{ height: 13, borderRadius: 8, background: '#F3F4F6', width: '25%' }} />
+    </div>
+    <div style={{ height: 26, borderRadius: 20, background: '#F3F4F6', width: 90 }} />
+  </div>
+);
+
+const EmptyState = ({ isFiltered }) => (
+  <div style={{
+    background: '#fff', borderRadius: 16, border: '1px dashed #E5E7EB',
+    padding: '64px 24px', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 12, textAlign: 'center',
+  }}>
+    <div style={{
+      width: 64, height: 64, borderRadius: 16, background: '#F9FAFB',
+      border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Inbox size={28} color="#9CA3AF" />
+    </div>
+    <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#111827' }}>
+      {isFiltered ? 'Không tìm thấy kết quả' : 'Chưa có đơn ứng tuyển'}
+    </p>
+    <p style={{ margin: 0, fontSize: 13, color: '#6B7280', maxWidth: 320, lineHeight: 1.6 }}>
+      {isFiltered
+        ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem thêm kết quả.'
+        : 'Hãy khám phá các cơ hội việc làm và nộp đơn ứng tuyển ngay hôm nay!'}
+    </p>
+  </div>
+);
+
+const StatsBar = ({ applications }) => {
+  const counts = Object.keys(STATUS_CONFIG).reduce((acc, key) => {
+    acc[key] = applications.filter(a => a.status === key).length;
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+        <div key={key} style={{
+          background: '#fff', borderRadius: 12, border: '1px solid #F3F4F6',
+          padding: '12px 14px',
+        }}>
+          <p style={{ margin: '0 0 4px', fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+            {cfg.label}
+          </p>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: cfg.text }}>
+            {counts[key] || 0}
+          </p>
         </div>
-        <SearchBar 
-          value={searchText} 
-          onChange={(val) => {
-            setSearchText(val);
-            handleSearch(val); 
-          }} 
-          onSearch={handleSearch} 
-          placeholder="Tìm vị trí hoặc công ty..."
-        />
+      ))}
+    </div>
+  );
+};
+
+// ─── ApplicationCard ───────────────────────────────────────────────────────────
+
+const ApplicationCard = ({ app }) => {
+  const [hovered, setHovered] = useState(false);
+
+  const formattedDate = app.appliedAt
+    ? new Date(app.appliedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '—';
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: '#fff',
+        borderRadius: 16,
+        border: `1px solid ${hovered ? '#D1D5DB' : '#F3F4F6'}`,
+        padding: '18px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.06)' : 'none',
+        cursor: 'default',
+      }}
+    >
+      <CompanyAvatar logo={app.companyLogo} name={app.companyName} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{
+          margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#111827',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {app.jobTitle || 'Vị trí không xác định'}
+        </h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#374151', fontWeight: 500 }}>
+            <Building2 size={13} color="#9CA3AF" />
+            {app.companyName || 'Công ty'}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#6B7280' }}>
+            <Calendar size={13} color="#9CA3AF" />
+            {formattedDate}
+          </span>
+          {app.cvFileName && (
+            <span style={{
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
+              color: '#3B82F6', background: '#EFF6FF', padding: '2px 8px',
+              borderRadius: 6, fontWeight: 500,
+            }}>
+              <FileText size={11} />
+              {app.cvFileName}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Component Table dùng chung */}
-      <Table 
-        columns={columns} 
-        data={filteredData} 
-        isLoading={isLoading} 
-        emptyMessage="Bạn chưa nộp đơn ứng tuyển cho công việc nào hoặc không tìm thấy kết quả phù hợp."
-      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <StatusBadge status={app.status} />
+        <button
+          onClick={() => window.location.href = `/jobs/${app.jobId}`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 13, fontWeight: 500,
+            color: hovered ? '#2563EB' : '#9CA3AF',
+            transition: 'color 0.15s', padding: '4px 0',
+          }}
+          title="Xem chi tiết công việc"
+        >
+          <ArrowUpRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
-      {/* Component Phân trang */}
-      {!isLoading && totalPages > 0 && (
-        <Pagination 
-          currentPage={currentPage} 
-          totalPages={totalPages} 
-          onPageChange={(newPage) => setCurrentPage(newPage)} 
-        />
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
+const MyApplicationsPage = () => {
+  const user = authService.getCurrentUser();
+  const userId = user?.id || user?.userId;
+
+  const [applications, setApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE = 8;
+
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [filteredData, setFilteredData] = useState([]);
+
+  // ── Fetch ──
+  const fetchApplications = useCallback(async () => {
+    if (!userId) { setIsLoading(false); return; }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await candidateService.getMyApplications(userId, currentPage, PAGE_SIZE);
+      const data = res.data?.content || [];
+      setApplications(data);
+      setTotalPages(res.data?.totalPages || 0);
+    } catch (err) {
+      setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, currentPage]);
+
+  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+  // ── Filter ──
+  useEffect(() => {
+    let result = applications;
+    if (statusFilter !== 'ALL') result = result.filter(a => a.status === statusFilter);
+    if (searchText.trim()) {
+      const term = searchText.toLowerCase();
+      result = result.filter(a =>
+        a.jobTitle?.toLowerCase().includes(term) ||
+        a.companyName?.toLowerCase().includes(term)
+      );
+    }
+    setFilteredData(result);
+  }, [searchText, statusFilter, applications]);
+
+  // ── Guard ──
+  if (!userId && !isLoading) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', background: '#fff', borderRadius: 20,
+        border: '1px solid #F3F4F6', minHeight: 360, gap: 12, padding: 32,
+      }}>
+        <Briefcase size={40} color="#D1D5DB" />
+        <p style={{ margin: 0, fontWeight: 600, fontSize: 16, color: '#111827' }}>Bạn chưa đăng nhập</p>
+        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>Vui lòng đăng nhập để theo dõi hành trình ứng tuyển.</p>
+      </div>
+    );
+  }
+
+  const isFiltered = statusFilter !== 'ALL' || searchText.trim() !== '';
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ── Header ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111827' }}>
+            Lịch sử ứng tuyển
+          </h1>
+          {!isLoading && (
+            <span style={{ fontSize: 13, color: '#6B7280' }}>
+              {filteredData.length} kết quả
+            </span>
+          )}
+        </div>
+        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>
+          Theo dõi tiến trình và trạng thái các đơn ứng tuyển của bạn
+        </p>
+      </div>
+
+      {/* ── Stats Bar ── */}
+      {!isLoading && applications.length > 0 && <StatsBar applications={applications} />}
+
+      {/* ── Filters ── */}
+      <div style={{
+        background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
+        padding: '16px 20px', display: 'flex', flexWrap: 'wrap',
+        gap: 12, alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        {/* Status Tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {STATUS_TABS.map(tab => {
+            const active = statusFilter === tab.key;
+            const cfg = STATUS_CONFIG[tab.key];
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                style={{
+                  padding: '6px 14px', borderRadius: 8, fontSize: 13,
+                  fontWeight: active ? 600 : 500, cursor: 'pointer', transition: 'all 0.15s',
+                  border: active ? `1.5px solid ${cfg?.dot || '#2563EB'}` : '1.5px solid transparent',
+                  background: active ? (cfg?.bg || '#EFF6FF') : '#F9FAFB',
+                  color: active ? (cfg?.text || '#1D4ED8') : '#4B5563',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', width: 260 }}>
+          <Search size={14} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Tìm công ty, vị trí..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+              border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13,
+              outline: 'none', color: '#111827', background: '#F9FAFB',
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={e => e.target.style.borderColor = '#3B82F6'}
+            onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+          />
+        </div>
+      </div>
+
+      {/* ── Error ── */}
+      {error && (
+        <div style={{
+          background: '#FEF2F2', border: '1px solid #FECACA',
+          borderRadius: 12, padding: '12px 16px', color: '#B91C1C', fontSize: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span>{error}</span>
+          <button
+            onClick={fetchApplications}
+            style={{
+              background: '#FEE2E2', border: 'none', cursor: 'pointer',
+              color: '#B91C1C', fontSize: 12, fontWeight: 600,
+              padding: '4px 10px', borderRadius: 6,
+            }}
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {/* ── List ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {isLoading
+          ? [1, 2, 3, 4].map(i => <SkeletonCard key={i} />)
+          : filteredData.length > 0
+            ? filteredData.map(app => <ApplicationCard key={app.id} app={app} />)
+            : <EmptyState isFiltered={isFiltered} />
+        }
+      </div>
+
+      {/* ── Pagination ── */}
+      {!isLoading && totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       )}
     </div>
   );
 };
 
 export default MyApplicationsPage;
+
 
 
 // ==========================================================================
@@ -4964,6 +5407,7 @@ export default function CandidateSearchPage() {
 // ==========================================================================
 
 import React, { useState, useEffect } from 'react';
+import { Building2, Globe, FileText, Camera, CheckCircle, AlertCircle, Clock, Edit2, X } from 'lucide-react';
 import employerService from '../../../features/employer/employerService';
 import authService from '../../../features/auth/authService';
 import Input from '../../../components/common/Input';
@@ -4973,22 +5417,19 @@ import Toast from '../../../components/common/Toast';
 export default function CompanyProfilePage() {
   const [userId, setUserId] = useState(null);
   
-  // State phân biệt hồ sơ đã tồn tại hay chưa
+  // Trạng thái Form & Dữ liệu
   const [isUpdateMode, setIsUpdateMode] = useState(false);
-  
-  // State điều khiển chế độ Xem (View) hay Sửa (Edit)
   const [isEditing, setIsEditing] = useState(false);
-
-  // State lưu dữ liệu form và dữ liệu gốc để so sánh
   const [formData, setFormData] = useState({ companyName: '', website: '', description: '' });
   const [originalData, setOriginalData] = useState({ companyName: '', website: '', description: '' });
-  
   const [verificationStatus, setVerificationStatus] = useState(null);
 
+  // Xử lý Logo
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [originalLogo, setOriginalLogo] = useState(null);
 
+  // Trạng thái UI
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
@@ -5011,7 +5452,7 @@ export default function CompanyProfilePage() {
         };
         
         setFormData(fetchedData);
-        setOriginalData(fetchedData); // Lưu lại bản gốc để đối chiếu
+        setOriginalData(fetchedData);
         setVerificationStatus(res.data.verificationStatus);
 
         if (res.data.logoUrl) {
@@ -5021,12 +5462,11 @@ export default function CompanyProfilePage() {
         }
         
         setIsUpdateMode(true); 
-        setIsEditing(false); // Có data rồi thì mặc định là chế độ Xem
+        setIsEditing(false);
       }
     } catch (error) {
-      console.log("Chưa có hồ sơ, ở chế độ Tạo mới");
       setIsUpdateMode(false);
-      setIsEditing(true); // Chưa có data thì bắt buộc mở Form để tạo
+      setIsEditing(true); // Bắt buộc nhập nếu chưa có hồ sơ
     }
   };
 
@@ -5041,7 +5481,6 @@ export default function CompanyProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    // Hủy sửa thì khôi phục lại dữ liệu gốc
     setFormData(originalData);
     setLogoPreview(originalLogo);
     setLogoFile(null);
@@ -5065,156 +5504,187 @@ export default function CompanyProfilePage() {
         await employerService.uploadLogo(userId, logoFile);
       }
 
-      setStatusMsg({ type: 'success', message: 'Cập nhật hồ sơ thành công. Đang chờ Admin kiểm duyệt!' });
-      
-      // Load lại profile để lấy trạng thái PENDING mới nhất
+      setStatusMsg({ type: 'success', message: 'Hồ sơ đã được lưu! Đang chờ Quản trị viên kiểm duyệt.' });
       await fetchProfile(userId);
-      setLogoFile(null); // Reset file upload state
+      setLogoFile(null);
       
     } catch (err) {
-      setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Lỗi khi cập nhật hồ sơ.' });
+      setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật hồ sơ.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Helper kiểm tra xem field nào đã bị thay đổi
-  const isModified = (fieldName) => isUpdateMode && formData[fieldName] !== originalData[fieldName];
-  const isLogoModified = logoFile !== null;
-
-  const renderStatusBadge = () => {
+  // UI Components helpers
+  const StatusBanner = () => {
     if (!verificationStatus) return null;
-    switch (verificationStatus) {
-      case 'APPROVED':
-        return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Đã duyệt (Hoạt động)</span>;
-      case 'REJECTED':
-        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Bị từ chối / Cần chỉnh sửa</span>;
-      case 'PENDING':
-      default:
-        return <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Đang chờ kiểm duyệt</span>;
-    }
+    
+    const statusConfig = {
+      APPROVED: { icon: <CheckCircle className="w-5 h-5 text-green-600" />, bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Hồ sơ đã được phê duyệt và đang hoạt động.' },
+      REJECTED: { icon: <AlertCircle className="w-5 h-5 text-red-600" />, bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Hồ sơ bị từ chối. Vui lòng cập nhật lại thông tin cho chính xác.' },
+      PENDING: { icon: <Clock className="w-5 h-5 text-yellow-600" />, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Hồ sơ đang chờ Quản trị viên kiểm duyệt.' }
+    };
+    const config = statusConfig[verificationStatus] || statusConfig.PENDING;
+
+    return (
+      <div className={`flex items-center gap-3 p-4 mb-6 rounded-lg border ${config.bg} ${config.text}`}>
+        {config.icon}
+        <span className="text-sm font-medium">{config.label}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-3xl">
+    <div className="max-w-4xl mx-auto pb-10">
       
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 className="text-xl font-bold text-gray-800">Hồ sơ Doanh nghiệp</h2>
-        <div className="flex items-center gap-3">
-          {isUpdateMode && renderStatusBadge()}
-          {!isEditing && isUpdateMode && (
-            <Button variant="outline" onClick={() => setIsEditing(true)} className="px-3 py-1 text-sm border-blue-600 text-blue-600 hover:bg-blue-50">
-              Chỉnh sửa hồ sơ
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {statusMsg.type && <div className="mb-4"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
-
-      {verificationStatus === 'REJECTED' && !isEditing && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-          <strong>Lưu ý:</strong> Hồ sơ của bạn đã bị từ chối kiểm duyệt. Vui lòng bấm <b>Chỉnh sửa hồ sơ</b> để khắc phục thông tin.
-        </div>
-      )}
-
-      {/* --- GIAO DIỆN CHẾ ĐỘ XEM (VIEW MODE) --- */}
-      {!isEditing ? (
-        <div className="flex flex-col gap-6 text-gray-700 text-sm">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-gray-50 border border-gray-200 rounded-md flex items-center justify-center overflow-hidden">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-xs text-gray-400">Chưa có Logo</span>
-              )}
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">{originalData.companyName || 'Chưa cập nhật tên'}</h3>
-              <p className="mt-1">Website: {originalData.website ? <a href={originalData.website} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">{originalData.website}</a> : 'Chưa cập nhật'}</p>
-            </div>
-          </div>
-          <div>
-            <h4 className="font-semibold text-gray-800 mb-2 border-b pb-1">Giới thiệu văn hóa công ty</h4>
-            <p className="whitespace-pre-wrap leading-relaxed">{originalData.description || 'Chưa có thông tin mô tả.'}</p>
-          </div>
-        </div>
-      ) : (
-
-      /* --- GIAO DIỆN CHẾ ĐỘ SỬA (EDIT MODE) --- */
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        
-        <div className="flex items-center gap-6 p-4 bg-gray-50 border rounded-md relative">
-          {isLogoModified && <span className="absolute top-2 right-2 bg-orange-100 text-orange-600 px-2 py-0.5 text-[10px] rounded-full font-bold">Đã đổi ảnh</span>}
-          <div className="w-24 h-24 bg-white border border-gray-300 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0">
-            {logoPreview ? (
-              <img src={logoPreview} alt="Company Logo" className="w-full h-full object-contain" />
-            ) : (
-              <span className="text-xs text-gray-400">Chưa có Logo</span>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Logo Doanh Nghiệp (Tùy chọn)</label>
-            <input 
-              type="file" 
-              accept="image/png, image/jpeg, image/jpg" 
-              onChange={handleFileChange}
-              className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        <div className="relative">
-          {isModified('companyName') && <span className="absolute right-0 top-0 text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          <Input 
-              label="Tên công ty (Bắt buộc)" 
-              name="companyName" 
-              value={formData.companyName} 
-              onChange={handleChange} 
-              required 
-          />
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Hồ Sơ Doanh Nghiệp</h1>
+          <p className="text-gray-500 text-sm mt-1">Quản lý thông tin và hình ảnh thương hiệu tuyển dụng của bạn.</p>
         </div>
         
-        <div className="relative">
-          {isModified('website') && <span className="absolute right-0 top-0 text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          <Input 
-              label="Trang web chính thức" 
-              type="url" 
-              name="website" 
-              value={formData.website} 
-              onChange={handleChange} 
-              placeholder="https://..." 
-          />
-        </div>
-        
-        <div className="flex flex-col gap-1 relative">
-          <div className="flex justify-between items-end">
-            <label className="text-sm font-medium text-gray-700">Giới thiệu văn hóa công ty</label>
-            {isModified('description') && <span className="text-[10px] text-orange-600 font-bold bg-orange-100 px-2 rounded-full">Đã chỉnh sửa</span>}
-          </div>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="6"
-            placeholder="Mô tả quy mô, ngành nghề, văn hóa công ty..."
-            className={`border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 ${isModified('description') ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-100' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
-          ></textarea>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-          {isUpdateMode && (
-            <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isLoading}>
-              Hủy
-            </Button>
-          )}
-          <Button type="submit" isLoading={isLoading}>
-            {isUpdateMode ? 'Lưu Thay Đổi (Gửi duyệt lại)' : 'Tạo Hồ Sơ Mới'}
+        {isUpdateMode && !isEditing && (
+          <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2 shadow-sm">
+            <Edit2 className="w-4 h-4" />
+            Chỉnh sửa thông tin
           </Button>
-        </div>
+        )}
+      </div>
 
-      </form>
+      {statusMsg.type && (
+        <div className="mb-6">
+          <Toast type={statusMsg.type} message={statusMsg.message} />
+        </div>
       )}
+
+      {isUpdateMode && !isEditing && <StatusBanner />}
+
+      {/* Main Content Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        
+        {/* --- CHẾ ĐỘ XEM (VIEW MODE) --- */}
+        {!isEditing ? (
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              {/* Logo Display */}
+              <div className="w-32 h-32 flex-shrink-0 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center p-2 shadow-sm">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain rounded-lg" />
+                ) : (
+                  <Building2 className="w-12 h-12 text-gray-300" />
+                )}
+              </div>
+
+              {/* Info Display */}
+              <div className="flex-1 space-y-6 w-full">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {originalData.companyName || 'Chưa cập nhật tên công ty'}
+                  </h2>
+                  
+                  {originalData.website && (
+                    <a href={originalData.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium">
+                      <Globe className="w-4 h-4" />
+                      {originalData.website}
+                    </a>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-100 pt-6">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-3">
+                    <FileText className="w-5 h-5 text-gray-500" />
+                    Giới thiệu công ty
+                  </h3>
+                  <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {originalData.description ? originalData.description : <span className="italic text-gray-400">Chưa có thông tin mô tả. Hãy cập nhật để ứng viên hiểu thêm về bạn.</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+
+        /* --- CHẾ ĐỘ SỬA (EDIT MODE) --- */
+        <div className="p-8 bg-gray-50/50">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Cập nhật Logo */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Logo Doanh Nghiệp</label>
+              <div className="flex items-center gap-6">
+                <div className="relative w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 bg-white flex items-center justify-center overflow-hidden group hover:border-blue-500 transition-colors">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <div className="text-center">
+                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                      <span className="text-[10px] text-gray-500 font-medium">Tải ảnh lên</span>
+                    </div>
+                  )}
+                  {/* Lớp overlay khi hover vào ảnh để chọn file */}
+                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="w-6 h-6 text-white" />
+                    <input type="file" accept="image/png, image/jpeg, image/jpg" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
+                <div className="text-sm text-gray-500">
+                  <p>Định dạng: JPG, PNG, JPEG.</p>
+                  <p>Kích thước khuyên dùng: Hình vuông 400x400px.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input 
+                  label="Tên công ty (Bắt buộc)" 
+                  name="companyName" 
+                  value={formData.companyName} 
+                  onChange={handleChange} 
+                  required 
+                  placeholder="VD: Công ty TNHH Worklify"
+                  icon={<Building2 className="w-4 h-4 text-gray-400" />}
+              />
+              <Input 
+                  label="Trang web chính thức" 
+                  type="url" 
+                  name="website" 
+                  value={formData.website} 
+                  onChange={handleChange} 
+                  placeholder="https://..." 
+                  icon={<Globe className="w-4 h-4 text-gray-400" />}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Giới thiệu tổng quan</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="6"
+                placeholder="Mô tả quy mô, lĩnh vực hoạt động, chế độ phúc lợi và văn hóa công ty..."
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all resize-y"
+              ></textarea>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+              {isUpdateMode && (
+                <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isLoading} className="flex items-center gap-2">
+                  <X className="w-4 h-4" />
+                  Hủy bỏ
+                </Button>
+              )}
+              <Button type="submit" isLoading={isLoading} className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                {isUpdateMode ? 'Lưu thay đổi & Gửi duyệt' : 'Hoàn tất & Tạo hồ sơ'}
+              </Button>
+            </div>
+          </form>
+        </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -5224,274 +5694,387 @@ export default function CompanyProfilePage() {
 // File: frontend-app/src/pages/employer/DashboardPage/index.jsx
 // ==========================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, FileText, CheckCircle, ArrowRight, Activity, MapPin } from 'lucide-react';
+import {
+  Briefcase, Users, FileText, CheckCircle, ArrowRight,
+  MapPin, Clock, TrendingUp, Eye, Calendar, ChevronRight,
+  Plus, Search, AlertCircle, Building2, Inbox
+} from 'lucide-react';
 import authService from '../../../features/auth/authService';
 import employerService from '../../../features/employer/employerService';
+import candidateService from '../../../features/candidate/candidateService';
 
-const DashboardPage = () => {
-  const [uiState, setUiState] = useState({ isLoading: true, error: null });
-  const [data, setData] = useState({
-    user: null,
-    stats: { activeJobs: 0, totalApplications: 0, newCandidates: 0, successHires: 0 },
-    recentJobs: [],
-    recentApplications: []
+// ─────────────────────────────────────────────
+// STATUS BADGE COMPONENTS
+// ─────────────────────────────────────────────
+const JOB_STATUS_MAP = {
+  ACTIVE:   { label: 'Đang mở',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  PENDING:  { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  CLOSED:   { label: 'Đã đóng',   bg: 'bg-gray-100 text-gray-600 border-gray-200' },
+  REJECTED: { label: 'Từ chối',   bg: 'bg-red-50 text-red-600 border-red-200' },
+};
+
+const APP_STATUS_MAP = {
+  PENDING:              { label: 'Chờ xử lý',  bg: 'bg-amber-50 text-amber-700 border-amber-200',     dot: 'bg-amber-400' },
+  REVIEWED:             { label: 'Đã xem',      bg: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-400' },
+  INTERVIEW_SCHEDULED:  { label: 'Phỏng vấn',  bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+  ACCEPTED:             { label: 'Đã tuyển',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  REJECTED:             { label: 'Từ chối',    bg: 'bg-gray-100 text-gray-500 border-gray-200',       dot: 'bg-gray-400' },
+};
+
+const JobStatusBadge = ({ status }) => {
+  const cfg = JOB_STATUS_MAP[status] ?? JOB_STATUS_MAP.PENDING;
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.bg}`}>
+      {cfg.label}
+    </span>
+  );
+};
+
+const AppStatusBadge = ({ status }) => {
+  const cfg = APP_STATUS_MAP[status] ?? APP_STATUS_MAP.PENDING;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${cfg.bg}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STAT CARD COMPONENT
+// ─────────────────────────────────────────────
+const StatCard = ({ title, value, subtitle, link, icon, accentClass, isLoading }) => (
+  <Link
+    to={link}
+    className="group relative p-6 rounded-2xl border border-gray-100 bg-white overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-200"
+  >
+    <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity ${accentClass}`} />
+    <div className="flex items-start justify-between mb-4">
+      {/* FIX: Đổi nền thành màu đặc, bo góc tròn và icon màu trắng */}
+      <div className={`p-3 rounded-xl ${accentClass} shadow-sm flex items-center justify-center w-max text-white`}>
+        {icon}
+      </div>
+      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
+    </div>
+    {isLoading ? (
+      <div className="h-8 w-16 bg-gray-100 rounded animate-pulse mb-1" />
+    ) : (
+      <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{value ?? 0}</p>
+    )}
+    <p className="text-sm font-semibold text-gray-500 mt-1">{title}</p>
+    {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+  </Link>
+);
+
+// ─────────────────────────────────────────────
+// MAIN DASHBOARD PAGE
+// ─────────────────────────────────────────────
+export default function EmployerDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+  const [user, setUser]     = useState(null);
+
+  const [stats, setStats]   = useState({
+    activeJobs: 0,
+    totalApplications: 0,
+    pendingApplications: 0,
+    acceptedApplications: 0,
   });
+  const [recentJobs, setRecentJobs]           = useState([]);
+  const [recentApplications, setRecentApplications] = useState([]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const run = async () => {
       const currentUser = authService.getCurrentUser();
-      
       if (!currentUser?.userId) {
-        setUiState({ isLoading: false, error: 'Không tìm thấy phiên đăng nhập.' });
+        setError('Không tìm thấy phiên đăng nhập.');
+        setLoading(false);
         return;
       }
+      setUser(currentUser);
 
       try {
-        // Tối ưu hoá: Lấy thông tin cần thiết song song
-        // Lưu ý: Các hàm API này giả định đã được định nghĩa trong employerService
-        const [jobsRes, statsRes] = await Promise.allSettled([
-          employerService.getMyJobs(currentUser.userId, 0, 5),
-          employerService.getDashboardStats(currentUser.userId) // Dữ liệu thống kê tổng hợp (nếu Backend có)
+        // 🌟 BƯỚC SỬA ĐỔI CHÍNH: Lấy đúng companyId thực tế từ userId trước
+        const profileResult = await employerService.getCompanyProfile(currentUser.userId);
+        const companyId = profileResult.data?.id;
+
+        if (!companyId) {
+          console.warn("Tài khoản này chưa lập hồ sơ doanh nghiệp!");
+          setLoading(false);
+          return;
+        }
+
+        // Gọi API song song bằng việc truyền COMPANY_ID (Thay vì truyền userId cũ)
+        const [jobsRes, appsRes] = await Promise.allSettled([
+          employerService.getMyJobs(companyId, 0, 5),
+          employerService.getApplicationsByEmployer?.(companyId, 0, 5)
+            ?? candidateService.getApplicationsByEmployer?.(companyId, 0, 5),
         ]);
 
-        const jobs = jobsRes.status === 'fulfilled' ? jobsRes.value?.data : { items: [], totalElements: 0 };
-        // Lấy tạm 1 data giả lập nếu statsRes bị lỗi (Ví dụ: Backend chưa code xong api /dashboard)
-        const statsData = statsRes.status === 'fulfilled' ? statsRes.value?.data : {
-            activeJobs: jobs?.totalElements || 0,
-            totalApplications: 24, // Giả lập
-            newCandidates: 8,     // Giả lập
-            successHires: 3       // Giả lập
-        };
+        // Xử lý dữ liệu Tin tuyển dụng từ Backend
+        const jobsData = jobsRes.status === 'fulfilled' ? (jobsRes.value?.data ?? jobsRes.value) : null;
+        const jobItems   = jobsData?.items ?? jobsData?.content ?? [];
+        
+        // Thống kê đếm số tin đang hiển thị công khai công ty sở hữu
+        const activeJobs = jobItems.filter(j => j.status === 'ACTIVE').length;
 
-        setData({
-          user: currentUser,
-          stats: statsData,
-          recentJobs: jobs?.items || jobs?.content || [],
-          // Giả lập danh sách ứng viên mới vì chưa có API getRecentApplications
-          recentApplications: [
-            { id: 101, name: "Nguyễn Văn A", position: "Frontend Developer", date: "2 giờ trước", status: "Chờ duyệt" },
-            { id: 102, name: "Trần Thị B", position: "Backend Java", date: "5 giờ trước", status: "Chờ duyệt" },
-            { id: 103, name: "Lê Hoàng C", position: "Product Manager", date: "Hôm qua", status: "Đã đánh giá" },
-          ]
+        // Xử lý dữ liệu đơn ứng tuyển
+        const appsData = appsRes.status === 'fulfilled' ? (appsRes.value?.data ?? appsRes.value) : null;
+        const appItems    = appsData?.items ?? appsData?.content ?? [];
+        const totalApps   = appsData?.totalElements ?? appItems.length;
+        const pendingApps = appItems.filter(a => a.status === 'PENDING').length;
+        const acceptedApps= appItems.filter(a => a.status === 'ACCEPTED').length;
+
+        setStats({
+          activeJobs,
+          totalApplications: totalApps,
+          pendingApplications: pendingApps,
+          acceptedApplications: acceptedApps,
         });
-
+        setRecentJobs(jobItems.slice(0, 5));
+        setRecentApplications(appItems.slice(0, 6));
       } catch (err) {
-        console.error(err);
-        setUiState(prev => ({ ...prev, error: 'Đã xảy ra lỗi khi đồng bộ dữ liệu doanh nghiệp.' }));
+        console.error('[EmployerDashboard Error]', err);
+        setError('Không thể tải dữ liệu tổng quan. Vui lòng thử lại.');
       } finally {
-        setUiState(prev => ({ ...prev, isLoading: false }));
+        setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    run();
   }, []);
 
   const displayName = useMemo(() => {
-    if (data.user?.companyName) return data.user.companyName;
-    return data.user?.email ? data.user.email.split('@')[0] : "Nhà tuyển dụng";
-  }, [data.user]);
+    if (user?.companyName) return user.companyName;
+    if (user?.fullName)    return user.fullName;
+    return user?.email?.split('@')[0] ?? 'Nhà tuyển dụng';
+  }, [user]);
 
-  if (uiState.isLoading) {
+  const handleReload = useCallback(() => window.location.reload(), []);
+
+  const formatWorkType = (type) => {
+    switch (type) {
+      case 'FULL_TIME': return 'Toàn thời gian';
+      case 'PART_TIME': return 'Bán thời gian';
+      case 'INTERNSHIP': return 'Thực tập sinh';
+      case 'REMOTE': return 'Làm việc từ xa';
+      default: return type;
+    }
+  };
+
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-gray-600 font-medium">Đang tải dữ liệu tổng quan...</span>
+        <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tải dữ liệu tổng quan...</p>
       </div>
     );
   }
 
-  if (uiState.error) {
+  if (error) {
     return (
-      <div className="p-6 max-w-4xl mx-auto bg-red-50 border border-red-200 text-red-700 rounded-xl mt-10">
-        <p className="font-semibold">{uiState.error}</p>
-        <button onClick={() => window.location.reload()} className="mt-3 text-sm underline text-red-800">Thử lại</button>
+      <div className="max-w-lg mx-auto mt-16 p-6 bg-red-50 border border-red-200 rounded-2xl text-center">
+        <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+        <p className="font-semibold text-red-700 mb-4">{error}</p>
+        <button onClick={handleReload} className="px-5 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors">
+          Tải lại trang
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      {/* 1. Header Area - Lời chào & Nút thao tác nhanh */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-        {/* Background Pattern Nhẹ */}
-        <div className="absolute right-0 top-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-60"></div>
-        
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      {/* HEADER */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl px-8 py-7 shadow-lg shadow-blue-200 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-72 h-72 rounded-full bg-blue-500/30 -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute right-16 bottom-0 w-40 h-40 rounded-full bg-blue-800/20 translate-y-1/2 pointer-events-none" />
+
         <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Chào mừng trở lại, <span className="text-blue-700">{displayName}</span>
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 className="w-5 h-5 text-blue-200" />
+            <span className="text-blue-200 text-sm font-medium">Bảng điều khiển nhà tuyển dụng</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Chào mừng, <span className="text-yellow-300">{displayName}</span>
           </h1>
-          <p className="text-gray-500 mt-2 font-medium">
-            Theo dõi hiệu quả tuyển dụng và quản lý hồ sơ ứng viên của bạn hôm nay.
-          </p>
+          <p className="text-blue-100 text-sm mt-1.5 font-medium">Quản lý tin tuyển dụng và hồ sơ ứng viên của bạn tại đây.</p>
         </div>
-        
-        <div className="relative z-10 flex gap-3">
-          <Link 
-            to="/employer/candidates/search" 
-            className="px-6 py-2.5 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2"
-          >
-            <Users className="w-4 h-4" /> Tìm ứng viên
+
+        <div className="relative z-10 flex flex-wrap gap-3">
+          <Link to="/employer/candidates/search" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-sm font-semibold border border-white/25 transition-all backdrop-blur-sm">
+            <Search className="w-4 h-4" /> Tìm ứng viên
           </Link>
-          <Link 
-            to="/employer/jobs/create" 
-            className="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2"
-          >
-            <Briefcase className="w-4 h-4" /> Đăng tin mới
+          <Link to="/employer/jobs/create" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-700 text-sm font-bold shadow-sm hover:bg-blue-50 transition-all">
+            <Plus className="w-4 h-4" /> Đăng tin mới
           </Link>
         </div>
       </header>
 
-      {/* 2. Tổng quan số liệu (Quick Stats Cards) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* STAT CARDS */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard 
-          title="Tin đang mở" 
-          value={data.stats.activeJobs} 
-          link="/employer/jobs" 
-          icon={<Briefcase className="w-7 h-7 text-blue-700" />}
-          colorClass="bg-blue-50/50 border-blue-100"
+          title="Tin đang hoạt động" subtitle="Tổng số bài viết công khai" value={stats.activeJobs} link="/employer/jobs" 
+          accentClass="bg-blue-500" 
+          icon={<Briefcase className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Tổng CV nhận được" 
-          value={data.stats.totalApplications} 
-          link="/employer/applications" 
-          icon={<FileText className="w-7 h-7 text-indigo-600" />}
-          colorClass="bg-indigo-50/50 border-indigo-100"
+          title="Tổng đơn ứng tuyển" subtitle="Bảng hồ sơ ứng viên" value={stats.totalApplications} link="/employer/applications" 
+          accentClass="bg-indigo-500" 
+          icon={<FileText className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Ứng viên mới (Tuần này)" 
-          value={`+${data.stats.newCandidates}`} 
-          link="/employer/applications" 
-          icon={<Activity className="w-7 h-7 text-amber-600" />}
-          colorClass="bg-amber-50/50 border-amber-100"
+          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications?status=PENDING" 
+          accentClass="bg-orange-500" 
+          icon={<Inbox className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Tuyển dụng thành công" 
-          value={data.stats.successHires} 
-          link="/employer/applications" 
-          icon={<CheckCircle className="w-7 h-7 text-emerald-600" />}
-          colorClass="bg-emerald-50/50 border-emerald-100"
+          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications?status=ACCEPTED" 
+          accentClass="bg-emerald-500" 
+          icon={<CheckCircle className="w-6 h-6 text-white" />} 
         />
       </section>
 
-      {/* 3. Phân bổ công việc (Layout 2 cột) */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        
-        {/* Cột trái (Rộng hơn): Tin tuyển dụng gần đây */}
-        <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-            <h2 className="text-xl font-extrabold text-gray-900">Tin đăng gần đây</h2>
-            <Link to="/employer/jobs" className="text-sm font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1">
-              Quản lý tin <ArrowRight className="w-4 h-4" />
+      {/* DETAILED TABLES */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        {/* LEFT COLUMN: TIN TUYỂN DỤNG GẦN ĐÂY */}
+        <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/40">
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-4.5 h-4.5 text-gray-500" strokeWidth={2} />
+              <h2 className="text-sm font-bold text-gray-800">Tin tuyển dụng gần đây</h2>
+            </div>
+            <Link to="/employer/jobs" className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors">
+              Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          
+
+          <div className="hidden sm:grid grid-cols-12 px-6 py-2.5 bg-gray-50/60 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
+            <span className="col-span-5">Vị trí</span>
+            <span className="col-span-3">Mức lương</span>
+            <span className="col-span-2">Địa điểm</span>
+            <span className="col-span-2 text-right">Trạng thái</span>
+          </div>
+
           <div className="divide-y divide-gray-50">
-            {data.recentJobs.length > 0 ? (
-              data.recentJobs.map(job => (
-                <div key={job.id} className="p-8 hover:bg-slate-50 transition-colors group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <Link to={`/jobs/${job.id}`} className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
+            {recentJobs.length === 0 ? (
+              <div className="py-14 text-center">
+                <Briefcase className="w-9 h-9 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium">Chưa có tin tuyển dụng nào được tìm thấy.</p>
+              </div>
+            ) : (
+              recentJobs.map(job => (
+                <div key={job.id} className="px-6 py-4 hover:bg-gray-50/60 transition-colors grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  <div className="sm:col-span-5 min-w-0">
+                    <Link to={`/employer/jobs/edit/${job.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm line-clamp-1">
                       {job.title}
                     </Link>
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm font-medium">
-                      <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                        {job.salaryRange || 'Thỏa thuận'}
+                    {/* Sửa từ job.work_type sang job.workType giống cấu trúc API */}
+                    {job.workType && (
+                      <span className="text-xs text-gray-400 mt-0.5 block">{formatWorkType(job.workType)}</span>
+                    )}
+                    {/* Sửa từ job.expires_at sang job.expiresAt */}
+                    {job.expiresAt && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400 mt-1">
+                        <Calendar className="w-3 h-3" />
+                        Hết hạn: {new Date(job.expiresAt).toLocaleDateString('vi-VN')}
                       </span>
-                      <span className="text-gray-500 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" /> {job.location || 'Chưa cập nhật'}
-                      </span>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                      Đang mở
+
+                  <div className="sm:col-span-3">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-md">
+                      <TrendingUp className="w-3 h-3" />
+                      {job.salaryRange || job.salary_range || 'Thỏa thuận'}
                     </span>
-                    <Link 
-                      to={`/employer/jobs/${job.id}/edit`}
-                      className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-                    >
-                      Sửa tin
-                    </Link>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{job.location || '—'}</span>
+                    </span>
+                  </div>
+
+                  <div className="sm:col-span-2 sm:text-right">
+                    <JobStatusBadge status={job.status} />
                   </div>
                 </div>
               ))
-            ) : (
-              <div className="p-12 text-center flex flex-col items-center">
-                <Briefcase className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-gray-500 font-medium">Bạn chưa đăng tin tuyển dụng nào.</p>
-                <Link to="/employer/jobs/create" className="mt-4 text-blue-700 font-semibold hover:underline">
-                  Tạo tin đăng đầu tiên
-                </Link>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: ĐƠN ỨNG TUYỂN MỚI */}
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/40">
+            <div className="flex items-center gap-2">
+              <Users className="w-4.5 h-4.5 text-gray-500" strokeWidth={2} />
+              <h2 className="text-sm font-bold text-gray-800">Đơn ứng tuyển mới</h2>
+            </div>
+            <Link to="/employer/applications" className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors">
+              Tất cả <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-gray-50">
+            {recentApplications.length === 0 ? (
+              <div className="py-14 text-center">
+                <Inbox className="w-9 h-9 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-medium">Chưa có đơn ứng tuyển nào.</p>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Cột phải: Ứng viên mới cập nhật */}
-        <div className="lg:col-span-1 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-            <h2 className="text-lg font-extrabold text-gray-900">CV mới nhận</h2>
-          </div>
-          
-          <div className="divide-y divide-gray-50 p-2">
-            {data.recentApplications.length > 0 ? (
-              data.recentApplications.map(app => (
-                <div key={app.id} className="p-4 hover:bg-blue-50/50 rounded-xl transition-colors cursor-pointer group">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-gray-900 group-hover:text-blue-700">{app.name}</h3>
-                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {app.date}
+            ) : (
+              recentApplications.map(app => (
+                <div key={app.id} className="px-5 py-3.5 hover:bg-blue-50/30 transition-colors group">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
+                      {app.fullName || app.full_name || 'Ứng viên'}
+                    </p>
+                    <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                      <Clock className="w-3 h-3" />
+                      {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : app.applied_at ? new Date(app.applied_at).toLocaleDateString('vi-VN') : '—'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 truncate">{app.position}</p>
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
-                      {app.status}
-                    </span>
-                    <Link to={`/employer/applications/${app.id}`} className="text-sm text-blue-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      Xem hồ sơ
+
+                  <p className="text-xs text-gray-500 truncate mb-2">
+                    {app.jobTitle || app.job_title || '—'}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <AppStatusBadge status={app.status} />
+                    <Link to={`/employer/applications/${app.id}`} className="text-xs text-blue-500 font-semibold opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1">
+                      <Eye className="w-3 h-3" /> Xem
                     </Link>
                   </div>
                 </div>
               ))
-            ) : (
-              <div className="p-8 text-center text-sm text-gray-500">Chưa có ứng viên mới.</div>
             )}
           </div>
-          
-          <div className="p-4 border-t border-gray-100 bg-gray-50/30">
-             <Link to="/employer/applications" className="block w-full text-center py-2 text-sm font-bold text-gray-700 hover:text-blue-700 transition-colors">
-                Xem tất cả danh sách
-             </Link>
-          </div>
         </div>
+      </section>
 
+      {/* QUICK ACTIONS */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <QuickAction to="/employer/jobs/create" icon={<Plus className="w-5 h-5" />} title="Đăng tin mới" desc="Tạo bài đăng tuyển dụng" colorClass="text-blue-600 bg-blue-50 group-hover:bg-blue-100" />
+        <QuickAction to="/employer/candidates/search" icon={<Search className="w-5 h-5" />} title="Tìm kiếm ứng viên" desc="Duyệt hồ sơ ứng viên" colorClass="text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100" />
+        <QuickAction to="/employer/profile" icon={<Building2 className="w-5 h-5" />} title="Hồ sơ công ty" desc="Cập nhật thông tin doanh nghiệp" colorClass="text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100" />
       </section>
     </div>
   );
-};
+}
 
-// Sub-component cho Thẻ Thống Kê
-const StatCard = ({ title, value, link, icon, colorClass }) => (
-  <Link to={link} className={`p-6 rounded-3xl border border-gray-100 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-lg bg-white relative overflow-hidden group`}>
-    {/* Vệt màu trang trí */}
-    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 opacity-50 transition-opacity group-hover:opacity-100 ${colorClass.split(' ')[0]}`}></div>
-    
-    <div className="flex justify-between items-start relative z-10">
-      <div>
-        <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">{title}</p>
-        <h3 className="text-4xl font-extrabold text-gray-900 mt-2 tracking-tight">{value}</h3>
-      </div>
-      <div className={`p-3 rounded-2xl ${colorClass}`}>
-        {icon}
-      </div>
+const QuickAction = ({ to, icon, title, desc, colorClass }) => (
+  <Link to={to} className="group flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md hover:border-gray-200 transition-all duration-200">
+    <div className={`p-3 rounded-xl transition-colors ${colorClass}`}>{icon}</div>
+    <div className="min-w-0">
+      <p className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{title}</p>
+      <p className="text-xs text-gray-400 truncate">{desc}</p>
     </div>
+    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 ml-auto flex-shrink-0 transition-colors" />
   </Link>
 );
-
-export default DashboardPage;
 
 
 // ==========================================================================
@@ -5513,35 +6096,41 @@ export default function JobCreatePage() {
     title: '',
     location: '',
     salaryRange: '',
-    workType: 'FULL_TIME', // Giá trị mặc định
+    workType: 'FULL_TIME',
     expiresAt: '',
     description: '',
     requirements: ''
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  // Lấy Company ID khi component mount
   useEffect(() => {
+    let isMounted = true;
     const fetchCompanyData = async () => {
       const user = authService.getCurrentUser();
-      if (user && user.userId) {
-        try {
-          const profile = await employerService.getCompanyProfile(user.userId);
-          if (profile.data && profile.data.id) {
+      if (!user?.userId) {
+        navigate('/auth/login');
+        return;
+      }
+      try {
+        const profile = await employerService.getCompanyProfile(user.userId);
+        if (isMounted) {
+          if (profile?.data?.id) {
             setCompanyId(profile.data.id);
           } else {
             handleMissingProfile();
           }
-        } catch (error) {
-          handleMissingProfile();
         }
-      } else {
-        navigate('/auth/login');
+      } catch (error) {
+        if (isMounted) handleMissingProfile();
+      } finally {
+        if (isMounted) setIsPageLoading(false);
       }
     };
     fetchCompanyData();
+    return () => { isMounted = false; };
   }, [navigate]);
 
   const handleMissingProfile = () => {
@@ -5549,138 +6138,195 @@ export default function JobCreatePage() {
     setTimeout(() => navigate('/employer/profile'), 3000);
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Kiểm tra dữ liệu bắt buộc trước khi gửi
-    if (!formData.expiresAt) {
-        setStatusMsg({ type: 'error', message: 'Vui lòng chọn Hạn nộp hồ sơ!' });
-        return;
-    }
-    if (!companyId) {
-        setStatusMsg({ type: 'error', message: 'Thông tin doanh nghiệp chưa hợp lệ.' });
-        return;
-    }
+    if (!companyId) return setStatusMsg({ type: 'error', message: 'Thông tin doanh nghiệp chưa hợp lệ.' });
 
     setIsLoading(true);
     setStatusMsg({ type: null, message: '' });
     
     try {
-      // 1. Chuẩn hóa dữ liệu gửi đi
       const submitData = { ...formData };
-      
-      // Xử lý định dạng thời gian: datetime-local thường trả về chuỗi 16 ký tự (YYYY-MM-DDThh:mm)
-      // Java LocalDateTime yêu cầu YYYY-MM-DDThh:mm:ss
-      if (submitData.expiresAt && submitData.expiresAt.length === 16) {
-        submitData.expiresAt = submitData.expiresAt + ':00';
+      if (submitData.expiresAt) {
+        submitData.expiresAt = submitData.expiresAt.length === 16 
+          ? `${submitData.expiresAt}:00` 
+          : submitData.expiresAt;
       }
-
-      // 2. Gọi service (Đảm bảo service đã sửa URL không chứa /api/v1/ dư thừa)
       await employerService.createJobPosting(companyId, submitData);
-      
-      // 3. Thông báo thành công
       setStatusMsg({ type: 'success', message: 'Đăng tin thành công! Tin đang chờ Admin kiểm duyệt.' });
-      
-      // 4. Điều hướng
       setTimeout(() => navigate('/employer/jobs'), 2000);
-      
     } catch (err) {
-      // 5. Hiển thị thông báo lỗi chi tiết từ backend nếu có
-      const errorMsg = err.response?.data?.message || 'Lỗi khi đăng tin. Vui lòng kiểm tra lại các trường thông tin.';
+      const errorMsg = err.response?.data?.message || 'Lỗi khi đăng tin. Vui lòng kiểm tra lại hệ thống.';
       setStatusMsg({ type: 'error', message: errorMsg });
     } finally {
-      // Luôn kết thúc trạng thái loading dù thành công hay lỗi
       setIsLoading(false);
     }
   };
 
+  // Class dùng chung cho các input field để đồng nhất UI
+  const inputClassName = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 bg-gray-50/50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-gray-700 placeholder-gray-400";
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Đăng tin tuyển dụng mới</h2>
-          <p className="text-sm text-gray-500 mt-1">Hệ thống sẽ tự động chuyển tin vào hàng đợi kiểm duyệt.</p>
-        </div>
-        <button onClick={() => navigate('/employer/jobs')} className="text-sm text-blue-600 hover:underline">
-          &larr; Quay lại danh sách
-        </button>
-      </div>
-      
-      {statusMsg.type && <div className="mb-6"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
-
-      {companyId ? (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <Input 
-            label="Tiêu đề công việc" name="title" value={formData.title} 
-            onChange={handleChange} required placeholder="VD: Senior ReactJS Developer" 
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input 
-              label="Địa điểm làm việc" name="location" value={formData.location} 
-              onChange={handleChange} required placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
-            />
-            <Input 
-              label="Mức lương (Tùy chọn)" name="salaryRange" value={formData.salaryRange} 
-              onChange={handleChange} placeholder="VD: 15,000,000 - 25,000,000 VND" 
-            />
+    <div className="min-h-screen bg-gray-50/30 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-4xl mx-auto transition-all">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Đăng tin tuyển dụng mới</h2>
+            <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Tin đăng sẽ được đưa vào hàng đợi kiểm duyệt trước khi hiển thị.
+            </p>
           </div>
+          <button 
+            onClick={() => navigate('/employer/jobs')} 
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors bg-gray-50 hover:bg-indigo-50 px-4 py-2 rounded-lg"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Quay lại
+          </button>
+        </div>
+        
+        {statusMsg.type && <div className="mb-8"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Hình thức làm việc</label>
-              <select 
-                name="workType" value={formData.workType} onChange={handleChange} required
-                className="border border-gray-300 rounded-md px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
-              >
-                <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
-                <option value="PART_TIME">Bán thời gian (Part-time)</option>
-                <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
-                <option value="REMOTE">Làm việc từ xa (Remote)</option>
-              </select>
+        {isPageLoading ? (
+          /* Hiệu ứng Skeleton Loading */
+          <div className="animate-pulse space-y-8">
+            <div className="h-12 bg-gray-100 rounded-xl w-full"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-12 bg-gray-100 rounded-xl"></div>
+              <div className="h-12 bg-gray-100 rounded-xl"></div>
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
-              <input 
-                type="datetime-local" name="expiresAt" value={formData.expiresAt} onChange={handleChange} required
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
+            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
+          </div>
+        ) : companyId ? (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Nhóm 1: Thông tin cơ bản */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
+              
+              <Input 
+                label="Tiêu đề công việc" 
+                name="title" 
+                value={formData.title} 
+                onChange={handleChange} 
+                required 
+                maxLength={255}
+                placeholder="VD: Senior ReactJS Developer" 
               />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input 
+                  label="Địa điểm làm việc" 
+                  name="location" 
+                  value={formData.location} 
+                  onChange={handleChange} 
+                  required 
+                  maxLength={255}
+                  placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
+                />
+                <Input 
+                  label="Mức lương (Tùy chọn)" 
+                  name="salaryRange" 
+                  value={formData.salaryRange} 
+                  onChange={handleChange} 
+                  maxLength={100}
+                  placeholder="VD: 15,000,000 - 25,000,000 VND" 
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700">Hình thức làm việc</label>
+                  <select 
+                    name="workType" 
+                    value={formData.workType} 
+                    onChange={handleChange} 
+                    required
+                    className={inputClassName}
+                  >
+                    <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
+                    <option value="PART_TIME">Bán thời gian (Part-time)</option>
+                    <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
+                    <option value="REMOTE">Làm việc từ xa (Remote)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
+                  <input 
+                    type="datetime-local" 
+                    name="expiresAt" 
+                    value={formData.expiresAt} 
+                    onChange={handleChange} 
+                    required
+                    className={inputClassName}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Mô tả công việc (Job Description) <span className="text-red-500">*</span></label>
-            <textarea
-              name="description" value={formData.description} onChange={handleChange} required rows="6"
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
-            ></textarea>
-          </div>
+            {/* Nhóm 2: Chi tiết & Yêu cầu */}
+            <div className="space-y-6 pt-4">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">2. Chi tiết công việc</h3>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700">Mô tả công việc (Job Description) <span className="text-red-500">*</span></label>
+                <textarea
+                  name="description" 
+                  value={formData.description} 
+                  onChange={handleChange} 
+                  required 
+                  rows="5"
+                  className={`${inputClassName} resize-y min-h-[120px]`}
+                  placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
+                ></textarea>
+              </div>
 
-          <div className="flex flex-col gap-1 bg-blue-50 p-4 rounded-md border border-blue-100">
-            <label className="text-sm font-bold text-blue-800 flex items-center gap-2">
-              <span>⚡</span> Yêu cầu ứng viên (Tiêu chí chấm điểm AI Scanner) <span className="text-red-500">*</span>
-            </label>
-            <p className="text-xs text-blue-600 mb-2">Liệt kê rõ ràng các kỹ năng (VD: ReactJS, Java, Spring Boot) để hệ thống AI đối chiếu và chấm điểm chính xác nhất.</p>
-            <textarea
-              name="requirements" value={formData.requirements} onChange={handleChange} required rows="5"
-              className="border border-blue-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="- Tốt nghiệp chuyên ngành CNTT&#10;- Có kinh nghiệm 2 năm với ReactJS&#10;- Am hiểu về RESTful API..."
-            ></textarea>
-          </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700">Yêu cầu ứng viên (Requirements) <span className="text-red-500">*</span></label>
+                <textarea
+                  name="requirements" 
+                  value={formData.requirements} 
+                  onChange={handleChange} 
+                  required 
+                  rows="5"
+                  className={`${inputClassName} resize-y min-h-[120px]`}
+                  placeholder="- Tốt nghiệp chuyên ngành CNTT&#10;- Có kinh nghiệm 2 năm với ReactJS&#10;- Kỹ năng làm việc nhóm tốt..."
+                ></textarea>
+              </div>
+            </div>
 
-          <div className="flex justify-end pt-4 border-t border-gray-100">
-            <Button type="submit" isLoading={isLoading}>Gửi Yêu Cầu Kiểm Duyệt</Button>
+            {/* Actions */}
+            <div className="flex justify-end pt-8 border-t border-gray-100">
+              <Button 
+                type="submit" 
+                isLoading={isLoading}
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 transition-all font-semibold"
+              >
+                Gửi Yêu Cầu Kiểm Duyệt
+              </Button>
+            </div>
+            
+          </form>
+        ) : (
+          <div className="py-20 text-center text-gray-500 font-medium">
+            Không tìm thấy thông tin doanh nghiệp.
           </div>
-        </form>
-      ) : (
-        <div className="py-10 text-center text-gray-500">
-          Đang tải dữ liệu doanh nghiệp...
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -5699,7 +6345,7 @@ import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
 
 export default function JobEditPage() {
-  const { id } = useParams(); // 1. Lấy jobId từ thanh địa chỉ URL (Ví dụ: /employer/jobs/edit/12)
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState(null);
   const [formData, setFormData] = useState({
@@ -5713,45 +6359,44 @@ export default function JobEditPage() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true); // Trạng thái đợi tải dữ liệu cũ
+  const [isFetching, setIsFetching] = useState(true); // Đang kéo dữ liệu cũ từ DB
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  // Khởi chạy khi component Mount: Lấy thông tin doanh nghiệp & Lấy dữ liệu cũ của Job
   useEffect(() => {
+    let isMounted = true;
+
     const initEditPage = async () => {
       const user = authService.getCurrentUser();
-      if (!user || !user.userId) {
+      if (!user?.userId) {
         navigate('/auth/login');
         return;
       }
 
       try {
-        // Lấy profile để kiểm tra quyền doanh nghiệp giống trang tạo
         const profile = await employerService.getCompanyProfile(user.userId);
-        if (profile.data && profile.data.id) {
-          setCompanyId(profile.data.id);
-          
-          // Tiến hành lấy dữ liệu chi tiết của Tin tuyển dụng cũ từ Backend
-          await loadJobDetail();
-        } else {
-          handleMissingProfile();
+        if (isMounted) {
+          if (profile?.data?.id) {
+            setCompanyId(profile.data.id);
+            // Kéo chi tiết bài đăng sau khi xác thực doanh nghiệp thành công
+            await loadJobDetail();
+          } else {
+            handleMissingProfile();
+          }
         }
       } catch (error) {
-        console.error('Lỗi khi tải thông tin hệ thống:', error);
-        handleMissingProfile();
+        if (isMounted) handleMissingProfile();
       } finally {
-        setIsFetching(false);
+        if (isMounted) setIsFetching(false);
       }
     };
 
     const loadJobDetail = async () => {
       try {
         const response = await employerService.getJobDetail(id);
-        if (response.data) {
+        if (isMounted && response?.data) {
           const jobData = response.data;
           
-          // ⚠️ QUAN TRỌNG: Định dạng LocalDateTime từ DB cần được cắt ngắn thành 16 ký tự (YYYY-MM-DDThh:mm)
-          // để hiển thị khớp và chính xác trên thẻ ô nhập <input type="datetime-local">
+          // Định dạng LocalDateTime (YYYY-MM-DDThh:mm:ss) sang (YYYY-MM-DDThh:mm) cho ô datetime-local
           if (jobData.expiresAt) {
             jobData.expiresAt = jobData.expiresAt.substring(0, 16);
           }
@@ -5765,16 +6410,18 @@ export default function JobEditPage() {
             description: jobData.description || '',
             requirements: jobData.requirements || ''
           });
-        } else {
+        } else if (isMounted) {
           setStatusMsg({ type: 'error', message: 'Không tìm thấy dữ liệu tin tuyển dụng này.' });
         }
       } catch (error) {
-        console.error('Lỗi khi tải thông tin tin tuyển dụng:', error);
-        setStatusMsg({ type: 'error', message: 'Lỗi máy chủ không thể tải chi tiết tin tuyển dụng.' });
+        if (isMounted) {
+          setStatusMsg({ type: 'error', message: 'Không thể tải chi tiết tin tuyển dụng từ hệ thống.' });
+        }
       }
     };
 
     initEditPage();
+    return () => { isMounted = false; };
   }, [id, navigate]);
 
   const handleMissingProfile = () => {
@@ -5782,32 +6429,27 @@ export default function JobEditPage() {
     setTimeout(() => navigate('/employer/profile'), 3000);
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.expiresAt) {
-      setStatusMsg({ type: 'error', message: 'Vui lòng chọn Hạn nộp hồ sơ!' });
-      return;
-    }
+    if (!formData.expiresAt) return setStatusMsg({ type: 'error', message: 'Vui lòng chọn Hạn nộp hồ sơ!' });
 
     setIsLoading(true);
     setStatusMsg({ type: null, message: '' });
     
     try {
       const submitData = { ...formData };
-      
       if (submitData.expiresAt && submitData.expiresAt.length === 16) {
-        submitData.expiresAt = submitData.expiresAt + ':00';
+        submitData.expiresAt = `${submitData.expiresAt}:00`;
       }
 
-      // Đã bổ sung thêm companyId vào đầu hàm gọi API theo đúng chuẩn mới
       await employerService.updateJobPosting(companyId, id, submitData);
-      
       setStatusMsg({ type: 'success', message: 'Cập nhật tin tuyển dụng thành công!' });
       setTimeout(() => navigate('/employer/jobs'), 2000);
-      
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.';
       setStatusMsg({ type: 'error', message: errorMsg });
@@ -5816,103 +6458,171 @@ export default function JobEditPage() {
     }
   };
 
-  // Trạng thái Loading ban đầu khi chờ kéo dữ liệu từ DB về đổ vào Form
-  if (isFetching) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 text-center text-gray-500 py-20 max-w-4xl mx-auto">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        Đang tải dữ liệu tin tuyển dụng từ hệ thống...
-      </div>
-    );
-  }
+  // Class dùng chung cho các input field để đồng nhất UI toàn hệ thống
+  const inputClassName = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 bg-gray-50/50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-gray-700 placeholder-gray-400";
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Chỉnh sửa tin tuyển dụng</h2>
-          <p className="text-sm text-gray-500 mt-1">Thay đổi nội dung mô tả vị trí hoặc cập nhật từ khóa chấm điểm AI.</p>
-        </div>
-        <button onClick={() => navigate('/employer/jobs')} className="text-sm text-blue-600 hover:underline">
-          &larr; Quay lại danh sách
-        </button>
-      </div>
-      
-      {statusMsg.type && <div className="mb-6"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <Input 
-          label="Tiêu đề công việc" name="title" value={formData.title} 
-          onChange={handleChange} required placeholder="VD: Senior ReactJS Developer" 
-        />
+    <div className="min-h-screen bg-gray-50/30 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-4xl mx-auto transition-all">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input 
-            label="Địa điểm làm việc" name="location" value={formData.location} 
-            onChange={handleChange} required placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
-          />
-          <Input 
-            label="Mức lương (Tùy chọn)" name="salaryRange" value={formData.salaryRange} 
-            onChange={handleChange} placeholder="VD: 15,000,000 - 25,000,000 VND" 
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Hình thức làm việc</label>
-            <select 
-              name="workType" value={formData.workType} onChange={handleChange} required
-              className="border border-gray-300 rounded-md px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
-            >
-              <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
-              <option value="PART_TIME">Bán thời gian (Part-time)</option>
-              <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
-              <option value="REMOTE">Làm việc từ xa (Remote)</option>
-            </select>
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Chỉnh sửa tin tuyển dụng</h2>
+            <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Cập nhật lại nội dung chính xác để thu hút ứng viên nộp hồ sơ.
+            </p>
           </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
-            <input 
-              type="datetime-local" name="expiresAt" value={formData.expiresAt} onChange={handleChange} required
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Mô tả công việc (Job Description) <span className="text-red-500">*</span></label>
-          <textarea
-            name="description" value={formData.description} onChange={handleChange} required rows="6"
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
-          ></textarea>
-        </div>
-
-        <div className="flex flex-col gap-1 bg-blue-50 p-4 rounded-md border border-blue-100">
-          <label className="text-sm font-bold text-blue-800 flex items-center gap-2">
-            <span>⚡</span> Yêu cầu ứng viên (Tiêu chí chấm điểm AI Scanner) <span className="text-red-500">*</span>
-          </label>
-          <p className="text-xs text-blue-600 mb-2">Liệt kê rõ ràng các kỹ năng hệ thống AI đối chiếu dữ liệu CV chính xác hơn.</p>
-          <textarea
-            name="requirements" value={formData.requirements} onChange={handleChange} required rows="5"
-            className="border border-blue-200 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            placeholder="- Tốt nghiệp chuyên ngành CNTT&#10;- Có kinh nghiệm 2 năm với ReactJS&#10;- Am hiểu về RESTful API..."
-          ></textarea>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t border-gray-100 gap-3">
           <button 
-            type="button" 
-            onClick={() => navigate('/employer/jobs')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-            disabled={isLoading}
+            onClick={() => navigate('/employer/jobs')} 
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors bg-gray-50 hover:bg-indigo-50 px-4 py-2 rounded-lg"
           >
-            Hủy bỏ
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Quay lại danh sách
           </button>
-          <Button type="submit" isLoading={isLoading}>Lưu thay đổi</Button>
         </div>
-      </form>
+        
+        {statusMsg.type && <div className="mb-8"><Toast type={statusMsg.type} message={statusMsg.message} /></div>}
+
+        {isFetching ? (
+          /* Hiệu ứng Skeleton Loading cao cấp lúc đang đợi nạp dữ liệu cũ */
+          <div className="animate-pulse space-y-8">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-12 bg-gray-100 rounded-xl w-full"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-12 bg-gray-100 rounded-xl"></div>
+              <div className="h-12 bg-gray-100 rounded-xl"></div>
+            </div>
+            <div className="h-4 bg-gray-200 rounded w-1/4 pt-4"></div>
+            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
+            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* Nhóm 1: Thông tin chung */}
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
+              
+              <Input 
+                label="Tiêu đề công việc" 
+                name="title" 
+                value={formData.title} 
+                onChange={handleChange} 
+                required 
+                maxLength={255} // Khớp cấu trúc DB VARCHAR(255)
+                placeholder="VD: Senior ReactJS Developer" 
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input 
+                  label="Địa điểm làm việc" 
+                  name="location" 
+                  value={formData.location} 
+                  onChange={handleChange} 
+                  required 
+                  maxLength={255} // Khớp cấu trúc DB VARCHAR(255)
+                  placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
+                />
+                <Input 
+                  label="Mức lương (Tùy chọn)" 
+                  name="salaryRange" 
+                  value={formData.salaryRange} 
+                  onChange={handleChange} 
+                  maxLength={100} // Khớp cấu trúc DB VARCHAR(100)
+                  placeholder="VD: 15,000,000 - 25,000,000 VND" 
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700">Hình thức làm việc</label>
+                  <select 
+                    name="workType" 
+                    value={formData.workType} 
+                    onChange={handleChange} 
+                    required
+                    className={inputClassName}
+                  >
+                    <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
+                    <option value="PART_TIME">Bán thời gian (Part-time)</option>
+                    <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
+                    <option value="REMOTE">Làm việc từ xa (Remote)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
+                  <input 
+                    type="datetime-local" 
+                    name="expiresAt" 
+                    value={formData.expiresAt} 
+                    onChange={handleChange} 
+                    required
+                    className={inputClassName}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nhóm 2: Chi tiết tin đăng */}
+            <div className="space-y-6 pt-4">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">2. Chi tiết tuyển dụng</h3>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700">Mô tả công việc (Job Description) <span className="text-red-500">*</span></label>
+                <textarea
+                  name="description" 
+                  value={formData.description} 
+                  onChange={handleChange} 
+                  required 
+                  rows="5"
+                  className={`${inputClassName} resize-y min-h-[120px]`}
+                  placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
+                ></textarea>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700">Yêu cầu ứng viên (Requirements) <span className="text-red-500">*</span></label>
+                <textarea
+                  name="requirements" 
+                  value={formData.requirements} 
+                  onChange={handleChange} 
+                  required 
+                  rows="5"
+                  className={`${inputClassName} resize-y min-h-[120px]`}
+                  placeholder="- Tốt nghiệp chuyên ngành CNTT hoặc liên quan&#10;- Có kinh nghiệm làm việc ở vị trí tương đương&#10;- Kỹ năng giao tiếp và làm việc nhóm tốt..."
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Bottom Actions Form */}
+            <div className="flex justify-end pt-8 border-t border-gray-100 gap-4">
+              <button 
+                type="button" 
+                onClick={() => navigate('/employer/jobs')}
+                className="px-6 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                disabled={isLoading}
+              >
+                Hủy bỏ
+              </button>
+              <Button 
+                type="submit" 
+                isLoading={isLoading}
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 transition-all font-semibold"
+              >
+                Lưu thay đổi
+              </Button>
+            </div>
+            
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -5925,24 +6635,22 @@ export default function JobEditPage() {
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import employerService from '../../../features/employer/employerService';
-import authService from '../../../features/auth/authService'; // Đảm bảo đã import authService
+import authService from '../../../features/auth/authService';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 
 export default function JobManagementPage() {
   const navigate = useNavigate();
   
-  // 1. Lấy userId từ tài khoản đang đăng nhập (ví dụ lúc này là số 4)
   const currentUser = authService.getCurrentUser();
   const userId = currentUser?.userId || currentUser?.id; 
   
-  // Tạo thêm một State để lưu Company ID thực tế (ví dụ lúc này là số 1)
   const [companyId, setCompanyId] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState('');
 
-  // LUỒNG 1: Sử dụng userId (4) để đi tìm companyId (1) từ Backend
+  // LUỒNG 1: Lấy thông tin profile doanh nghiệp dựa trên userId tài khoản đang login
   useEffect(() => {
     if (!userId) {
       setLoading(false);
@@ -5953,14 +6661,11 @@ export default function JobManagementPage() {
     const fetchCompanyId = async () => {
       try {
         setLoading(true);
-        // Gọi API công khai: GET /api/v1/employers/4/profile
         const profileResult = await employerService.getCompanyProfile(userId);
-        
-        // Bóc tách lấy ID thật của doanh nghiệp (sẽ lấy ra số 1)
         const realCompanyId = profileResult.data?.id; 
 
         if (realCompanyId) {
-          setCompanyId(realCompanyId); // Cập nhật vào state
+          setCompanyId(realCompanyId);
         } else {
           console.warn("Tài khoản này chưa được khởi tạo hồ sơ doanh nghiệp!");
           setLoading(false);
@@ -5974,7 +6679,7 @@ export default function JobManagementPage() {
     fetchCompanyId();
   }, [userId, navigate]);
 
-  // LUỒNG 2: Khi đã có companyId thật (số 1), tiến hành load danh sách Tin tuyển dụng
+  // LUỒNG 2: Khi đã lấy được companyId thực tế, tiến hành nạp danh sách tin tuyển dụng
   useEffect(() => {
     if (!companyId) return;
     loadJobs();
@@ -5983,38 +6688,33 @@ export default function JobManagementPage() {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      // Gọi API: GET /api/v1/jobs/employers/1?page=0&size=10
       const result = await employerService.getMyJobs(companyId, 0, 10);
       setJobs(result.data?.content || []);
     } catch (error) {
       console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.message);
-      setToastMessage('Không thể tải danh sách tin tuyển dụng từ hệ thống.');
-      setTimeout(() => setToastMessage(''), 3000);
+      showToast('Không thể tải danh sách tin tuyển dụng từ hệ thống.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Tính năng Sao chép Link Ứng tuyển Ẩn danh
-  const handleCopyBlindTestLink = (jobId) => {
-    const blindUrl = `https://appa.ungdungnghiencuu.com/apply/blind-test/${jobId}`;
-    navigator.clipboard.writeText(blindUrl);
-    setToastMessage('Đã sao chép Link Ứng tuyển Ẩn danh!');
+  // Hàm hiển thị thông báo Toast nhanh
+  const showToast = (msg) => {
+    setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  // Tính năng Cập nhật trạng thái tin tuyển dụng
+  // Tính năng cập nhật trạng thái tin tuyển dụng (Đóng bài đăng)
   const handleStatusChange = async (jobId, newStatus) => {
     if (!companyId) return;
     try {
       await employerService.updateApplicationStatus(companyId, jobId, newStatus);
-      setToastMessage(`Đã chuyển trạng thái tin #${jobId} sang ${newStatus}`);
-      loadJobs(); // Tải lại danh sách sau khi cập nhật thành công
+      showToast('Đã dừng hiển thị tin tuyển dụng thành công.');
+      loadJobs(); 
     } catch (error) {
       console.error('Lỗi khi đổi trạng thái:', error);
-      setToastMessage('Có lỗi xảy ra khi cập nhật trạng thái.');
+      showToast('Có lỗi xảy ra khi cập nhật trạng thái.');
     }
-    setTimeout(() => setToastMessage(''), 3000);
   };
 
   const renderStatusBadge = (status) => {
@@ -6026,109 +6726,160 @@ export default function JobManagementPage() {
     }
   };
 
+  const formatWorkType = (type) => {
+    switch (type) {
+      case 'FULL_TIME': return 'Toàn thời gian';
+      case 'PART_TIME': return 'Bán thời gian';
+      case 'INTERNSHIP': return 'Thực tập sinh';
+      case 'REMOTE': return 'Làm việc từ xa';
+      default: return type;
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-screen relative">
+    <div className="min-h-screen bg-gray-50/30 py-8 px-4 sm:px-6 lg:px-8 relative">
+      
+      {/* Toast Notification Giao diện mới sạch sẽ */}
       {toastMessage && (
-        <div className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg text-sm transition-opacity z-50">
+        <div className="fixed top-5 right-5 bg-slate-900/95 backdrop-blur-sm text-white px-5 py-3 rounded-xl shadow-xl shadow-slate-900/20 text-sm font-medium z-50 transition-all border border-slate-800 animate-fade-in flex items-center gap-2">
+          <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           {toastMessage}
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Quản lý Tin tuyển dụng</h2>
-          <p className="text-sm text-gray-500 mt-1">Theo dõi hiệu suất và vòng đời các vị trí đang mở.</p>
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-6xl mx-auto transition-all">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Quản lý Tin tuyển dụng</h2>
+            <p className="text-sm text-gray-500 mt-1">Theo dõi trạng thái hiển thị và quản lý hồ sơ ứng tuyển của các vị trí.</p>
+          </div>
+          <Button 
+            onClick={() => navigate('/employer/jobs/create')} 
+            className="whitespace-nowrap inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-100 transition-all text-sm"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Đăng tin mới
+          </Button>
         </div>
-        <Button onClick={() => navigate('/employer/jobs/create')} className="whitespace-nowrap">
-          + Đăng tin mới
-        </Button>
-      </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      ) : jobs.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-          <p className="text-gray-500 mb-4">Bạn chưa đăng tin tuyển dụng nào.</p>
-          <Button onClick={() => navigate('/employer/jobs/create')}>Tạo tin đầu tiên</Button>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-4 font-semibold text-gray-700 w-1/3">Vị trí tuyển dụng</th>
-                <th className="p-4 font-semibold text-gray-700">Trạng thái</th>
-                <th className="p-4 font-semibold text-gray-700">Ngày hết hạn</th>
-                <th className="p-4 font-semibold text-gray-700 text-center">Hồ sơ chờ</th>
-                <th className="p-4 font-semibold text-gray-700 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-blue-50/50 transition-colors group">
-                  <td className="p-4">
-                    <div className="font-bold text-gray-800 text-base">{job.title}</div>
-                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                      <span>{job.location}</span>
-                      <span>•</span>
-                      <span>{job.workType}</span>
-                    </div>
-                  </td>
-                  <td className="p-4 align-middle">
-                    {renderStatusBadge(job.status)}
-                  </td>
-                  <td className="p-4 text-gray-600">
-                    {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString('vi-VN') : 'Không giới hạn'}
-                  </td>
-                  <td className="p-4 text-center">
-                    <Link 
-                      to={`/employer/applications?jobId=${job.id}`} 
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold hover:bg-blue-200 transition-colors"
-                    >
-                      {job.applicationCount || 0} 
-                    </Link>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end items-center gap-3">
-                      <button 
-                        onClick={() => handleCopyBlindTestLink(job.id)}
-                        className="text-gray-500 hover:text-indigo-600 text-xs font-medium bg-gray-100 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
-                      >
-                        🔗 Blind Link
-                      </button>
-                      
-                      <Link 
-                        to={`/employer/jobs/edit/${job.id}`} 
-                        className="text-gray-500 hover:text-blue-600 text-xs font-medium transition-colors"
-                      >
-                        Sửa
-                      </Link>
-                      
-                      {job.status === 'ACTIVE' ? (
-                        <button 
-                          onClick={() => handleStatusChange(job.id, 'CLOSED')}
-                          className="text-gray-500 hover:text-red-600 text-xs font-medium transition-colors"
-                        >
-                          Đóng tin
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => handleStatusChange(job.id, 'ACTIVE')}
-                          className="text-gray-500 hover:text-green-600 text-xs font-medium transition-colors"
-                        >
-                          Gia hạn
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        {loading ? (
+          /* Khung xương Skeleton Table đẹp đẽ thay cho Spinner quay tròn */
+          <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm animate-pulse">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-gray-50/70">
+                <tr>
+                  <th className="p-4 bg-gray-100/60 w-2/5 h-12"></th>
+                  <th className="p-4 bg-gray-100/60 h-12 w-24"></th>
+                  <th className="p-4 bg-gray-100/60 h-12 w-32"></th>
+                  <th className="p-4 bg-gray-100/60 h-12 w-24 text-center"></th>
+                  <th className="p-4 bg-gray-100/60 h-12 w-36"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[1, 2, 3].map((n) => (
+                  <tr key={n}>
+                    <td className="p-5 space-y-2.5">
+                      <div className="h-4 bg-gray-100 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                    </td>
+                    <td className="p-5"><div className="h-6 bg-gray-100 rounded-full w-20"></div></td>
+                    <td className="p-5"><div className="h-4 bg-gray-100 rounded w-24"></div></td>
+                    <td className="p-5"><div className="h-8 w-8 bg-gray-100 rounded-full mx-auto"></div></td>
+                    <td className="p-5"><div className="h-4 bg-gray-100 rounded w-16 ml-auto"></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : jobs.length === 0 ? (
+          /* Trạng thái trống trống trải */
+          <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <p className="text-gray-500 font-medium mb-4">Doanh nghiệp của bạn chưa đăng tin tuyển dụng nào.</p>
+            <Button onClick={() => navigate('/employer/jobs/create')} className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors">
+              Tạo bài đăng đầu tiên
+            </Button>
+          </div>
+        ) : (
+          /* Danh sách bảng tin chính thức */
+          <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm bg-white">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-50/70 border-b border-gray-100">
+                  <th className="p-4 font-bold text-gray-700 w-2/5">Vị trí tuyển dụng</th>
+                  <th className="p-4 font-bold text-gray-700 w-28">Trạng thái</th>
+                  <th className="p-4 font-bold text-gray-700 w-32">Hạn nộp hồ sơ</th>
+                  <th className="p-4 font-bold text-gray-700 text-center w-28">Hồ sơ đã nhận</th>
+                  <th className="p-4 font-bold text-gray-700 text-right w-36">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {jobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-slate-50/60 transition-colors group">
+                    <td className="p-4 lg:p-5">
+                      <div className="font-semibold text-gray-900 text-base group-hover:text-indigo-600 transition-colors">{job.title}</div>
+                      <div className="text-xs text-gray-400 mt-1.5 flex items-center gap-2 font-medium">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          </svg>
+                          {job.location}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span>{formatWorkType(job.workType)}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 align-middle">
+                      {renderStatusBadge(job.status)}
+                    </td>
+                    <td className="p-4 text-gray-500 font-medium">
+                      {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString('vi-VN') : 'Không giới hạn'}
+                    </td>
+                    <td className="p-4 text-center">
+                      <Link 
+                        to={`/employer/applications?jobId=${job.id}`} 
+                        className="inline-flex items-center justify-center min-w-[32px] h-8 px-2 rounded-full bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs border border-indigo-100/50"
+                      >
+                        {job.applicationCount || 0}
+                      </Link>
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end items-center gap-4">
+                        <Link 
+                          to={`/employer/jobs/edit/${job.id}`} 
+                          className="text-gray-600 hover:text-indigo-600 font-semibold text-xs transition-colors"
+                        >
+                          Chỉnh sửa
+                        </Link>
+                        
+                        {/* Chỉ hiện nút Đóng tin nếu trạng thái là ACTIVE */}
+                        {job.status === 'ACTIVE' && (
+                          <button 
+                            onClick={() => handleStatusChange(job.id, 'CLOSED')}
+                            className="text-gray-400 hover:text-red-600 font-semibold text-xs transition-colors"
+                          >
+                            Đóng tin
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
