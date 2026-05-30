@@ -34,7 +34,7 @@ export default function CompanyDetailPage() {
         try {
           // Sử dụng jobService với API public
           const jobsResponse = await jobService.getPublicJobsByCompany(
-            id,
+            companyData.id,
             0,
             10,
           );
