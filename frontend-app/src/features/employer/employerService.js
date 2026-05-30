@@ -83,6 +83,19 @@ const employerService = {
     return response.data;
   },
 
+  getApplicationById: async (applicationId) => {
+    const response = await axiosClient.get(`/applications/${applicationId}`);
+    return response.data;
+  },
+
+  // Lấy dữ liệu file CV (dạng Blob)
+  downloadCvFile: async (cvId) => {
+    const response = await axiosClient.get(`/files/cv/${cvId}`, {
+      responseType: 'blob' // Bắt buộc phải có để Axios hiểu đây là file nhị phân
+    });
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {

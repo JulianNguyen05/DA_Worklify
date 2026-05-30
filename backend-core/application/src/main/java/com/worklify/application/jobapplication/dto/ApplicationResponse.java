@@ -22,4 +22,6 @@ public class ApplicationResponse {
     private String companyLogo;
     private String cvFileName;
     private String candidateName;
+    private String candidateEmail;
+    private String candidatePhone;
 }

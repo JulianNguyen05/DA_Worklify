@@ -7,6 +7,8 @@ import com.worklify.application.jobapplication.service.JobApplicationService;
 import com.worklify.domain.application.model.Application;
 import com.worklify.domain.application.model.ApplicationStatus;
 import com.worklify.domain.application.repository.ApplicationRepository;
+import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.repository.UserRepository;
 import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.candidate.model.CvDocument;
 import com.worklify.domain.candidate.repository.CandidateProfileRepository;
@@ -33,13 +35,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final JobPostingRepository jobPostingRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final CvDocumentRepository cvDocumentRepository;
-
-    // BỔ SUNG: Inject CandidateProfileRepository thay vì UserRepository
+    private final UserRepository userRepository;
     private final CandidateProfileRepository candidateProfileRepository;
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, ApplicationRequest request) {
-        // 1. Kiểm tra tính hợp lệ của Tin tuyển dụng từ JobPostingRepository port
         JobPosting jobPosting = jobPostingRepository.findById(request.getJobId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng tương ứng"));
 
@@ -47,7 +47,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             throw new IllegalArgumentException("Tin tuyển dụng hiện tại không còn hoạt động hoặc đã đóng");
         }
 
-        // 2. Khởi tạo đối tượng Rich Domain Model theo đúng phương thức factory có sẵn trong file Domain
         Application application = Application.createNew(
                 request.getJobId(),
                 request.getCvId(),
@@ -55,7 +54,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 request.getCoverLetter()
         );
 
-        // 3. Persist thực thể xuống cơ sở dữ liệu qua ApplicationRepository port
         Application savedApplication = applicationRepository.save(application);
 
         return mapToResponse(savedApplication);
@@ -72,7 +70,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Transactional(readOnly = true)
     public PageResponse<ApplicationResponse> getApplicationsForReviewBoard(Long jobId, DomainPageable pageable) {
         DomainPage<Application> page = applicationRepository.findByJobId(jobId, pageable);
-
         return mapToPageResponse(page);
     }
 
@@ -84,24 +81,26 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         JobPosting jobPosting = jobPostingRepository.findById(application.getJobId())
                 .orElseThrow(() -> new IllegalArgumentException("Tin tuyển dụng liên kết không tồn tại"));
 
-        // Kiểm tra quyền sở hữu công việc thuộc về doanh nghiệp thực hiện thao tác
         if (!jobPosting.getCompanyId().equals(companyId)) {
             throw new IllegalArgumentException("Bạn không có quyền thay đổi trạng thái đơn ứng tuyển của công việc này");
         }
 
-        // Thay đổi trạng thái thông qua phương thức hành vi đóng gói sẵn của Domain Model
         application.updateStatus(status);
         applicationRepository.save(application);
     }
 
-    // Mapper helper: Ánh xạ đầy đủ thông tin dành cho Ứng viên hoặc Nhà tuyển dụng sở hữu
-    private ApplicationResponse mapToResponse(Application app) {
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationResponse getApplicationById(Long id) {
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn ứng tuyển"));
+        return mapToResponse(application);
+    }
 
-        // 1. Tìm thông tin Job
+    private ApplicationResponse mapToResponse(Application app) {
         JobPosting job = jobPostingRepository.findById(app.getJobId()).orElse(null);
         String jobTitle = (job != null) ? job.getTitle() : null;
 
-        // 2. Tìm thông tin Công ty (Dựa vào companyId của Job)
         String companyName = null;
         String companyLogo = null;
         if (job != null) {
@@ -112,15 +111,24 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             }
         }
 
-        // 3. Tìm thông tin file CV
         CvDocument cv = cvDocumentRepository.findById(app.getCvId()).orElse(null);
         String cvFileName = (cv != null) ? cv.getFileName() : null;
 
-        // 4. BỔ SUNG: Lấy thông tin Tên ứng viên từ CandidateProfile
         String candidateName = null;
+        String candidatePhone = null;
+        String candidateEmail = null;
+
         if (app.getCandidateId() != null) {
             CandidateProfile candidate = candidateProfileRepository.findByUserId(app.getCandidateId()).orElse(null);
-            candidateName = (candidate != null) ? candidate.getFullName() : null;
+            if (candidate != null) {
+                candidateName = candidate.getFullName();
+                candidatePhone = candidate.getPhone();
+            }
+
+            User user = userRepository.findById(app.getCandidateId()).orElse(null);
+            if (user != null && user.getEmail() != null) {
+                candidateEmail = user.getEmail().value(); // ĐÃ SỬA CHỖ NÀY
+            }
         }
 
         return ApplicationResponse.builder()
@@ -136,11 +144,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .companyName(companyName)
                 .companyLogo(companyLogo)
                 .cvFileName(cvFileName)
-                .candidateName(candidateName) // TRUYỀN TÊN VÀO DTO
+                .candidateName(candidateName)
+                .candidateEmail(candidateEmail)
+                .candidatePhone(candidatePhone)
                 .build();
     }
 
-    // Mapper helper: Chuyển đổi dữ liệu phân trang từ Domain sang Application DTO
     private PageResponse<ApplicationResponse> mapToPageResponse(DomainPage<Application> page) {
         return PageResponse.<ApplicationResponse>builder()
                 .content(page.getContent().stream()

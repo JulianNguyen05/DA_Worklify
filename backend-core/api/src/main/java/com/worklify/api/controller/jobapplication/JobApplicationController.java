@@ -63,6 +63,13 @@ public class JobApplicationController {
         return ApiResponse.success(null, "Cập nhật trạng thái thành công");
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
+    @Operation(summary = "Xem chi tiết 1 đơn ứng tuyển")
+    public ApiResponse<ApplicationResponse> getApplicationById(@PathVariable("id") Long id) {
+        return ApiResponse.success(applicationService.getApplicationById(id));
+    }
+
     private DomainPageable createPageable(int page, int size) {
         return new SearchPageable(page, size);
     }

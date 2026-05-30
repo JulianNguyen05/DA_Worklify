@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import authService from '../../../features/auth/authService';
 import employerService from '../../../features/employer/employerService';
-import candidateService from '../../../features/candidate/candidateService';
 
 // ─────────────────────────────────────────────
 // STATUS BADGE COMPONENTS
@@ -23,7 +22,7 @@ const APP_STATUS_MAP = {
   PENDING:              { label: 'Chờ xử lý',  bg: 'bg-amber-50 text-amber-700 border-amber-200',     dot: 'bg-amber-400' },
   REVIEWED:             { label: 'Đã xem',      bg: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-400' },
   INTERVIEW_SCHEDULED:  { label: 'Phỏng vấn',  bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
-  ACCEPTED:             { label: 'Đã tuyển',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  ACCEPTED:             { label: 'Đã duyệt',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   REJECTED:             { label: 'Từ chối',    bg: 'bg-gray-100 text-gray-500 border-gray-200',       dot: 'bg-gray-400' },
 };
 
@@ -56,7 +55,6 @@ const StatCard = ({ title, value, subtitle, link, icon, accentClass, isLoading }
   >
     <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity ${accentClass}`} />
     <div className="flex items-start justify-between mb-4">
-      {/* FIX: Đổi nền thành màu đặc, bo góc tròn và icon màu trắng */}
       <div className={`p-3 rounded-xl ${accentClass} shadow-sm flex items-center justify-center w-max text-white`}>
         {icon}
       </div>
@@ -86,11 +84,11 @@ export default function EmployerDashboardPage() {
     pendingApplications: 0,
     acceptedApplications: 0,
   });
-  const [recentJobs, setRecentJobs]           = useState([]);
+  const [recentJobs, setRecentJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
 
   useEffect(() => {
-    const run = async () => {
+    const fetchDashboardData = async () => {
       const currentUser = authService.getCurrentUser();
       if (!currentUser?.userId) {
         setError('Không tìm thấy phiên đăng nhập.');
@@ -100,45 +98,46 @@ export default function EmployerDashboardPage() {
       setUser(currentUser);
 
       try {
-        // 🌟 BƯỚC SỬA ĐỔI CHÍNH: Lấy đúng companyId thực tế từ userId trước
+        // 1. Lấy thông tin công ty
         const profileResult = await employerService.getCompanyProfile(currentUser.userId);
         const companyId = profileResult.data?.id;
 
         if (!companyId) {
-          console.warn("Tài khoản này chưa lập hồ sơ doanh nghiệp!");
           setLoading(false);
           return;
         }
 
-        // Gọi API song song bằng việc truyền COMPANY_ID (Thay vì truyền userId cũ)
-        const [jobsRes, appsRes] = await Promise.allSettled([
-          employerService.getMyJobs(companyId, 0, 5),
-          employerService.getApplicationsByEmployer?.(companyId, 0, 5)
-            ?? candidateService.getApplicationsByEmployer?.(companyId, 0, 5),
-        ]);
+        // 2. Lấy danh sách việc làm của công ty
+        const jobsRes = await employerService.getMyJobs(companyId, 0, 50);
+        const jobItems = jobsRes.data?.content || jobsRes.data || [];
+        const activeJobsCount = jobItems.filter(j => j.status === 'ACTIVE').length;
 
-        // Xử lý dữ liệu Tin tuyển dụng từ Backend
-        const jobsData = jobsRes.status === 'fulfilled' ? (jobsRes.value?.data ?? jobsRes.value) : null;
-        const jobItems   = jobsData?.items ?? jobsData?.content ?? [];
+        // 3. Lấy hồ sơ ứng tuyển bằng cách quét qua danh sách việc làm
+        const appPromises = jobItems.map(job => employerService.getApplicationsForJob(job.id, 0, 20));
+        const appResponses = await Promise.allSettled(appPromises);
         
-        // Thống kê đếm số tin đang hiển thị công khai công ty sở hữu
-        const activeJobs = jobItems.filter(j => j.status === 'ACTIVE').length;
-
-        // Xử lý dữ liệu đơn ứng tuyển
-        const appsData = appsRes.status === 'fulfilled' ? (appsRes.value?.data ?? appsRes.value) : null;
-        const appItems    = appsData?.items ?? appsData?.content ?? [];
-        const totalApps   = appsData?.totalElements ?? appItems.length;
-        const pendingApps = appItems.filter(a => a.status === 'PENDING').length;
-        const acceptedApps= appItems.filter(a => a.status === 'ACCEPTED').length;
-
-        setStats({
-          activeJobs,
-          totalApplications: totalApps,
-          pendingApplications: pendingApps,
-          acceptedApplications: acceptedApps,
+        let allApps = [];
+        appResponses.forEach(res => {
+          if (res.status === 'fulfilled') {
+             const apps = res.value.data?.content || res.value.data || [];
+             allApps = [...allApps, ...apps];
+          }
         });
+
+        // 4. Sắp xếp hồ sơ mới nhất lên đầu
+        allApps.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
+        // 5. Tính toán các chỉ số
+        setStats({
+          activeJobs: activeJobsCount,
+          totalApplications: allApps.length,
+          pendingApplications: allApps.filter(a => a.status === 'PENDING').length,
+          acceptedApplications: allApps.filter(a => a.status === 'ACCEPTED').length,
+        });
+        
         setRecentJobs(jobItems.slice(0, 5));
-        setRecentApplications(appItems.slice(0, 6));
+        setRecentApplications(allApps.slice(0, 6));
+
       } catch (err) {
         console.error('[EmployerDashboard Error]', err);
         setError('Không thể tải dữ liệu tổng quan. Vui lòng thử lại.');
@@ -147,7 +146,7 @@ export default function EmployerDashboardPage() {
       }
     };
 
-    run();
+    fetchDashboardData();
   }, []);
 
   const displayName = useMemo(() => {
@@ -172,7 +171,7 @@ export default function EmployerDashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tải dữ liệu tổng quan...</p>
+        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tổng hợp dữ liệu ứng tuyển...</p>
       </div>
     );
   }
@@ -230,12 +229,12 @@ export default function EmployerDashboardPage() {
           icon={<FileText className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications?status=PENDING" 
+          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications" 
           accentClass="bg-orange-500" 
           icon={<Inbox className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications?status=ACCEPTED" 
+          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications" 
           accentClass="bg-emerald-500" 
           icon={<CheckCircle className="w-6 h-6 text-white" />} 
         />
@@ -275,11 +274,9 @@ export default function EmployerDashboardPage() {
                     <Link to={`/employer/jobs/edit/${job.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm line-clamp-1">
                       {job.title}
                     </Link>
-                    {/* Sửa từ job.work_type sang job.workType giống cấu trúc API */}
                     {job.workType && (
                       <span className="text-xs text-gray-400 mt-0.5 block">{formatWorkType(job.workType)}</span>
                     )}
-                    {/* Sửa từ job.expires_at sang job.expiresAt */}
                     {job.expiresAt && (
                       <span className="inline-flex items-center gap-1 text-xs text-gray-400 mt-1">
                         <Calendar className="w-3 h-3" />
@@ -334,16 +331,17 @@ export default function EmployerDashboardPage() {
                 <div key={app.id} className="px-5 py-3.5 hover:bg-blue-50/30 transition-colors group">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
-                      {app.fullName || app.full_name || 'Ứng viên'}
+                      {/* Đã sửa thành candidateName đồng bộ với Backend */}
+                      {app.candidateName || `Ứng viên #${app.id}`}
                     </p>
                     <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                       <Clock className="w-3 h-3" />
-                      {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : app.applied_at ? new Date(app.applied_at).toLocaleDateString('vi-VN') : '—'}
+                      {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : '—'}
                     </span>
                   </div>
 
                   <p className="text-xs text-gray-500 truncate mb-2">
-                    {app.jobTitle || app.job_title || '—'}
+                    {app.jobTitle || '—'}
                   </p>
 
                   <div className="flex items-center justify-between">

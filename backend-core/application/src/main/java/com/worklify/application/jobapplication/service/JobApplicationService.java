@@ -13,4 +13,5 @@ public interface JobApplicationService {
     PageResponse<ApplicationResponse> getApplicationsForReviewBoard(Long jobId, DomainPageable pageable);
 
     void updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status);
+    ApplicationResponse getApplicationById(Long id);
 }
