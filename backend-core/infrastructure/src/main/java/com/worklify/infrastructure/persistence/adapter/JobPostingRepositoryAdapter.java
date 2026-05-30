@@ -56,4 +56,14 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public DomainPage<JobPosting> findByCompanyIdAndStatus(Long companyId, JobStatus status, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyIdAndStatus(
+                companyId,
+                status,
+                PaginationMapper.toSpringPageable(pageable)
+        );
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
 }

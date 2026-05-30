@@ -16,4 +16,5 @@ public interface JobService {
     void saveJobForCandidate(Long candidateId, Long jobId);
     void unsaveJobForCandidate(Long candidateId, Long jobId);
     PageResponse<SavedJobResponse> getSavedJobsByCandidate(Long candidateId, DomainPageable pageable);
+    PageResponse<JobPostingResponse> getPublicJobsByCompany(Long companyId, DomainPageable pageable);
 }

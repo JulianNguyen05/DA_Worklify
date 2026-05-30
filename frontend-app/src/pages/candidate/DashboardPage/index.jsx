@@ -39,6 +39,10 @@ const DashboardPage = () => {
         const jobs = jobsRes.status === 'fulfilled' ? jobsRes.value?.data : { content: [], totalElements: 0 };
         const companies = companiesRes.status === 'fulfilled' ? companiesRes.value?.data : { content: [], totalElements: 0 };
 
+        const sortedCompanies = (companies?.content || []).sort((a, b) => 
+            (b.likeCount || 0) - (a.likeCount || 0)
+        );
+
         setData({
           user: currentUser,
           stats: {
@@ -48,7 +52,7 @@ const DashboardPage = () => {
             companyCount: companies?.totalElements || 0,
           },
           latestJobs: jobs?.content || [],
-          topCompanies: companies?.content || []
+          topCompanies: sortedCompanies // Sử dụng mảng đã được sắp xếp
         });
 
       } catch (err) {
@@ -169,7 +173,7 @@ const DashboardPage = () => {
           <div className="divide-y divide-gray-100">
             {data.topCompanies.length > 0 ? (
               data.topCompanies.map(company => (
-                <Link key={company.id} to={`/companies/${company.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
+                <Link key={company.id} to={`/companies/${company.userId}`} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {company.logoUrl ? (
                       <img src={`http://localhost:8080${company.logoUrl}`} alt={company.companyName} className="w-full h-full object-cover" />

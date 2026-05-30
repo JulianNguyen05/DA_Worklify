@@ -93,4 +93,15 @@ public class JobController {
             }
         };
     }
+
+    @GetMapping("/public/employers/{companyId}")
+    @Operation(summary = "Khách/Ứng viên xem danh sách việc làm đang tuyển của doanh nghiệp")
+    public ApiResponse<PageResponse<JobPostingResponse>> getPublicJobsByCompany(
+            @PathVariable("companyId") Long companyId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+
+        DomainPageable pageable = createPageable(page, size);
+        return ApiResponse.success(jobService.getPublicJobsByCompany(companyId, pageable));
+    }
 }

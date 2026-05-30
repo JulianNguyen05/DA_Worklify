@@ -16,7 +16,12 @@ const jobService = {
     const response = await axiosClient.get(`/jobs/${jobId}`);
     return response.data;
   },
-  
+
+  getPublicJobsByCompany: async (companyId, page = 0, size = 10) => {
+    const response = await axiosClient.get(`/jobs/public/employers/${companyId}?page=${page}&size=${size}`);
+    return response.data;
+  },
+
   // Xem hồ sơ doanh nghiệp (Public)
   getCompanyProfile: async (companyId) => {
     // Đã xóa tiền tố /api/v1

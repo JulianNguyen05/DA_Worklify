@@ -18,6 +18,8 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
 
     List<JobPostingJpaEntity> findByStatus(JobStatus status);
 
+    Page<JobPostingJpaEntity> findByCompanyIdAndStatus(Long companyId, JobStatus status, Pageable pageable);
+
     @Query("SELECT j FROM JobPostingJpaEntity j WHERE " +
             "(:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
             "(:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +

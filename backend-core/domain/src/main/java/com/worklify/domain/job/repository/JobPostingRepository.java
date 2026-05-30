@@ -13,4 +13,5 @@ public interface JobPostingRepository {
     DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable);
     List<JobPosting> findByStatus(JobStatus status);
     long countByStatus(JobStatus status);
+    DomainPage<JobPosting> findByCompanyIdAndStatus(Long companyId, JobStatus status, DomainPageable pageable);
 }

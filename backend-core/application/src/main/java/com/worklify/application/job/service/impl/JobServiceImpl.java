@@ -184,4 +184,11 @@ public class JobServiceImpl implements JobService {
                 .pageSize(page.getPageSize())
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<JobPostingResponse> getPublicJobsByCompany(Long companyId, DomainPageable pageable) {
+        // Chỉ lấy những Job có status là ACTIVE cho Public API
+        return mapToPageResponse(jobPostingRepository.findByCompanyIdAndStatus(companyId, JobStatus.ACTIVE, pageable));
+    }
 }
