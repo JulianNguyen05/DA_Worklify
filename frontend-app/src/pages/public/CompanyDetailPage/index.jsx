@@ -209,7 +209,8 @@ export default function CompanyDetailPage() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 max-h-[200px] overflow-y-auto pr-2"
+                   style={{ scrollbarWidth: 'thin' }}>
                 {activeJobs.map((job) => (
                   <Link
                     key={job.id}
