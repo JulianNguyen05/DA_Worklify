@@ -2,6 +2,9 @@ package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.auth.repository.UserRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
 import com.worklify.infrastructure.persistence.entity.UserJpaEntity;
 import com.worklify.infrastructure.persistence.mapper.UserEntityMapper;
 import com.worklify.infrastructure.persistence.repository.UserJpaRepository;
@@ -40,5 +43,12 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public long count() {
         return jpaRepository.count();
+    }
+
+    @Override
+    public DomainPage<User> findAll(DomainPageable pageable) {
+        org.springframework.data.domain.Page<UserJpaEntity> page =
+                jpaRepository.findAll(PaginationMapper.toSpringPageable(pageable));
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 }

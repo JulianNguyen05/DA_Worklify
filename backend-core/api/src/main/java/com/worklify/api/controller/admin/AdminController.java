@@ -6,7 +6,10 @@ import com.worklify.application.admin.dto.CompanyModerationRequest;
 import com.worklify.application.admin.dto.DashboardStatsResponse;
 import com.worklify.application.admin.dto.JobModerationRequest;
 import com.worklify.application.admin.service.AdminService;
+import com.worklify.application.auth.dto.UserResponse;
+import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.employer.dto.CompanyProfileResponse;
+import com.worklify.domain.common.DomainPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -74,5 +77,25 @@ public class AdminController {
     @Operation(summary = "Lấy danh sách tin tuyển dụng đang chờ duyệt")
     public ApiResponse<List<AdminJobResponse>> getPendingJobs() {
         return ApiResponse.success(adminService.getPendingJobs());
+    }
+
+    @GetMapping("/users")
+    @Operation(summary = "Lấy danh sách tất cả người dùng (Có phân trang)")
+    public ApiResponse<PageResponse<UserResponse>> getAllUsers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        DomainPageable pageable = new DomainPageable() {
+            @Override
+            public int getPageNumber() { return page; }
+            @Override
+            public int getPageSize() { return size; }
+            @Override
+            public org.springframework.data.domain.Pageable toSpringPageable() {
+                return org.springframework.data.domain.PageRequest.of(page, size);
+            }
+        };
+
+        return ApiResponse.success(adminService.getAllUsers(pageable));
     }
 }

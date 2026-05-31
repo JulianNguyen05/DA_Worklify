@@ -5,6 +5,7 @@ import com.worklify.application.common.exception.ResourceNotFoundException;
 import com.worklify.application.employer.dto.CompanyProfileResponse;
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.candidate.model.Skill;
+import com.worklify.domain.candidate.repository.CandidateProfileRepository;
 import com.worklify.domain.candidate.repository.SkillRepository;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.employer.repository.CompanyLikeRepository;
@@ -45,6 +46,7 @@ public class AdminServiceImpl implements AdminService {
     private final CompanyLikeRepository companyLikeRepository;
     private final SystemLogRepository systemLogRepository;
     private final SkillRepository skillRepository;
+    private final CandidateProfileRepository candidateProfileRepository;
 
     // Admin ID thực tế nên được lấy từ SecurityContext — tạm dùng hằng số
     private static final Long SYSTEM_ADMIN_ID = 1L;
@@ -175,8 +177,44 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(DomainPageable pageable) {
-        // TODO: Thêm UserRepository.findAll(DomainPageable) khi cần
-        throw new UnsupportedOperationException("Chưa hỗ trợ phân trang người dùng.");
+        // 1. Lấy danh sách người dùng từ DB thông qua Repository
+        DomainPage<User> page = userRepository.findAll(pageable);
+
+        // 2. Chuyển đổi dữ liệu từ Entity (User) sang DTO (UserResponse) để gửi về Frontend
+        List<UserResponse> content = page.getContent().stream().map(user -> {
+            // Lấy email an toàn tránh lỗi null
+            String emailStr = user.getEmail() != null ? String.valueOf(user.getEmail()) : "Chưa cập nhật";
+
+            // Tìm tên hiển thị dựa trên Role (Tùy chọn, Frontend có cơ chế fallback nếu null)
+            String fullName = "Chưa cập nhật tên";
+            if (user.getRole() != null) {
+                if (user.getRole().name().equals("CANDIDATE")) {
+                    fullName = candidateProfileRepository.findByUserId(user.getId())
+                            .map(c -> c.getFullName()).orElse(fullName);
+                } else if (user.getRole().name().equals("EMPLOYER")) {
+                    fullName = companyProfileRepository.findByUserId(user.getId())
+                            .map(c -> c.getCompanyName()).orElse(fullName);
+                }
+            }
+
+            return UserResponse.builder()
+                    .id(user.getId())
+                    .email(emailStr)
+                    .fullName(fullName)
+                    .phone(user.getPhone() != null ? user.getPhone().value() : null)
+                    .role(user.getRole())
+                    .status(user.getStatus())
+                    .build();
+        }).collect(Collectors.toList());
+
+        // 3. Đóng gói vào PageResponse
+        return PageResponse.<UserResponse>builder()
+                .content(content)
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getPageNumber())
+                .pageSize(page.getPageSize())
+                .build();
     }
 
     @Override

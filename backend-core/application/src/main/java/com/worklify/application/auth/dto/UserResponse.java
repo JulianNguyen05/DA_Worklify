@@ -16,4 +16,6 @@ public class UserResponse {
     private UserStatus status;
     private boolean mfaEnabled;
     private LocalDateTime createdAt;
+    private String fullName;
+    private String phone;
 }
