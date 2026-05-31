@@ -54,26 +54,26 @@
     </td>
     <td align="center" width="50%">
       <strong>💼 Danh Sách Việc Làm (Job List)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/38BDF8?text=💼+Job+List+Page&font=roboto" alt="Job List Page" width="100%"/>
+      <img src="demo_images/job_list_page.png" alt="Job List Page" width="100%"/>
       <br/><sub>Trang tìm kiếm và lọc việc làm theo nhiều tiêu chí: ngành nghề, địa điểm, mức lương, loại hình công việc.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>📄 Chi Tiết Việc Làm (Job Detail)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/38BDF8?text=📄+Job+Detail+Page&font=roboto" alt="Job Detail Page" width="100%"/>
+      <img src="demo_images/job_detail_page.png" alt="Job Detail Page" width="100%"/>
       <br/><sub>Thông tin đầy đủ về vị trí tuyển dụng: mô tả công việc, yêu cầu kỹ năng, mức lương, thông tin công ty và nút nộp hồ sơ.</sub>
     </td>
     <td align="center" width="50%">
       <strong>🏢 Danh Sách Công Ty (Company List)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/38BDF8?text=🏢+Company+List+Page&font=roboto" alt="Company List Page" width="100%"/>
+      <img src="demo_images/company_list_page.png" alt="Company List Page" width="100%"/>
       <br/><sub>Khám phá các doanh nghiệp đang tuyển dụng, xem thông tin tổng quan, quy mô và số lượng vị trí đang mở.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>🏬 Chi Tiết Công Ty (Company Detail)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/38BDF8?text=🏬+Company+Detail+Page&font=roboto" alt="Company Detail Page" width="100%"/>
+      <img src="demo_images/company_detail_page.png" alt="Company Detail Page" width="100%"/>
       <br/><sub>Hồ sơ doanh nghiệp chi tiết bao gồm mô tả, văn hóa công ty, hình ảnh và toàn bộ các việc làm đang tuyển.</sub>
     </td>
     <td align="center" width="50%">
