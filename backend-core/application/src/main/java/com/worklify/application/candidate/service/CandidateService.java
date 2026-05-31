@@ -1,5 +1,7 @@
 package com.worklify.application.candidate.service;
 import com.worklify.application.candidate.dto.*;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.domain.common.DomainPageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -23,4 +25,5 @@ public interface CandidateService {
     void removeSkillFromCandidate(Long userId, Long skillId);
 
     CvDocumentResponse renameCv(Long userId, Long cvId, String newName);
+    PageResponse<CandidateProfileResponse> searchCandidates(String keyword, DomainPageable pageable);
 }

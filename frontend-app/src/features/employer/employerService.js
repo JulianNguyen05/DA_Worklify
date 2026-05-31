@@ -96,6 +96,15 @@ const employerService = {
     return response.data;
   },
 
+  // --- Tìm kiếm ứng viên ---
+  searchCandidates: async (keyword, page = 0, size = 10) => {
+    // Gọi API tìm kiếm ứng viên. Nếu Backend chưa có API này, bạn cần tạo thêm ở BE.
+    const response = await axiosClient.get(`/candidates/search`, {
+      params: { keyword, page, size }
+    });
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {

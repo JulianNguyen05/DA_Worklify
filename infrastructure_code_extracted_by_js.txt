@@ -778,6 +778,16 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public DomainPage<JobPosting> findByCompanyIdAndStatus(Long companyId, JobStatus status, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyIdAndStatus(
+                companyId,
+                status,
+                PaginationMapper.toSpringPageable(pageable)
+        );
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
 }
 
 // ======================================================================
@@ -1807,6 +1817,8 @@ public interface JobPostingJpaRepository extends JpaRepository<JobPostingJpaEnti
     Page<JobPostingJpaEntity> findByCompanyId(Long companyId, Pageable pageable);
 
     List<JobPostingJpaEntity> findByStatus(JobStatus status);
+
+    Page<JobPostingJpaEntity> findByCompanyIdAndStatus(Long companyId, JobStatus status, Pageable pageable);
 
     @Query("SELECT j FROM JobPostingJpaEntity j WHERE " +
             "(:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +

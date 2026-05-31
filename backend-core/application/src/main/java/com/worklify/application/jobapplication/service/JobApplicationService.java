@@ -1,4 +1,5 @@
 package com.worklify.application.jobapplication.service;
+
 import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.jobapplication.dto.ApplicationRequest;
 import com.worklify.application.jobapplication.dto.ApplicationResponse;
@@ -13,5 +14,7 @@ public interface JobApplicationService {
     PageResponse<ApplicationResponse> getApplicationsForReviewBoard(Long jobId, DomainPageable pageable);
 
     void updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status);
+
+    // BỔ SUNG KHAI BÁO NÀY ĐỂ FIX LỖI START SPRING BOOT
     ApplicationResponse getApplicationById(Long id);
 }

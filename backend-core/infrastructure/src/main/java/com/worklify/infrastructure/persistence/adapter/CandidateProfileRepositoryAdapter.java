@@ -2,9 +2,14 @@ package com.worklify.infrastructure.persistence.adapter;
 
 import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.candidate.repository.CandidateProfileRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
+import com.worklify.infrastructure.persistence.entity.CandidateProfileJpaEntity;
 import com.worklify.infrastructure.persistence.mapper.CandidateEntityMapper;
 import com.worklify.infrastructure.persistence.repository.CandidateProfileJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
 
@@ -30,5 +35,14 @@ public class CandidateProfileRepositoryAdapter implements CandidateProfileReposi
     @Override
     public Optional<CandidateProfile> findById(Long id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public DomainPage<CandidateProfile> searchCandidates(String keyword, DomainPageable pageable) {
+        Page<CandidateProfileJpaEntity> page = jpaRepository.searchCandidates(
+                keyword,
+                PaginationMapper.toSpringPageable(pageable)
+        );
+        return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worklify.application.candidate.dto.*;
 import com.worklify.application.candidate.service.CandidateService;
+import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.common.port.FileStoragePort;
 import com.worklify.domain.auth.repository.UserRepository;
 import com.worklify.domain.candidate.model.CandidateProfile;
@@ -14,6 +15,8 @@ import com.worklify.domain.candidate.repository.CandidateProfileRepository;
 import com.worklify.domain.candidate.repository.CandidateSkillRepository;
 import com.worklify.domain.candidate.repository.CvDocumentRepository;
 import com.worklify.domain.candidate.repository.SkillRepository;
+import com.worklify.domain.common.DomainPage;
+import com.worklify.domain.common.DomainPageable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -318,6 +321,38 @@ public class CandidateServiceImpl implements CandidateService {
                 .dob(profile.getDob())
                 .address(profile.getAddress())
                 .summary(profile.getSummary())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CandidateProfileResponse> searchCandidates(String keyword, DomainPageable pageable) {
+        DomainPage<CandidateProfile> page = candidateProfileRepository.searchCandidates(keyword, pageable);
+
+        return PageResponse.<CandidateProfileResponse>builder()
+                .content(page.getContent().stream().map(profile -> {
+                    // Lấy danh sách tên kỹ năng của ứng viên này
+                    List<String> skills = candidateSkillRepository.findByCandidateId(profile.getId()).stream()
+                            .map(cs -> skillRepository.findById(cs.getSkillId()).map(Skill::getName).orElse(""))
+                            .filter(name -> !name.isEmpty())
+                            .collect(Collectors.toList());
+
+                    return CandidateProfileResponse.builder()
+                            .id(profile.getId())
+                            .userId(profile.getUserId())
+                            .fullName(profile.getFullName())
+                            .phone(profile.getPhone())
+                            .gender(profile.getGender())
+                            .dob(profile.getDob())
+                            .address(profile.getAddress())
+                            .summary(profile.getSummary())
+                            .skills(skills) // Truyền list skills vào DTO
+                            .build();
+                }).collect(Collectors.toList()))
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getPageNumber())
+                .pageSize(page.getPageSize())
                 .build();
     }
 
