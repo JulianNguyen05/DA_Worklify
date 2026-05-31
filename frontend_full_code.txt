@@ -2039,6 +2039,28 @@ const employerService = {
     return response.data;
   },
 
+  getApplicationById: async (applicationId) => {
+    const response = await axiosClient.get(`/applications/${applicationId}`);
+    return response.data;
+  },
+
+  // Lấy dữ liệu file CV (dạng Blob)
+  downloadCvFile: async (cvId) => {
+    const response = await axiosClient.get(`/files/cv/${cvId}`, {
+      responseType: 'blob' // Bắt buộc phải có để Axios hiểu đây là file nhị phân
+    });
+    return response.data;
+  },
+
+  // --- Tìm kiếm ứng viên ---
+  searchCandidates: async (keyword, page = 0, size = 10) => {
+    // Gọi API tìm kiếm ứng viên. Nếu Backend chưa có API này, bạn cần tạo thêm ở BE.
+    const response = await axiosClient.get(`/candidates/search`, {
+      params: { keyword, page, size }
+    });
+    return response.data;
+  },
+
   // --- Thống kê Dashboard ---
   getDashboardStats: async (companyId) => {
     try {
@@ -2506,33 +2528,37 @@ export default function CompanyModerationPage() {
 // ==========================================================================
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Area, AreaChart,
+  PieChart, Pie, Cell, Legend 
 } from 'recharts';
+import { 
+  Users, Building2, Briefcase, FileText, TrendingUp, TrendingDown, 
+  Clock, CheckCircle, AlertCircle, ArrowRight, ShieldCheck 
+} from 'lucide-react';
 import adminService from '../../../features/admin/adminService';
 import Toast from '../../../components/common/Toast';
-import { Link } from 'react-router-dom';
 
-const COLORS = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981']; // Màu cho biểu đồ tròn
+// Palette màu hiện đại cho biểu đồ
+const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-const DashboardPage = () => {
+export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
-  const [pendingJobsList, setPendingJobsList] = useState([]); // Danh sách tin chờ duyệt
+  const [pendingJobsList, setPendingJobsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Gọi song song 2 API để tối ưu tốc độ
+        setIsLoading(true);
         const [statsRes, jobsRes] = await Promise.all([
           adminService.getDashboardStats(),
-          adminService.getPendingJobs(0, 5) // Lấy 5 tin mới nhất
+          adminService.getPendingJobs(0, 5)
         ]);
         
         setStats(statsRes.data);
-        // Trích xuất list từ DomainPage của Spring Boot (thường nằm trong trường content hoặc data)
         setPendingJobsList(jobsRes.data?.content || jobsRes.data || []); 
       } catch (err) {
         setError('Không thể kết nối đến máy chủ để tải dữ liệu.');
@@ -2543,160 +2569,290 @@ const DashboardPage = () => {
     fetchDashboardData();
   }, []);
 
-  if (isLoading) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Đã xảy ra lỗi</h2>
+        <p className="text-gray-500 mb-6">{error}</p>
+        <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors shadow-sm">
+          Thử lại
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Bảng điều khiển (Dashboard)</h1>
-        <button className="bg-white border border-gray-300 px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          Xuất báo cáo
-        </button>
-      </div>
-
-      {error && <Toast type="error" message={error} />}
-
-      {/* --- PHẦN 1: OVERVIEW CARDS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Tổng người dùng" 
-          value={stats?.totalUsers || 0} 
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>} 
-          color="bg-blue-50 text-blue-600" 
-        />
-        <StatCard 
-          title="Tin đang hoạt động" 
-          value={stats?.activeJobs || 0} 
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>} 
-          color="bg-emerald-50 text-emerald-600" 
-        />
-        <StatCard 
-          title="Tin chờ duyệt" 
-          value={stats?.pendingJobs || 0} 
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>} 
-          color="bg-amber-50 text-amber-600" 
-        />
-        <StatCard 
-          title="Ứng tuyển thành công" 
-          value={stats?.successfulApplications || 0} 
-          icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>} 
-          color="bg-purple-50 text-purple-600" 
-        />
-      </div>
-
-      {/* --- PHẦN 2: ANALYTICS CHARTS --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Biểu đồ đường */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Tăng trưởng người dùng mới</h2>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats?.userGrowth || []} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                <Line type="monotone" dataKey="value" name="Người dùng" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Biểu đồ tròn */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Trạng thái Tin tuyển dụng</h2>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats?.jobDistribution || []}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {(stats?.jobDistribution || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* --- PHẦN 3: PENDING ACTIONS --- */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-800">Tin tuyển dụng cần duyệt gấp</h2>
-          <Link to="/admin/jobs-moderation" className="text-sm font-medium text-blue-600 hover:text-blue-800">Xem tất cả &rarr;</Link>
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            <ShieldCheck className="w-8 h-8 text-indigo-600" />
+            Trung tâm quản trị
+          </h1>
+          <p className="text-gray-500 font-medium mt-1">Giám sát toàn diện hệ thống tuyển dụng SmartMatch</p>
         </div>
         
-        {pendingJobsList.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            Không có tin tuyển dụng nào đang chờ duyệt.
+        <div className="relative z-10 flex gap-3">
+          <Link to="/admin/reports" className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold rounded-xl text-sm transition-all shadow-sm">
+            Xuất báo cáo
+          </Link>
+          <Link to="/admin/jobs-moderation" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center gap-2">
+            Duyệt tin ngay <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      {/* STATS OVERVIEW CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          isLoading={isLoading} title="Tổng Ứng viên" value={stats?.totalUsers || 0} 
+          trend="+12% so với tháng trước" isTrendUp={true}
+          icon={<Users className="w-6 h-6 text-blue-600" />} colorClass="bg-blue-50" 
+        />
+        <StatCard 
+          isLoading={isLoading} title="Tổng Doanh nghiệp" value={stats?.totalCompanies || 0} 
+          trend="+5% so với tháng trước" isTrendUp={true}
+          icon={<Building2 className="w-6 h-6 text-emerald-600" />} colorClass="bg-emerald-50" 
+        />
+        <StatCard 
+          isLoading={isLoading} title="Việc làm đang mở" value={stats?.activeJobs || 0} 
+          trend="-2% so với tháng trước" isTrendUp={false}
+          icon={<Briefcase className="w-6 h-6 text-purple-600" />} colorClass="bg-purple-50" 
+        />
+        <StatCard 
+          isLoading={isLoading} title="Tin chờ duyệt" value={stats?.pendingJobs || 0} 
+          trend="Cần xử lý gấp" isTrendUp={null} highlight={true}
+          icon={<Clock className="w-6 h-6 text-amber-600" />} colorClass="bg-amber-50" 
+        />
+      </div>
+
+      {/* CHARTS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LƯU LƯỢNG SYSTEM (LINE/AREA CHART) */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Hoạt động hệ thống</h3>
+              <p className="text-sm text-gray-500">Thống kê lượng tin đăng & ứng tuyển trong 7 ngày qua</p>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                  <th className="px-6 py-3 font-medium">Tiêu đề công việc</th>
-                  <th className="px-6 py-3 font-medium">ID Công ty</th>
-                  <th className="px-6 py-3 font-medium">Ngày nộp</th>
-                  <th className="px-6 py-3 font-medium text-right">Thao tác</th>
+          
+          <div className="h-72 w-full">
+            {isLoading ? (
+              <div className="w-full h-full bg-gray-50 animate-pulse rounded-xl" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats?.chartData || mockLineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="jobs" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorJobs)" name="Tin tuyển dụng" />
+                  <Area type="monotone" dataKey="applications" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorApps)" name="Đơn ứng tuyển" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* TỶ LỆ TRẠNG THÁI (PIE CHART) */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Trạng thái công việc</h3>
+          <p className="text-sm text-gray-500 mb-6">Phân bổ tin tuyển dụng toàn sàn</p>
+          
+          <div className="flex-1 min-h-[250px] relative">
+            {isLoading ? (
+              <div className="w-48 h-48 bg-gray-50 animate-pulse rounded-full mx-auto mt-4" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stats?.pieData || mockPieData}
+                    innerRadius={70}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {(stats?.pieData || mockPieData).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => [`${value} tin`, 'Số lượng']}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '13px', paddingTop: '20px' }}/>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+            {/* Center Text in Donut */}
+            {!isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
+                <span className="text-3xl font-extrabold text-gray-900">{stats?.totalJobs || 342}</span>
+                <span className="text-xs font-medium text-gray-500">Tổng tin</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* RECENT PENDING JOBS TABLE */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Tin tuyển dụng chờ duyệt</h3>
+              <p className="text-xs font-medium text-gray-500">Cần xác nhận để hiển thị lên hệ thống</p>
+            </div>
+          </div>
+          <Link to="/admin/jobs-moderation" className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+            Xem tất cả
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 font-bold">
+                <th className="px-6 py-4 w-1/2">Tiêu đề công việc</th>
+                <th className="px-6 py-4">ID Doanh nghiệp</th>
+                <th className="px-6 py-4">Ngày đăng</th>
+                <th className="px-6 py-4 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {isLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-3/4"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-1/2"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-1/2"></div></td>
+                    <td className="px-6 py-4"><div className="h-8 bg-gray-100 rounded w-20 ml-auto"></div></td>
+                  </tr>
+                ))
+              ) : pendingJobsList.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <CheckCircle className="w-12 h-12 text-emerald-300 mb-3" />
+                      <p className="text-gray-600 font-medium text-lg">Tuyệt vời!</p>
+                      <p className="text-gray-400 text-sm">Không còn tin tuyển dụng nào đang chờ duyệt.</p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pendingJobsList.map((job) => (
-                  <tr key={job.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{job.title}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{job.companyId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+              ) : (
+                pendingJobsList.map((job) => (
+                  <tr key={job.id} className="hover:bg-indigo-50/30 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">{job.title}</div>
+                      <div className="text-xs text-gray-500 mt-1">{job.location || 'Chưa cập nhật địa điểm'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        {job.companyId}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-500">
                       {new Date(job.createdAt).toLocaleDateString('vi-VN')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-right">
-                      <Link to={`/admin/jobs-moderation?jobId=${job.id}`} className="text-blue-600 hover:text-blue-900 font-medium">
-                        Xử lý
+                    <td className="px-6 py-4 text-right">
+                      <Link 
+                        to={`/admin/jobs-moderation?jobId=${job.id}`} 
+                        className="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm"
+                      >
+                        Kiểm duyệt
                       </Link>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
   );
-};
+}
 
-// Component thẻ thống kê
-const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
-    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
-      {icon}
+// ──────────────────────────────────────────────
+// SUB-COMPONENTS & MOCK DATA
+// ──────────────────────────────────────────────
+
+const StatCard = ({ title, value, icon, colorClass, trend, isTrendUp, highlight, isLoading }) => (
+  <div className={`p-6 rounded-3xl border transition-all duration-300 hover:shadow-md relative overflow-hidden group
+    ${highlight ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-white border-gray-100'}
+  `}>
+    {highlight && <div className="absolute top-0 right-0 w-2 h-full bg-amber-400" />}
+    
+    <div className="flex justify-between items-start mb-4">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>
+        {icon}
+      </div>
+      {trend && (
+        <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1
+          ${isTrendUp === true ? 'text-emerald-700 bg-emerald-100' : 
+            isTrendUp === false ? 'text-rose-700 bg-rose-100' : 'text-amber-700 bg-amber-100/50'}
+        `}>
+          {isTrendUp === true && <TrendingUp className="w-3 h-3" />}
+          {isTrendUp === false && <TrendingDown className="w-3 h-3" />}
+          {trend}
+        </span>
+      )}
     </div>
+    
     <div>
-      <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      {isLoading ? (
+        <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-md mb-2" />
+      ) : (
+        <h3 className="text-3xl font-extrabold text-gray-900 tracking-tight">{value}</h3>
+      )}
+      <p className="text-sm font-semibold text-gray-500 mt-1">{title}</p>
     </div>
   </div>
 );
 
-export default DashboardPage;
+// Dữ liệu giả lập (Fallback) nếu Backend chưa trả về field chartData/pieData
+const mockLineData = [
+  { name: 'T2', jobs: 40, applications: 120 },
+  { name: 'T3', jobs: 30, applications: 140 },
+  { name: 'T4', jobs: 60, applications: 200 },
+  { name: 'T5', jobs: 45, applications: 180 },
+  { name: 'T6', jobs: 70, applications: 250 },
+  { name: 'T7', jobs: 20, applications: 90 },
+  { name: 'CN', jobs: 10, applications: 40 },
+];
+
+const mockPieData = [
+  { name: 'Đang mở (Active)', value: 65 },
+  { name: 'Chờ duyệt (Pending)', value: 15 },
+  { name: 'Đã đóng (Closed)', value: 15 },
+  { name: 'Từ chối (Rejected)', value: 5 },
+];
 
 
 // ==========================================================================
@@ -5065,80 +5221,325 @@ export default function SettingsPage() {
 // File: frontend-app/src/pages/employer/ApplicationDetailPage/index.jsx
 // ==========================================================================
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Button from '../../../components/common/Button';
-import Toast from '../../../components/common/Toast';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import employerService from "../../../features/employer/employerService";
+import authService from "../../../features/auth/authService";
+import Button from "../../../components/common/Button";
+import Toast from "../../../components/common/Toast";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+  Briefcase,
+} from "lucide-react";
 
 export default function ApplicationDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams(); // ID của application
   const navigate = useNavigate();
-  const [application, setApplication] = useState(null);
-  const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
+  const [application, setApplication] = useState(null);
+  const [companyId, setCompanyId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusMsg, setStatusMsg] = useState({ type: null, message: "" });
+
+  // 1. TẢI DỮ LIỆU THẬT TỪ BACKEND
   useEffect(() => {
-    // Giả lập fetch data
-    setApplication({
-      id: id,
-      candidateName: 'Nguyễn Văn A',
-      email: 'nguyenvana@gmail.com',
-      phone: '0901234567',
-      appliedAt: '2026-05-21',
-      coverLetter: 'Tôi rất quan tâm đến vị trí này và tự tin có thể đáp ứng...',
-      cvUrl: '#',
-      aiScore: 88,
-      status: 'PENDING'
-    });
+    const fetchDetail = async () => {
+      setIsLoading(true);
+      try {
+        // Lấy companyId của nhà tuyển dụng đang đăng nhập
+        const user = authService.getCurrentUser();
+        if (user?.userId) {
+          const profileRes = await employerService.getCompanyProfile(
+            user.userId,
+          );
+          setCompanyId(profileRes.data?.id);
+        }
+
+        // Gọi API lấy chi tiết đơn ứng tuyển
+        const res = await employerService.getApplicationById(id);
+        setApplication(res.data);
+      } catch (error) {
+        setStatusMsg({
+          type: "error",
+          message: "Không thể tải chi tiết hồ sơ từ hệ thống.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDetail();
   }, [id]);
 
-  const handleAction = (action) => {
-    setStatusMsg({ type: 'success', message: `Đã cập nhật trạng thái: ${action}` });
-    setApplication({ ...application, status: action });
+  // 2. XỬ LÝ CẬP NHẬT TRẠNG THÁI (DUYỆT/LOẠI)
+  const handleAction = async (newStatus) => {
+    try {
+      if (!companyId) throw new Error("Không xác định được công ty sở hữu.");
+
+      await employerService.updateApplicationStatus(companyId, id, newStatus);
+      setStatusMsg({
+        type: "success",
+        message: `Đã cập nhật trạng thái thành: ${newStatus}`,
+      });
+
+      // Cập nhật giao diện ngay lập tức
+      setApplication({ ...application, status: newStatus });
+    } catch (error) {
+      setStatusMsg({ type: "error", message: "Cập nhật trạng thái thất bại." });
+    }
   };
 
-  if (!application) return <div className="text-gray-500">Đang tải...</div>;
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "ACCEPTED":
+        return (
+          <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
+            <CheckCircle className="w-4 h-4" /> Chấp nhận
+          </span>
+        );
+      case "REJECTED":
+        return (
+          <span className="bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
+            <XCircle className="w-4 h-4" /> Từ chối
+          </span>
+        );
+      case "REVIEWED":
+        return (
+          <span className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
+            <Eye className="w-4 h-4" /> Đã xem
+          </span>
+        );
+      default:
+        return (
+          <span className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
+            <Clock className="w-4 h-4" /> Chờ duyệt
+          </span>
+        );
+    }
+  };
+
+  // Nếu đang gọi API
+  if (isLoading) {
+    return (
+      <div className="p-20 text-center text-gray-500 flex flex-col items-center">
+        <Clock className="w-10 h-10 animate-spin mb-4 text-indigo-500" />
+        <p className="font-medium text-lg">Đang tải thông tin hồ sơ...</p>
+      </div>
+    );
+  }
+
+  // Nếu API lỗi hoặc không tìm thấy
+  if (!application) {
+    return (
+      <div className="p-10 text-center text-red-500 font-bold">
+        Không tìm thấy dữ liệu hồ sơ này!
+      </div>
+    );
+  }
+
+  const handleViewCV = async () => {
+    try {
+      // Gọi service tải file
+      const blobData = await employerService.downloadCvFile(application.cvId);
+
+      // Tạo một URL tạm thời cho file PDF trên trình duyệt
+      const fileUrl = window.URL.createObjectURL(
+        new Blob([blobData], { type: "application/pdf" }),
+      );
+
+      // Mở sang một Tab mới để xem PDF
+      window.open(fileUrl, "_blank");
+    } catch (error) {
+      console.error(error);
+      setStatusMsg({
+        type: "error",
+        message: "Lỗi! Không thể tải được file CV từ máy chủ.",
+      });
+    }
+  };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+      {statusMsg.message && (
+        <Toast
+          type={statusMsg.type}
+          message={statusMsg.message}
+          onClose={() => setStatusMsg({ type: null, message: "" })}
+        />
+      )}
+
+      {/* HEADER: INFO CHUNG */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Hồ sơ ứng viên: {application.candidateName}</h2>
-          <p className="text-sm text-gray-500">Ngày nộp: {new Date(application.appliedAt).toLocaleDateString()} | Trạng thái hiện tại: <span className="font-semibold">{application.status}</span></p>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-gray-500 hover:text-indigo-600 flex items-center gap-1 text-sm font-medium mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Quay lại danh sách
+          </button>
+
+          <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 rounded-full text-indigo-600">
+              <User className="w-6 h-6" />
+            </div>
+            {application.candidateName ||
+              `Ứng viên ID: ${application.candidateId}`}
+          </h1>
+
+          <p className="text-gray-600 mt-2 flex items-center gap-2 text-md">
+            <Briefcase className="w-4.5 h-4.5 text-gray-400" />
+            Ứng tuyển vị trí:{" "}
+            <span className="font-bold text-gray-800">
+              {application.jobTitle || "Chưa cập nhật"}
+            </span>
+          </p>
         </div>
-        <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline">&larr; Quay lại danh sách</button>
+
+        <div className="flex flex-col items-end gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100 min-w-[200px]">
+          {getStatusBadge(application.status)}
+          <span className="text-sm text-gray-500 font-medium flex items-center gap-1.5">
+            <Clock className="w-4 h-4" />
+            Ngày nộp:{" "}
+            {application.appliedAt
+              ? new Date(application.appliedAt).toLocaleDateString("vi-VN")
+              : "N/A"}
+          </span>
+        </div>
       </div>
 
-      {statusMsg.type && <Toast type={statusMsg.type} message={statusMsg.message} />}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Cột trái: Thông tin & Điểm AI */}
+        {/* CỘT TRÁI: LIÊN HỆ & DUYỆT */}
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 text-center">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Đánh giá từ AI</h3>
-            <div className="text-5xl font-black text-green-600">{application.aiScore}%</div>
-            <p className="text-xs text-gray-500 mt-2">Độ tương thích (Confidence Score)</p>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-3">
+              Thông tin liên hệ
+            </h3>
+
+            <div className="space-y-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <Mail className="w-5 h-5 text-gray-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
+                    Email
+                  </p>
+                  <p className="text-sm font-bold text-gray-800 break-all">
+                    {application.candidateEmail || "Đang cập nhật..."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-gray-50 rounded-lg">
+                  <Phone className="w-5 h-5 text-gray-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
+                    Số điện thoại
+                  </p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {application.candidatePhone || "Đang cập nhật..."}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-md font-semibold text-gray-800 mb-3">Liên hệ</h3>
-            <p className="text-sm text-gray-600 mb-2"><strong>Email:</strong> {application.email}</p>
-            <p className="text-sm text-gray-600 mb-4"><strong>SĐT:</strong> {application.phone}</p>
-            <Button variant="outline" className="w-full text-blue-600 border-blue-600">Tải / Xem CV (PDF)</Button>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-3">
+              Quyết định
+            </h3>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => handleAction("ACCEPTED")}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex justify-center items-center gap-2 py-3 rounded-xl shadow-sm font-bold"
+                disabled={
+                  application.status === "ACCEPTED" ||
+                  application.status === "REJECTED"
+                }
+              >
+                <CheckCircle className="w-5 h-5" /> Chấp nhận ứng viên
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleAction("REJECTED")}
+                className="w-full text-rose-600 border-2 border-rose-100 hover:bg-rose-50 flex justify-center items-center gap-2 py-3 rounded-xl font-bold transition-colors"
+                disabled={
+                  application.status === "ACCEPTED" ||
+                  application.status === "REJECTED"
+                }
+              >
+                <XCircle className="w-5 h-5" /> Từ chối hồ sơ
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Cột phải: Thư giới thiệu & Hành động */}
+        {/* CỘT PHẢI: COVER LETTER & CV */}
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-md font-semibold text-gray-800 mb-3">Thư giới thiệu (Cover Letter)</h3>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-md border border-gray-100">
-              {application.coverLetter}
-            </p>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+              Thư giới thiệu (Cover Letter)
+            </h3>
+            {application.coverLetter ? (
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+                {application.coverLetter}
+              </p>
+            ) : (
+              <p className="text-gray-400 text-sm italic bg-gray-50 p-4 rounded-xl text-center">
+                Ứng viên không viết thư giới thiệu.
+              </p>
+            )}
           </div>
 
-          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex gap-4">
-            <Button onClick={() => handleAction('ACCEPTED')} className="flex-1 bg-green-600 hover:bg-green-700">Phê duyệt & Gọi phỏng vấn</Button>
-            <Button onClick={() => handleAction('REJECTED')} variant="outline" className="flex-1 text-red-600 border-red-600 hover:bg-red-50">Loại hồ sơ</Button>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+              <FileText className="w-5 h-5 text-indigo-500" /> Hồ sơ đính kèm
+              (CV)
+            </h3>
+            {application.cvFileName ? (
+              <div className="flex items-center justify-between p-5 bg-indigo-50/40 border border-indigo-100 rounded-xl hover:border-indigo-300 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-100 rounded-xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <FileText className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-base flex items-center gap-2">
+                      {/* Dùng split để cắt chuỗi theo dấu '/', sau đó lấy phần tử cuối cùng (pop) */}
+                      {application.cvFileName
+                        ? application.cvFileName
+                            .split("/")
+                            .pop()
+                            .split("\\")
+                            .pop()
+                        : "Hồ sơ đính kèm"}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                      Tài liệu đính kèm
+                    </p>
+                  </div>
+                </div>
+                {/* Đường dẫn tải CV thực tế. Bạn cấu hình URL trỏ về API /api/v1/files/ của bạn nhé */}
+                <button
+                  onClick={handleViewCV}
+                  className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                >
+                  Tải / Xem CV
+                </button>
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm italic bg-gray-50 p-4 rounded-xl text-center">
+                Ứng viên không đính kèm file CV.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -5147,188 +5548,254 @@ export default function ApplicationDetailPage() {
 }
 
 
+
 // ==========================================================================
 // File: frontend-app/src/pages/employer/ApplicationListPage/index.jsx
 // ==========================================================================
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import employerService from '../../../features/employer/employerService';
-import authService from '../../../features/auth/authService'; // Khai báo authService
+import authService from '../../../features/auth/authService';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
+// BỔ SUNG: Import thêm icon Eye
+import { Briefcase, Users, FileText, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
 
 export default function ApplicationListPage() {
-  const [searchParams] = useSearchParams();
-  const jobId = searchParams.get('jobId') || 101; 
-  
-  // LẤY COMPANY ID ĐỘNG: Trích xuất từ nhà tuyển dụng đang đăng nhập thay vì gán cứng bằng 10
-  const currentUser = authService.getCurrentUser();
-  const companyId = currentUser?.companyId || 10;
+  const navigate = useNavigate();
+  const [companyId, setCompanyId] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [activeJobId, setActiveJobId] = useState(null);
   
   const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingScore, setIsLoadingScore] = useState(null);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  // 1. LẤY DANH SÁCH ĐƠN TUYỂN DỤNG THẬT TỪ BACKEND
+  // 1. LẤY THÔNG TIN CÔNG TY VÀ DANH SÁCH CÔNG VIỆC LÀM TABS
   useEffect(() => {
-    const fetchApplications = async () => {
-      setIsLoading(true);
+    const fetchInitialData = async () => {
+      const user = authService.getCurrentUser();
+      if (!user?.userId) {
+        navigate('/auth/login');
+        return;
+      }
+
       try {
-        const res = await employerService.getApplicationsForJob(jobId);
-        // Backend bóc tách ApiResponse wrapped PageResponse, danh sách bản ghi nằm ở res.data.content
-        const appList = res.data?.content || [];
+        setIsLoadingJobs(true);
+        const profileRes = await employerService.getCompanyProfile(user.userId);
+        const compId = profileRes.data?.id;
         
-        // Gắn thêm thuộc tính aiScore cục bộ để theo dõi tiến trình Quét AI trên UI
-        const mappedList = appList.map(app => ({
-          ...app,
-          aiScore: app.aiScore || null 
-        }));
-        setApplications(mappedList);
+        if (!compId) {
+          setStatusMsg({ type: 'error', message: 'Bạn chưa tạo hồ sơ doanh nghiệp!' });
+          return;
+        }
+        setCompanyId(compId);
+
+        const jobsRes = await employerService.getMyJobs(compId, 0, 50); 
+        const jobsData = jobsRes.data?.content || jobsRes.data || [];
+        setJobs(jobsData);
+
+        if (jobsData.length > 0) {
+          setActiveJobId(jobsData[0].id);
+        }
       } catch (error) {
-        console.error("Lỗi lấy danh sách hồ sơ tuyển dụng từ máy chủ:", error);
-        setStatusMsg({ type: 'error', message: 'Không thể kết nối đến máy chủ lấy dữ liệu hồ sơ!' });
+        setStatusMsg({ type: 'error', message: 'Không thể tải danh sách công việc.' });
       } finally {
-        setIsLoading(false);
+        setIsLoadingJobs(false);
       }
     };
 
-    if (jobId) {
-      fetchApplications();
-    }
-  }, [jobId]);
+    fetchInitialData();
+  }, [navigate]);
 
-  // 2. KẾT NỐI AI MATCH SCORE THỰC TẾ (Quét NLP và Học máy từ backend)
-  const handleAiScan = async (appId) => {
-    setIsLoadingScore(appId);
-    try {
-      const res = await employerService.getAiScore(appId);
-      // Kết quả trả về cấu trúc AiMatchScoreResponse { confidenceScore: float }
-      const aiData = res.data;
-      const scorePercentage = aiData?.confidenceScore ? Math.round(aiData.confidenceScore) : 0;
+  // 2. KHI CHUYỂN TAB, TẢI DANH SÁCH ỨNG VIÊN
+  useEffect(() => {
+    if (!activeJobId) return;
 
-      setStatusMsg({ type: 'success', message: `Phân tích AI Matcher hoàn tất! Độ trùng khớp: ${scorePercentage}%` });
-      
-      // Đồng bộ điểm số phân tích NLP thật vào danh sách hiển thị
-      setApplications(prev => prev.map(app => 
-        app.id === appId ? { ...app, aiScore: scorePercentage } : app
-      ));
-    } catch (error) {
-      console.error("Lỗi đồng bộ hoặc xử lý tiến trình AI:", error);
-      setStatusMsg({ type: 'error', message: 'Hệ thống AI đang xử lý bất đồng bộ hoặc gặp sự cố!' });
-    } finally {
-      setIsLoadingScore(null);
-    }
-  };
+    const fetchApplications = async () => {
+      setIsLoadingApps(true);
+      try {
+        const res = await employerService.getApplicationsForJob(activeJobId, 0, 50);
+        const appList = res.data?.content || res.data || [];
+        setApplications(appList);
+      } catch (error) {
+        setStatusMsg({ type: 'error', message: 'Lỗi tải danh sách hồ sơ ứng tuyển!' });
+      } finally {
+        setIsLoadingApps(false);
+      }
+    };
 
-  // 3. CẬP NHẬT TRẠNG THÁI HỒ SƠ THẬT QUA ENDPOINT PATCH
+    fetchApplications();
+  }, [activeJobId]);
+
+  // 3. CẬP NHẬT TRẠNG THÁI HỒ SƠ
   const handleUpdateStatus = async (appId, newStatus) => {
     try {
       await employerService.updateApplicationStatus(companyId, appId, newStatus);
-      setStatusMsg({ type: 'success', message: `Đã chuyển đổi trạng thái hồ sơ thành công sang: ${newStatus}` });
+      setStatusMsg({ type: 'success', message: `Đã cập nhật trạng thái thành: ${newStatus}` });
       
-      // Cập nhật State tức thời trên View UI
       setApplications(prev => prev.map(app => 
         app.id === appId ? { ...app, status: newStatus } : app
       ));
     } catch (error) {
-      console.error("Lỗi thực thi cập nhật trạng thái đơn ứng tuyển:", error);
-      setStatusMsg({ type: 'error', message: 'Thao tác phê duyệt/loại lên hệ thống thất bại!' });
+      setStatusMsg({ type: 'error', message: 'Thao tác cập nhật thất bại!' });
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'ACCEPTED': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Chấp nhận</span>;
+      case 'REJECTED': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Từ chối</span>;
+      case 'REVIEWED': return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Đã xem</span>;
+      default: return <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">Chờ duyệt</span>;
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[70vh]">
       {statusMsg.message && (
         <Toast type={statusMsg.type} message={statusMsg.message} onClose={() => setStatusMsg({ type: null, message: '' })} />
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Danh sách đơn ứng tuyển</h2>
-          <p className="text-sm text-gray-500 mt-1">Cơ chế Tuyển dụng Ẩn danh (Blind Recruitment) đảm bảo tính công bằng (Mã Job: #{jobId})</p>
-        </div>
+      {/* HEADER */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+          <Users className="w-6 h-6 text-indigo-600" />
+          Quản lý Đơn ứng tuyển
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">Xem và xử lý hồ sơ ứng viên theo từng chiến dịch tuyển dụng.</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="p-3 font-medium text-gray-600">Ứng viên (Hệ thống ẩn danh)</th>
-              <th className="p-3 font-medium text-gray-600">Ngày nộp đơn</th>
-              <th className="p-3 font-medium text-gray-600">Đánh giá độ phù hợp AI</th>
-              <th className="p-3 font-medium text-gray-600 text-center">Trạng thái hiện tại</th>
-              <th className="p-3 font-medium text-gray-600 text-center">Hành động</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading ? (
-              <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-500">Đang tải dữ liệu thực tế từ máy chủ SmartMatch...</td>
-              </tr>
-            ) : applications.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="p-8 text-center text-gray-500">Chưa có ứng viên nào nộp hồ sơ cho vị trí này.</td>
-              </tr>
-            ) : (
-              applications.map((app) => (
-                <tr key={app.id} className="hover:bg-gray-50">
-                  <td className="p-3 font-medium text-blue-600 cursor-pointer">
-                    {/* Sử dụng blindTestUrl trung lập từ Domain Entity phục vụ đánh giá khách quan */}
-                    <a href={app.blindTestUrl} target="_blank" rel="noreferrer" className="hover:underline">
-                      {app.candidateName || `Hồ sơ ứng viên ẩn danh #${app.id}`}
-                    </a>
-                  </td>
-                  <td className="p-3 text-gray-500">
-                    {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : 'Vừa mới nộp'}
-                  </td>
-                  <td className="p-3">
-                    {app.aiScore !== null ? (
-                      <span className="font-bold text-green-600">🎯 {app.aiScore}% Phù hợp</span>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleAiScan(app.id)} 
-                        isLoading={isLoadingScore === app.id}
-                        className="px-2 py-1 text-xs border-purple-500 text-purple-600 hover:bg-purple-50"
-                      >
-                        🤖 Quét AI Match
-                      </Button>
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      app.status === 'ACCEPTED' || app.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                      app.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {app.status}
-                    </span>
-                  </td>
-                  <td className="p-3 flex gap-2 justify-center">
-                    <Button 
-                      variant="primary" 
-                      onClick={() => handleUpdateStatus(app.id, 'ACCEPTED')} 
-                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
-                      disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
-                    >
-                      Duyệt
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleUpdateStatus(app.id, 'REJECTED')} 
-                      className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 text-xs rounded"
-                      disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
-                    >
-                      Loại
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {isLoadingJobs ? (
+        <div className="py-10 text-center text-gray-500">Đang tải dữ liệu chiến dịch...</div>
+      ) : jobs.length === 0 ? (
+        <div className="py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+          <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">Bạn chưa đăng tin tuyển dụng nào.</p>
+        </div>
+      ) : (
+        <>
+          {/* TABS CÔNG VIỆC */}
+          <div className="flex overflow-x-auto border-b border-gray-200 mb-6 custom-scrollbar">
+            <div className="flex gap-2 pb-2">
+              {jobs.map(job => (
+                <button
+                  key={job.id}
+                  onClick={() => setActiveJobId(job.id)}
+                  className={`px-5 py-2.5 font-medium text-sm whitespace-nowrap rounded-lg transition-all duration-200 ${
+                    activeJobId === job.id 
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm' 
+                      : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  {job.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* KHU VỰC DANH SÁCH ỨNG VIÊN */}
+          <div className="bg-gray-50/50 rounded-xl border border-gray-100 p-1">
+            <div className="px-5 py-4 flex justify-between items-center border-b border-gray-200 bg-white rounded-t-lg">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                Danh sách hồ sơ
+                <span className="bg-indigo-100 text-indigo-700 py-0.5 px-2.5 rounded-full text-xs">
+                  {applications.length} ứng viên
+                </span>
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto bg-white rounded-b-lg">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-gray-50/80 border-b border-gray-100">
+                    <th className="p-4 font-bold text-gray-600 w-1/3">Ứng viên</th>
+                    <th className="p-4 font-bold text-gray-600">Ngày nộp</th>
+                    <th className="p-4 font-bold text-gray-600 text-center">Trạng thái</th>
+                    <th className="p-4 font-bold text-gray-600 text-right">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {isLoadingApps ? (
+                    <tr>
+                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                        <Clock className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-300" />
+                        Đang tải danh sách hồ sơ...
+                      </td>
+                    </tr>
+                  ) : applications.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                        Chưa có ứng viên nào nộp hồ sơ cho vị trí này.
+                      </td>
+                    </tr>
+                  ) : (
+                    applications.map((app) => (
+                      <tr key={app.id} className="hover:bg-indigo-50/30 transition-colors">
+                        <td className="p-4">
+                          <div className="font-bold text-gray-900">
+                            {/* Hiển thị Tên Ứng viên */}
+                            {app.candidateName || `Ứng viên ID: ${app.candidateId}`}
+                          </div>
+                          {app.cvFileName && (
+                            <div className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium">
+                              <FileText className="w-3 h-3" /> {app.cvFileName}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-gray-500 font-medium">
+                          {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : 'Vừa mới nộp'}
+                        </td>
+                        <td className="p-4 text-center">
+                          {getStatusBadge(app.status)}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            {/* NÚT XEM CHI TIẾT */}
+                            <Button 
+                              variant="outline" 
+                              onClick={() => navigate(`/employer/applications/${app.id}`)}
+                              className="px-3 py-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 text-xs rounded-md flex items-center gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Chi tiết
+                            </Button>
+
+                            <Button 
+                              variant="primary" 
+                              onClick={() => handleUpdateStatus(app.id, 'ACCEPTED')} 
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-md shadow-sm flex items-center gap-1"
+                              disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" /> Duyệt
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => handleUpdateStatus(app.id, 'REJECTED')} 
+                              className="px-3 py-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 text-xs rounded-md flex items-center gap-1"
+                              disabled={app.status === 'ACCEPTED' || app.status === 'REJECTED'}
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Loại
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      `}} />
     </div>
   );
 }
@@ -5338,65 +5805,227 @@ export default function ApplicationListPage() {
 // File: frontend-app/src/pages/employer/CandidateSearchPage/index.jsx
 // ==========================================================================
 
-import React, { useState } from 'react';
-import Input from '../../../components/common/Input';
-import Button from '../../../components/common/Button';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, MapPin, Briefcase, Award, Filter, 
+  FileText, User, Mail, Phone, Loader2, Sparkles 
+} from 'lucide-react';
+import employerService from '../../../features/employer/employerService';
+import Toast from '../../../components/common/Toast';
 
 export default function CandidateSearchPage() {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [candidates, setCandidates] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setHasSearched(true);
-    // Giả lập kết quả tìm kiếm
-    setCandidates([
-      { id: 1, name: 'Lê Văn C', title: 'Backend Developer', skills: 'Java, Spring Boot, MySQL', experience: '4 năm' },
-      { id: 2, name: 'Phạm Thị D', title: 'Fullstack Engineer', skills: 'ReactJS, NodeJS, Spring Boot', experience: '2 năm' }
-    ]);
+  // Nạp ngẫu nhiên một vài ứng viên khi vừa vào trang (Tùy chọn)
+  useEffect(() => {
+    handleSearch(new Event('submit'), true);
+  }, []);
+
+  const handleSearch = async (e, isInitialLoad = false) => {
+    if (e) e.preventDefault();
+    
+    // Bỏ qua nếu tìm kiếm trống và không phải load lần đầu
+    if (!isInitialLoad && !keyword.trim()) {
+      setStatusMsg({ type: 'warning', message: 'Vui lòng nhập từ khóa tìm kiếm.' });
+      return;
+    }
+
+    setIsLoading(true);
+    setHasSearched(!isInitialLoad);
+    
+    try {
+      // Gọi API thật từ Backend
+      const response = await employerService.searchCandidates(keyword, 0, 20);
+      const data = response.data?.content || response.data || [];
+      setCandidates(data);
+    } catch (error) {
+      console.error(error);
+      // Nếu BE chưa có API, nó sẽ báo lỗi 404. Bạn có thể tạm thời bẫy lỗi ở đây.
+      setStatusMsg({ type: 'error', message: 'Lỗi tải dữ liệu hoặc API Backend chưa sẵn sàng!' });
+      setCandidates([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Hàm tạo avatar chữ cái đầu
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">Tìm kiếm Ứng viên (Kho dữ liệu)</h2>
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      {statusMsg.message && (
+        <Toast type={statusMsg.type} message={statusMsg.message} onClose={() => setStatusMsg({ type: null, message: '' })} />
+      )}
 
-      <form onSubmit={handleSearch} className="flex gap-4 items-end mb-8">
-        <div className="flex-1">
-          <Input 
-            label="Tìm kiếm theo kỹ năng, chức danh..." 
-            value={keyword} 
-            onChange={(e) => setKeyword(e.target.value)} 
-            placeholder="VD: Spring Boot, ReactJS..." 
-          />
+      {/* HEADER & THANH TÌM KIẾM */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-12 text-white shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 max-w-3xl">
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 flex items-center gap-3">
+            <Sparkles className="w-8 h-8 text-yellow-300" />
+            Tìm kiếm nhân tài
+          </h1>
+          <p className="text-indigo-100 text-lg mb-8">
+            Khám phá kho dữ liệu hàng ngàn ứng viên chất lượng cao, phù hợp với mọi vị trí mà doanh nghiệp bạn đang tìm kiếm.
+          </p>
+
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Nhập kỹ năng, chức danh, ngôn ngữ lập trình..."
+                className="block w-full pl-11 pr-4 py-4 rounded-xl border-0 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-yellow-300 transition-shadow text-lg shadow-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-8 py-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Tìm ứng viên'}
+            </button>
+          </form>
         </div>
-        <Button type="submit" className="w-32">Tìm kiếm</Button>
-      </form>
+      </div>
 
-      {hasSearched && (
-        <div>
-          <h3 className="text-md font-semibold text-gray-700 mb-4">Kết quả tìm kiếm ({candidates.length})</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {candidates.length === 0 ? (
-              <p className="text-sm text-gray-500">Không tìm thấy ứng viên phù hợp với từ khóa này.</p>
-            ) : (
-              candidates.map(candidate => (
-                <div key={candidate.id} className="border border-gray-200 p-4 rounded-md hover:shadow-sm transition-shadow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-blue-700 text-lg">{candidate.name}</h4>
-                    <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-600">{candidate.experience} kinh nghiệm</span>
+      {/* BỘ LỌC NHANH (UI DEMO) */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 text-gray-500 font-medium px-2">
+          <Filter className="w-4 h-4" /> Lọc nhanh:
+        </div>
+        {['Java', 'ReactJS', 'Node.js', 'Spring Boot', 'Python', 'Thực tập sinh'].map(skill => (
+          <button 
+            key={skill}
+            onClick={() => { setKeyword(skill); handleSearch(null, false); }}
+            className="px-4 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors whitespace-nowrap"
+          >
+            {skill}
+          </button>
+        ))}
+      </div>
+
+      {/* KẾT QUẢ TÌM KIẾM */}
+      <div>
+        <div className="flex justify-between items-end mb-6 px-2">
+          <h2 className="text-xl font-bold text-gray-800">
+            {hasSearched ? `Kết quả tìm kiếm cho "${keyword}"` : 'Ứng viên nổi bật'}
+            <span className="ml-2 text-sm font-medium text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              {candidates.length}
+            </span>
+          </h2>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 animate-pulse flex gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-1/3" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : candidates.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-gray-100 border-dashed p-16 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Không tìm thấy ứng viên</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Không có ứng viên nào khớp với từ khóa "{keyword}". Hãy thử tìm kiếm với các từ khóa ngắn gọn hoặc phổ biến hơn.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {candidates.map((candidate) => (
+              <div key={candidate.id} className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:border-indigo-100 transition-all group flex flex-col justify-between">
+                
+                <div className="flex gap-5 items-start mb-4">
+                  {/* Avatar */}
+                  <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-extrabold text-xl shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    {getInitials(candidate.fullName || candidate.name)}
                   </div>
-                  <p className="text-sm font-medium text-gray-800 mb-1">{candidate.title}</p>
-                  <p className="text-sm text-gray-500 line-clamp-2"><strong>Kỹ năng:</strong> {candidate.skills}</p>
-                  <div className="mt-4 text-right">
-                    <Button variant="outline" className="px-3 py-1 text-xs text-blue-600 border-blue-600">Xem hồ sơ</Button>
+                  
+                  {/* Thông tin chính */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                        {candidate.fullName || candidate.name || 'Ứng viên ẩn danh'}
+                      </h3>
+                      {candidate.experience && (
+                        <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                          {candidate.experience} KN
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-gray-500 mt-1 truncate">
+                      {candidate.title || candidate.summary || 'Chưa cập nhật chức danh'}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                      {(candidate.address || candidate.location) && (
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {candidate.address || candidate.location}</span>
+                      )}
+                      {(candidate.gender) && (
+                        <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {candidate.gender === 'MALE' ? 'Nam' : 'Nữ'}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
+
+                {/* Kỹ năng (nếu Backend có trả về mảng skills) */}
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
+                    {(candidate.skills || ['Giao tiếp', 'Làm việc nhóm', 'Thích nghi nhanh']).slice(0, 4).map((skill, idx) => (
+                      <span key={idx} className="px-2.5 py-1 bg-gray-50 text-gray-600 border border-gray-100 rounded-md text-xs font-medium">
+                        {skill}
+                      </span>
+                    ))}
+                    {candidate.skills?.length > 4 && <span className="px-2 py-1 text-gray-400 text-xs font-medium">+{candidate.skills.length - 4}</span>}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-50 mt-auto">
+                  <button 
+                    onClick={() => setStatusMsg({ type: 'warning', message: 'Tính năng xem hồ sơ đang được hoàn thiện!' })}
+                    className="flex-1 bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                  >
+                    <User className="w-4 h-4" /> Xem hồ sơ
+                  </button>
+                  {candidate.cvId && (
+                     <button 
+                       onClick={() => window.open(`http://localhost:8080/api/v1/files/cv/${candidate.cvId}`, '_blank')}
+                       className="flex-1 bg-indigo-600 text-white border-2 border-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                     >
+                       <FileText className="w-4 h-4" /> Tải CV
+                     </button>
+                  )}
+                </div>
+
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -5703,7 +6332,6 @@ import {
 } from 'lucide-react';
 import authService from '../../../features/auth/authService';
 import employerService from '../../../features/employer/employerService';
-import candidateService from '../../../features/candidate/candidateService';
 
 // ─────────────────────────────────────────────
 // STATUS BADGE COMPONENTS
@@ -5719,7 +6347,7 @@ const APP_STATUS_MAP = {
   PENDING:              { label: 'Chờ xử lý',  bg: 'bg-amber-50 text-amber-700 border-amber-200',     dot: 'bg-amber-400' },
   REVIEWED:             { label: 'Đã xem',      bg: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-400' },
   INTERVIEW_SCHEDULED:  { label: 'Phỏng vấn',  bg: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
-  ACCEPTED:             { label: 'Đã tuyển',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  ACCEPTED:             { label: 'Đã duyệt',   bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   REJECTED:             { label: 'Từ chối',    bg: 'bg-gray-100 text-gray-500 border-gray-200',       dot: 'bg-gray-400' },
 };
 
@@ -5752,7 +6380,6 @@ const StatCard = ({ title, value, subtitle, link, icon, accentClass, isLoading }
   >
     <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity ${accentClass}`} />
     <div className="flex items-start justify-between mb-4">
-      {/* FIX: Đổi nền thành màu đặc, bo góc tròn và icon màu trắng */}
       <div className={`p-3 rounded-xl ${accentClass} shadow-sm flex items-center justify-center w-max text-white`}>
         {icon}
       </div>
@@ -5782,11 +6409,11 @@ export default function EmployerDashboardPage() {
     pendingApplications: 0,
     acceptedApplications: 0,
   });
-  const [recentJobs, setRecentJobs]           = useState([]);
+  const [recentJobs, setRecentJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
 
   useEffect(() => {
-    const run = async () => {
+    const fetchDashboardData = async () => {
       const currentUser = authService.getCurrentUser();
       if (!currentUser?.userId) {
         setError('Không tìm thấy phiên đăng nhập.');
@@ -5796,45 +6423,46 @@ export default function EmployerDashboardPage() {
       setUser(currentUser);
 
       try {
-        // 🌟 BƯỚC SỬA ĐỔI CHÍNH: Lấy đúng companyId thực tế từ userId trước
+        // 1. Lấy thông tin công ty
         const profileResult = await employerService.getCompanyProfile(currentUser.userId);
         const companyId = profileResult.data?.id;
 
         if (!companyId) {
-          console.warn("Tài khoản này chưa lập hồ sơ doanh nghiệp!");
           setLoading(false);
           return;
         }
 
-        // Gọi API song song bằng việc truyền COMPANY_ID (Thay vì truyền userId cũ)
-        const [jobsRes, appsRes] = await Promise.allSettled([
-          employerService.getMyJobs(companyId, 0, 5),
-          employerService.getApplicationsByEmployer?.(companyId, 0, 5)
-            ?? candidateService.getApplicationsByEmployer?.(companyId, 0, 5),
-        ]);
+        // 2. Lấy danh sách việc làm của công ty
+        const jobsRes = await employerService.getMyJobs(companyId, 0, 50);
+        const jobItems = jobsRes.data?.content || jobsRes.data || [];
+        const activeJobsCount = jobItems.filter(j => j.status === 'ACTIVE').length;
 
-        // Xử lý dữ liệu Tin tuyển dụng từ Backend
-        const jobsData = jobsRes.status === 'fulfilled' ? (jobsRes.value?.data ?? jobsRes.value) : null;
-        const jobItems   = jobsData?.items ?? jobsData?.content ?? [];
+        // 3. Lấy hồ sơ ứng tuyển bằng cách quét qua danh sách việc làm
+        const appPromises = jobItems.map(job => employerService.getApplicationsForJob(job.id, 0, 20));
+        const appResponses = await Promise.allSettled(appPromises);
         
-        // Thống kê đếm số tin đang hiển thị công khai công ty sở hữu
-        const activeJobs = jobItems.filter(j => j.status === 'ACTIVE').length;
-
-        // Xử lý dữ liệu đơn ứng tuyển
-        const appsData = appsRes.status === 'fulfilled' ? (appsRes.value?.data ?? appsRes.value) : null;
-        const appItems    = appsData?.items ?? appsData?.content ?? [];
-        const totalApps   = appsData?.totalElements ?? appItems.length;
-        const pendingApps = appItems.filter(a => a.status === 'PENDING').length;
-        const acceptedApps= appItems.filter(a => a.status === 'ACCEPTED').length;
-
-        setStats({
-          activeJobs,
-          totalApplications: totalApps,
-          pendingApplications: pendingApps,
-          acceptedApplications: acceptedApps,
+        let allApps = [];
+        appResponses.forEach(res => {
+          if (res.status === 'fulfilled') {
+             const apps = res.value.data?.content || res.value.data || [];
+             allApps = [...allApps, ...apps];
+          }
         });
+
+        // 4. Sắp xếp hồ sơ mới nhất lên đầu
+        allApps.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
+        // 5. Tính toán các chỉ số
+        setStats({
+          activeJobs: activeJobsCount,
+          totalApplications: allApps.length,
+          pendingApplications: allApps.filter(a => a.status === 'PENDING').length,
+          acceptedApplications: allApps.filter(a => a.status === 'ACCEPTED').length,
+        });
+        
         setRecentJobs(jobItems.slice(0, 5));
-        setRecentApplications(appItems.slice(0, 6));
+        setRecentApplications(allApps.slice(0, 6));
+
       } catch (err) {
         console.error('[EmployerDashboard Error]', err);
         setError('Không thể tải dữ liệu tổng quan. Vui lòng thử lại.');
@@ -5843,7 +6471,7 @@ export default function EmployerDashboardPage() {
       }
     };
 
-    run();
+    fetchDashboardData();
   }, []);
 
   const displayName = useMemo(() => {
@@ -5868,7 +6496,7 @@ export default function EmployerDashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tải dữ liệu tổng quan...</p>
+        <p className="text-sm text-gray-500 font-medium animate-pulse">Đang tổng hợp dữ liệu ứng tuyển...</p>
       </div>
     );
   }
@@ -5926,12 +6554,12 @@ export default function EmployerDashboardPage() {
           icon={<FileText className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications?status=PENDING" 
+          title="Đơn chờ xử lý" subtitle="Yêu cầu cần duyệt" value={stats.pendingApplications} link="/employer/applications" 
           accentClass="bg-orange-500" 
           icon={<Inbox className="w-6 h-6 text-white" />} 
         />
         <StatCard 
-          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications?status=ACCEPTED" 
+          title="Tuyển thành công" subtitle="Ứng viên đã tiếp nhận" value={stats.acceptedApplications} link="/employer/applications" 
           accentClass="bg-emerald-500" 
           icon={<CheckCircle className="w-6 h-6 text-white" />} 
         />
@@ -5971,11 +6599,9 @@ export default function EmployerDashboardPage() {
                     <Link to={`/employer/jobs/edit/${job.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm line-clamp-1">
                       {job.title}
                     </Link>
-                    {/* Sửa từ job.work_type sang job.workType giống cấu trúc API */}
                     {job.workType && (
                       <span className="text-xs text-gray-400 mt-0.5 block">{formatWorkType(job.workType)}</span>
                     )}
-                    {/* Sửa từ job.expires_at sang job.expiresAt */}
                     {job.expiresAt && (
                       <span className="inline-flex items-center gap-1 text-xs text-gray-400 mt-1">
                         <Calendar className="w-3 h-3" />
@@ -6030,16 +6656,17 @@ export default function EmployerDashboardPage() {
                 <div key={app.id} className="px-5 py-3.5 hover:bg-blue-50/30 transition-colors group">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
-                      {app.fullName || app.full_name || 'Ứng viên'}
+                      {/* Đã sửa thành candidateName đồng bộ với Backend */}
+                      {app.candidateName || `Ứng viên #${app.id}`}
                     </p>
                     <span className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                       <Clock className="w-3 h-3" />
-                      {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : app.applied_at ? new Date(app.applied_at).toLocaleDateString('vi-VN') : '—'}
+                      {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : '—'}
                     </span>
                   </div>
 
                   <p className="text-xs text-gray-500 truncate mb-2">
-                    {app.jobTitle || app.job_title || '—'}
+                    {app.jobTitle || '—'}
                   </p>
 
                   <div className="flex items-center justify-between">

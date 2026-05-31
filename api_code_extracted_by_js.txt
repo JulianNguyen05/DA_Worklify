@@ -563,6 +563,9 @@ package com.worklify.api.controller.candidate;
 import com.worklify.api.common.response.ApiResponse;
 import com.worklify.application.candidate.dto.*;
 import com.worklify.application.candidate.service.CandidateService;
+import com.worklify.application.common.dto.PageResponse;
+import com.worklify.domain.common.DomainPageable;
+import com.worklify.domain.common.SearchPageable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -680,6 +683,18 @@ public class CandidateController {
 
         candidateService.deleteCv(userId, cvId);
         return ApiResponse.success(null, "Xóa CV thành công");
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
+    @Operation(summary = "Tìm kiếm ứng viên (Dành cho Nhà tuyển dụng)")
+    public ApiResponse<PageResponse<CandidateProfileResponse>> searchCandidates(
+            @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
+
+        DomainPageable pageable = new SearchPageable(page, size);
+        return ApiResponse.success(candidateService.searchCandidates(keyword, pageable));
     }
 }
 
