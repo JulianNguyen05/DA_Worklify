@@ -49,7 +49,7 @@
   <tr>
     <td align="center" width="50%">
       <strong>🏠 Trang Chủ (Home Page)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/38BDF8?text=🏠+Home+Page&font=roboto" alt="Home Page" width="100%"/>
+      <img src="demo_images/home_page.png" alt="Home Page" width="100%"/>
       <br/><sub>Giao diện chào đón với thanh tìm kiếm việc làm thông minh, danh sách công việc nổi bật và các công ty đối tác.</sub>
     </td>
     <td align="center" width="50%">
