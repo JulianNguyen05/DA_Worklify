@@ -184,14 +184,14 @@
     </td>
     <td align="center" width="50%">
       <strong>👥 Quản Lý Người Dùng (User Management)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=👥+User+Management+Page&font=roboto" alt="User Management Page" width="100%"/>
+      <img src="demo_images/user_management_page.png" alt="User Management Page" width="100%"/>
       <br/><sub>Xem, tìm kiếm và quản lý toàn bộ tài khoản (Ứng viên / Nhà tuyển dụng). Kích hoạt, vô hiệu hóa hoặc điều chỉnh quyền.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>✅ Kiểm Duyệt Tin Tuyển Dụng (Job Moderation)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=✅+Job+Moderation+Page&font=roboto" alt="Job Moderation Page" width="100%"/>
+      <img src="demo_images/job_moderation_page.png" alt="Job Moderation Page" width="100%"/>
       <br/><sub>Xét duyệt các tin tuyển dụng chờ phê duyệt: đọc nội dung, phê duyệt hoặc từ chối với lý do cụ thể.</sub>
     </td>
     <td align="center" width="50%">
@@ -203,13 +203,8 @@
   <tr>
     <td align="center" width="50%">
       <strong>🏷️ Quản Lý Danh Mục (Category Management)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=🏷️+Category+Management+Page&font=roboto" alt="Category Management Page" width="100%"/>
+      <img src="demo_images/category_management_page.png" alt="Category Management Page" width="100%"/>
       <br/><sub>Thêm, sửa, xóa các danh mục ngành nghề và kỹ năng dùng chung trong toàn bộ hệ thống.</sub>
-    </td>
-    <td align="center" width="50%">
-      <strong>📈 Xuất Báo Cáo (Report Export)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=📈+Report+Export+Page&font=roboto" alt="Report Export Page" width="100%"/>
-      <br/><sub>Xuất báo cáo thống kê theo khoảng thời gian tùy chọn. Hỗ trợ xuất file Excel/CSV cho từng loại dữ liệu.</sub>
     </td>
   </tr>
 </table>

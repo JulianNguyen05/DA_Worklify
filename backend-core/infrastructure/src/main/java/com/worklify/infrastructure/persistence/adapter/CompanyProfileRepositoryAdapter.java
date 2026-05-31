@@ -1,5 +1,6 @@
 package com.worklify.infrastructure.persistence.adapter;
 
+import com.worklify.domain.candidate.model.CandidateProfile;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.employer.model.CompanyProfile;
@@ -35,7 +36,9 @@ public class CompanyProfileRepositoryAdapter implements CompanyProfileRepository
 
     @Override
     public Optional<CompanyProfile> findByUserId(Long userId) {
-        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+        // Đổi từ jpaRepository.findByUserId(...) thành:
+        return jpaRepository.findFirstByUserId(userId)
+                .map(mapper::toDomain);
     }
 
     @Override

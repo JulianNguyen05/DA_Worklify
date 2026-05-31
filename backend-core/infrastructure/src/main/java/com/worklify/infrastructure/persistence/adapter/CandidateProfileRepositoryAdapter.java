@@ -26,7 +26,9 @@ public class CandidateProfileRepositoryAdapter implements CandidateProfileReposi
 
     @Override
     public Optional<CandidateProfile> findByUserId(Long userId) {
-        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+        // Đổi từ jpaRepository.findByUserId(...) thành:
+        return jpaRepository.findFirstByUserId(userId)
+                .map(mapper::toDomain);
     }
 
     /**

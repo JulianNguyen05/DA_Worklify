@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, ShieldAlert, ShieldCheck, Mail, Shield, ShieldBan, UserX } from 'lucide-react';
+import { Users, Search, ShieldAlert, ShieldCheck, Mail, ShieldBan, UserX } from 'lucide-react';
 import adminService from '../../../features/admin/adminService';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
@@ -7,17 +7,20 @@ import Toast from '../../../components/common/Toast';
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  
+  // State quản lý bộ lọc
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL', 'CANDIDATE', 'EMPLOYER', 'ADMIN'
+  
   const [isLoading, setIsLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const res = await adminService.getUsers(0, 100); // Lấy nhiều một chút để demo lọc local
+      const res = await adminService.getUsers(0, 100);
       const data = res.data?.content || res.data || [];
       setUsers(data);
-      setFilteredUsers(data);
     } catch (err) {
       console.error(err);
       setStatusMsg({ type: 'error', message: 'Lỗi khi tải danh sách người dùng.' });
@@ -30,19 +33,26 @@ export default function UserManagementPage() {
     fetchUsers();
   }, []);
 
-  // Xử lý tìm kiếm Local
+  // Xử lý bộ lọc kết hợp: Tab Vai trò + Thanh tìm kiếm
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-      return;
+    let result = users;
+
+    // 1. Lọc theo Tab Vai trò
+    if (activeTab !== 'ALL') {
+      result = result.filter(u => u.role === activeTab);
     }
-    const lowerTerm = searchTerm.toLowerCase();
-    const filtered = users.filter(u => 
-      (u.email && u.email.toLowerCase().includes(lowerTerm)) || 
-      (u.fullName && u.fullName.toLowerCase().includes(lowerTerm))
-    );
-    setFilteredUsers(filtered);
-  }, [searchTerm, users]);
+
+    // 2. Lọc theo Từ khóa tìm kiếm
+    if (searchTerm.trim()) {
+      const lowerTerm = searchTerm.toLowerCase();
+      result = result.filter(u => 
+        (u.email && u.email.toLowerCase().includes(lowerTerm)) || 
+        (u.fullName && u.fullName.toLowerCase().includes(lowerTerm))
+      );
+    }
+
+    setFilteredUsers(result);
+  }, [searchTerm, activeTab, users]);
 
   const handleBanUser = async (userId) => {
     if (!window.confirm('Cảnh báo: Hành động này sẽ khóa tài khoản người dùng ngay lập tức. Bạn có chắc chắn?')) return;
@@ -50,13 +60,12 @@ export default function UserManagementPage() {
     try {
       await adminService.banUser(userId);
       setStatusMsg({ type: 'success', message: 'Đã khóa tài khoản thành công.' });
-      fetchUsers(); // Tải lại danh sách để cập nhật UI
+      fetchUsers(); 
     } catch (err) {
       setStatusMsg({ type: 'error', message: 'Không thể khóa tài khoản này.' });
     }
   };
 
-  // Helper render Badge Vai trò
   const renderRoleBadge = (role) => {
     switch (role) {
       case 'ADMIN':
@@ -68,13 +77,19 @@ export default function UserManagementPage() {
     }
   };
 
-  // Helper render Badge Trạng thái
   const renderStatusBadge = (status) => {
     if (status === 'BANNED') {
       return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700"><ShieldBan className="w-3 h-3" /> Đã khóa</span>;
     }
     return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700"><ShieldCheck className="w-3 h-3" /> Hoạt động</span>;
   };
+
+  const tabs = [
+    { id: 'ALL', label: 'Tất cả tài khoản' },
+    { id: 'CANDIDATE', label: 'Ứng viên' },
+    { id: 'EMPLOYER', label: 'Doanh nghiệp' },
+    { id: 'ADMIN', label: 'Quản trị viên' }
+  ];
 
   return (
     <div className="max-w-7xl mx-auto pb-12 space-y-6">
@@ -109,12 +124,39 @@ export default function UserManagementPage() {
         <Toast type={statusMsg.type} message={statusMsg.message} onClose={() => setStatusMsg({ type: null, message: '' })} />
       )}
 
+      {/* Tabs Filter Section */}
+      <div className="flex overflow-x-auto border-b border-gray-200 custom-scrollbar">
+        <div className="flex gap-2 pb-2">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-5 py-2.5 font-semibold text-sm whitespace-nowrap rounded-xl transition-all duration-200 ${
+                activeTab === tab.id 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50 border border-transparent'
+              }`}
+            >
+              {tab.label}
+              {/* Hiển thị số lượng nhỏ bên cạnh Tab "Tất cả" */}
+              {tab.id === 'ALL' && (
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === 'ALL' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                  {users.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Table Section */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <h3 className="font-bold text-gray-800">Danh sách Tài khoản</h3>
-          <span className="text-xs font-semibold bg-gray-200 text-gray-700 px-3 py-1 rounded-full">
-            Tổng: {users.length}
+          <h3 className="font-bold text-gray-800">
+            {activeTab === 'ALL' ? 'Danh sách Tất cả' : `Danh sách ${tabs.find(t => t.id === activeTab)?.label}`}
+          </h3>
+          <span className="text-xs font-semibold bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full shadow-sm">
+            Hiển thị: {filteredUsers.length} kết quả
           </span>
         </div>
 
@@ -153,8 +195,8 @@ export default function UserManagementPage() {
                   <td colSpan="4" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center">
                       <UserX className="w-12 h-12 text-gray-300 mb-3" />
-                      <p className="text-lg font-bold text-gray-600">Không tìm thấy người dùng</p>
-                      <p className="text-sm text-gray-400">Thử tìm kiếm với từ khóa khác.</p>
+                      <p className="text-lg font-bold text-gray-600">Không tìm thấy người dùng phù hợp</p>
+                      <p className="text-sm text-gray-400">Vui lòng thay đổi từ khóa hoặc bộ lọc danh mục.</p>
                     </div>
                   </td>
                 </tr>
@@ -202,10 +244,18 @@ export default function UserManagementPage() {
           </table>
         </div>
       </div>
+      
+      {/* CSS cho thanh cuộn ngang của Tabs */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+      `}} />
     </div>
   );
 }
 
-// Icon Components phụ (Tách ra để dùng trong hàm)
+// Icon Components
 const BriefcaseIcon = (props) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
 const UserIcon = (props) => <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;

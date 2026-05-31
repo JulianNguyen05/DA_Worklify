@@ -25,4 +25,5 @@ public interface CandidateProfileJpaRepository extends JpaRepository<CandidatePr
             @Param("keyword") String keyword,
             Pageable pageable
     );
+    Optional<CandidateProfileJpaEntity> findFirstByUserId(Long userId);
 }

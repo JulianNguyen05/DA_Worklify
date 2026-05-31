@@ -182,8 +182,9 @@ public class AdminServiceImpl implements AdminService {
 
         // 2. Chuyển đổi dữ liệu từ Entity (User) sang DTO (UserResponse) để gửi về Frontend
         List<UserResponse> content = page.getContent().stream().map(user -> {
-            // Lấy email an toàn tránh lỗi null
-            String emailStr = user.getEmail() != null ? String.valueOf(user.getEmail()) : "Chưa cập nhật";
+
+            // ĐÃ SỬA: Dùng .value() thay vì String.valueOf() để lấy chuỗi email chuẩn
+            String emailStr = user.getEmail() != null ? user.getEmail().value() : "Chưa cập nhật";
 
             // Tìm tên hiển thị dựa trên Role (Tùy chọn, Frontend có cơ chế fallback nếu null)
             String fullName = "Chưa cập nhật tên";

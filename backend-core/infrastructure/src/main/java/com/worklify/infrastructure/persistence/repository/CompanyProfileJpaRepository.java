@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface CompanyProfileJpaRepository extends JpaRepository<CompanyProfileJpaEntity, Long> {
     Optional<CompanyProfileJpaEntity> findByUserId(Long userId);
     List<CompanyProfileJpaEntity> findByVerificationStatus(VerificationStatus status);
+    Optional<CompanyProfileJpaEntity> findFirstByUserId(Long userId);
 }
