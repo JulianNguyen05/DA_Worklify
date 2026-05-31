@@ -78,19 +78,19 @@
     </td>
     <td align="center" width="50%">
       <strong>🔑 Đăng Nhập (Login)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/A78BFA?text=🔑+Login+Page&font=roboto" alt="Login Page" width="100%"/>
+      <img src="demo_images/login.png" alt="Login Page" width="100%"/>
       <br/><sub>Giao diện đăng nhập bảo mật, hỗ trợ phân biệt vai trò người dùng và luồng quên mật khẩu.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>📝 Đăng Ký (Register)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/A78BFA?text=📝+Register+Page&font=roboto" alt="Register Page" width="100%"/>
+      <img src="demo_images/register.png" alt="Register Page" width="100%"/>
       <br/><sub>Đăng ký tài khoản mới với lựa chọn vai trò Ứng Viên hoặc Nhà Tuyển Dụng và xác thực dữ liệu đầu vào toàn diện.</sub>
     </td>
     <td align="center" width="50%">
       <strong>🔒 Quên Mật Khẩu (Forgot Password)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/A78BFA?text=🔒+Forgot+Password+Page&font=roboto" alt="Forgot Password Page" width="100%"/>
+      <img src="demo_images/forgot_password.png" alt="Forgot Password Page" width="100%"/>
       <br/><sub>Luồng khôi phục mật khẩu an toàn qua email với xác nhận OTP hoặc link đặt lại.</sub>
     </td>
   </tr>
