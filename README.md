@@ -38,8 +38,6 @@
 
 ## 📸 Giao Diện Hệ Thống
 
----
-
 ### 🌐 Khu Vực Công Khai & Xác Thực
 
 <table>
@@ -101,33 +99,25 @@
   <tr>
     <td align="center" width="50%">
       <strong>📊 Bảng Điều Khiển (Candidate Dashboard)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/34D399?text=📊+Candidate+Dashboard&font=roboto" alt="Candidate Dashboard" width="100%"/>
+      <img src="demo_images/candidate_dashboard.png" alt="Candidate Dashboard" width="100%"/>
       <br/><sub>Tổng quan cá nhân: số lượng hồ sơ đã nộp, trạng thái xử lý và các việc làm nổi bật đang tuyển dụng.</sub>
     </td>
     <td align="center" width="50%">
       <strong>📋 Xây Dựng CV (CV Builder)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/34D399?text=📋+CV+Builder+Page&font=roboto" alt="CV Builder Page" width="100%"/>
+      <img src="demo_images/cv_builder_page.png" alt="CV Builder Page" width="100%"/>
       <br/><sub>Công cụ tải lên và quản lý CV định dạng PDF. Xem trước file trực tiếp trên trình duyệt trước khi lưu.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>📬 Hồ Sơ Đã Nộp (My Applications)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/34D399?text=📬+My+Applications+Page&font=roboto" alt="My Applications Page" width="100%"/>
+      <img src="demo_images/my_applications_page.png" alt="My Applications Page" width="100%"/>
       <br/><sub>Theo dõi toàn bộ hồ sơ ứng tuyển với trạng thái thời gian thực: Đang xét duyệt, Đã xem, Phỏng vấn, Từ chối.</sub>
     <td align="center" width="50%">
       <strong>👤 Hồ Sơ Cá Nhân (Profile)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/34D399?text=👤+Candidate+Profile+Page&font=roboto" alt="Candidate Profile Page" width="100%"/>
+      <img src="demo_images/candidate_profile_page.png" alt="Candidate Profile Page" width="100%"/>
       <br/><sub>Quản lý thông tin cá nhân, kinh nghiệm làm việc, học vấn, kỹ năng và mức lương kỳ vọng.</sub>
     </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <strong>⚙️ Cài Đặt Tài Khoản (Settings)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/34D399?text=⚙️+Candidate+Settings+Page&font=roboto" alt="Candidate Settings Page" width="100%"/>
-      <br/><sub>Cập nhật mật khẩu, cài đặt thông báo email và quản lý quyền riêng tư tài khoản.</sub>
-    </td>
-    <td></td>
   </tr>
 </table>
 
