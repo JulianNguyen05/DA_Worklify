@@ -471,18 +471,6 @@ da_SmartMatch/
 
 ---
 
-## 👥 Đóng Góp
-
-Mọi đóng góp đều được chào đón! Vui lòng đọc hướng dẫn sau:
-
-1. Fork repository
-2. Tạo feature branch: `git checkout -b feature/ten-tinh-nang`
-3. Commit thay đổi: `git commit -m 'feat: Thêm tính năng ABC'`
-4. Push lên branch: `git push origin feature/ten-tinh-nang`
-5. Tạo Pull Request
-
----
-
 ## 📄 Giấy Phép
 
 Dự án được phân phối theo giấy phép **MIT License**. Xem thêm tại file [`LICENSE`](./LICENSE).
