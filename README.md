@@ -38,9 +38,6 @@
 
 ## 📸 Giao Diện Hệ Thống
 
-> **Hướng dẫn:** Thay thế các placeholder `[Ảnh chụp màn hình]` bằng file ảnh thực tế của bạn.
-> Ví dụ: `![Home Page](./docs/screenshots/homepage.png)`
-
 ---
 
 ### 🌐 Khu Vực Công Khai & Xác Thực
