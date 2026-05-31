@@ -129,49 +129,44 @@
   <tr>
     <td align="center" width="50%">
       <strong>📊 Bảng Điều Khiển (Employer Dashboard)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=📊+Employer+Dashboard&font=roboto" alt="Employer Dashboard" width="100%"/>
+      <img src="demo_images/employer_dashboard.png" alt="Employer Dashboard" width="100%"/>
       <br/><sub>Tổng quan doanh nghiệp: số lượng tin đăng, hồ sơ nhận được, tỉ lệ phản hồi và biểu đồ hoạt động tuyển dụng.</sub>
     </td>
     <td align="center" width="50%">
       <strong>🏬 Hồ Sơ Công Ty (Company Profile)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=🏬+Company+Profile+Page&font=roboto" alt="Company Profile Page" width="100%"/>
+      <img src="demo_images/company_profile_page.png" alt="Company Profile Page" width="100%"/>
       <br/><sub>Chỉnh sửa thông tin doanh nghiệp: logo, mô tả, lĩnh vực, quy mô, địa chỉ và trang mạng xã hội.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>📋 Quản Lý Tin Tuyển Dụng (Job Management)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=📋+Job+Management+Page&font=roboto" alt="Job Management Page" width="100%"/>
+      <img src="demo_images/job_management_page.png" alt="Job Management Page" width="100%"/>
       <br/><sub>Bảng tổng hợp tất cả tin tuyển dụng: lọc theo trạng thái (Đang mở/Đã đóng/Chờ duyệt), chỉnh sửa và xóa nhanh.</sub>
     </td>
     <td align="center" width="50%">
       <strong>✏️ Tạo / Chỉnh Sửa Tin (Job Create / Edit)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=✏️+Job+Create+%2F+Edit+Page&font=roboto" alt="Job Create/Edit Page" width="100%"/>
+      <img src="demo_images/job_create_page.png" alt="Job Create/Edit Page" width="100%"/>
       <br/><sub>Form soạn thảo tin tuyển dụng đầy đủ: tiêu đề, mô tả (rich text), yêu cầu kỹ năng, mức lương, hạn nộp hồ sơ.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>📬 Danh Sách Hồ Sơ (Application List)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=📬+Application+List+Page&font=roboto" alt="Application List Page" width="100%"/>
+      <img src="demo_images/application_list_page.png" alt="Application List Page" width="100%"/>
       <br/><sub>Xem tất cả hồ sơ ứng tuyển cho từng vị trí, sắp xếp theo thời gian nộp, lọc theo trạng thái xử lý.</sub>
     </td>
     <td align="center" width="50%">
       <strong>🔍 Chi Tiết Hồ Sơ (Application Detail)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=🔍+Application+Detail+Page&font=roboto" alt="Application Detail Page" width="100%"/>
+      <img src="demo_images/application_detail_page.png" alt="Application Detail Page" width="100%"/>
       <br/><sub>Xem CV ứng viên (PDF viewer), thông tin cá nhân và cập nhật trạng thái xử lý hồ sơ.</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
       <strong>🔎 Tìm Kiếm Ứng Viên (Candidate Search)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=🔎+Candidate+Search+Page&font=roboto" alt="Candidate Search Page" width="100%"/>
+      <img src="demo_images/candidate_search_page.png" alt="Candidate Search Page" width="100%"/>
       <br/><sub>Chủ động tìm kiếm ứng viên theo kỹ năng, kinh nghiệm, địa điểm — không cần chờ ứng viên tự nộp.</sub>
-    </td>
-    <td align="center" width="50%">
-      <strong>⚙️ Cài Đặt Tài Khoản (Employer Settings)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/FB923C?text=⚙️+Employer+Settings+Page&font=roboto" alt="Employer Settings Page" width="100%"/>
-      <br/><sub>Quản lý thông tin tài khoản, đổi mật khẩu và cài đặt thông báo tuyển dụng.</sub>
     </td>
   </tr>
 </table>
@@ -184,7 +179,7 @@
   <tr>
     <td align="center" width="50%">
       <strong>📊 Bảng Điều Khiển Admin (Admin Dashboard)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=📊+Admin+Dashboard&font=roboto" alt="Admin Dashboard" width="100%"/>
+      <img src="demo_images/admin_dashboard.png" alt="Admin Dashboard" width="100%"/>
       <br/><sub>Toàn cảnh hệ thống: tổng người dùng, tin tuyển dụng, hồ sơ nộp và các biểu đồ thống kê theo thời gian.</sub>
     </td>
     <td align="center" width="50%">
@@ -201,7 +196,7 @@
     </td>
     <td align="center" width="50%">
       <strong>🏢 Kiểm Duyệt Công Ty (Company Moderation)</strong><br/>
-      <img src="https://placehold.co/800x500/0F172A/F472B6?text=🏢+Company+Moderation+Page&font=roboto" alt="Company Moderation Page" width="100%"/>
+      <img src="demo_images/company_moderation_page.png" alt="Company Moderation Page" width="100%"/>
       <br/><sub>Xét duyệt hồ sơ doanh nghiệp mới đăng ký: kiểm tra thông tin pháp lý, logo và nội dung mô tả.</sub>
     </td>
   </tr>
