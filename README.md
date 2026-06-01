@@ -470,12 +470,6 @@ da_SmartMatch/
 
 ---
 
-## 📄 Giấy Phép
-
-Dự án được phân phối theo giấy phép **MIT License**. Xem thêm tại file [`LICENSE`](./LICENSE).
-
----
-
 <div align="center">
 
 **Built with by Julian Nguyen**
