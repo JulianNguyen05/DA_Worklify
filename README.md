@@ -478,9 +478,9 @@ Dự án được phân phối theo giấy phép **MIT License**. Xem thêm tạ
 
 <div align="center">
 
-**Được xây dựng với ❤️ bởi Julian Nguyen**
+**Built with by Julian Nguyen**
 
-[![GitHub Stars](https://img.shields.io/github/stars/JulianNguyen05/DA_Worklify/?style=social)](https://github.com/JulianNguyen05/DA_Worklify)
-[![GitHub Forks](https://img.shields.io/github/forks/your-username/worklify?style=social)](https://github.com/JulianNguyen05/DA_Worklify)
+[![GitHub Stars](https://img.shields.io/github/stars/JulianNguyen05/DA_Worklify?style=social)](https://github.com/JulianNguyen05/DA_Worklify)
+[![GitHub Forks](https://img.shields.io/github/forks/JulianNguyen05/DA_Worklify?style=social)](https://github.com/JulianNguyen05/DA_Worklify)
 
 </div>
