@@ -3,7 +3,6 @@
 # 🚀 Worklify — Nền Tảng Tuyển Dụng Thông Minh
 
 [![Demo Video](https://img.shields.io/badge/▶%20Xem%20Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/your-demo-link)
-[![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-Worklify-0A66C2?style=for-the-badge&logo=vercel&logoColor=white)](https://worklify.demo.com)
 
 ---
 
