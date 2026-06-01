@@ -2,7 +2,7 @@
 
 # 🚀 Worklify — Nền Tảng Tuyển Dụng Thông Minh
 
-[![Demo Video](https://img.shields.io/badge/▶%20Xem%20Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/your-demo-link)
+[![Demo Video](https://img.shields.io/badge/▶%20Xem%20Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/B_SttBJRtP0)
 
 ---
 
