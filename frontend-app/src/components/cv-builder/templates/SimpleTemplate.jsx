@@ -160,7 +160,7 @@ const EditableContactList = ({ items, sectionId, primaryColor, onUpdateItems }) 
     <div className="w-full relative group/section">
       <div className="space-y-0.5 relative">
         {items.map((item, index) => (
-          <div key={index} className="relative flex flex-wrap items-start group/item transition-all border border-transparent hover:border-dashed hover:border-gray-300 rounded">
+          <div key={index} className="relative grid grid-cols-[auto_1fr] items-start gap-x-2 group/item transition-all border border-transparent hover:border-dashed hover:border-gray-300 rounded">
             <div className="absolute right-0 -top-8 flex-row gap-0.5 bg-white shadow-lg border border-gray-200 rounded-lg z-20 opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all flex" contentEditable="false">
               <button onClick={() => handleMoveUp(index)} disabled={index === 0} className="px-1.5 hover:bg-blue-100 rounded-md text-blue-600 disabled:opacity-30 disabled:text-gray-300 transition-colors" title="Di chuyển lên"><ArrowUp size={13} /></button>
               <button onClick={() => handleMoveDown(index)} disabled={index === items.length - 1} className="px-1.5 hover:bg-blue-100 rounded-md text-blue-600 disabled:opacity-30 disabled:text-gray-300 transition-colors" title="Di chuyển xuống"><ArrowDown size={13} /></button>
@@ -168,16 +168,21 @@ const EditableContactList = ({ items, sectionId, primaryColor, onUpdateItems }) 
               <button onClick={() => handleAdd(index)} className="px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium flex items-center gap-0.5 transition-colors shadow-sm" style={{ backgroundColor: primaryColor || THEME.primary }}><Plus size={13} /> Thêm</button>
             </div>
 
+            {/* Cột 1 (auto): label. border-r đóng vai trò dấu ":" cũ — không còn là 1
+                flex-item riêng nên KHÔNG có phần tử nào đứng "ngang hàng" với label để
+                bị label 2 dòng đè lên; grid row tự giãn chiều cao theo cột cao nhất. */}
             <div contentEditable suppressContentEditableWarning
               onBlur={(e) => handleHTMLBlur(e, 'label', (f, v) => handleTextChange(index, f, v))}
-              className={`font-bold text-[0.9em] ${contactEditableClass}`} style={{ color: primaryColor }}
+              className={`font-bold text-[0.9em] pr-2 border-r-2 ${contactEditableClass}`}
+              style={{ color: primaryColor, borderColor: primaryColor }}
               data-placeholder={config.placeholders.contactInfo.title}
               dangerouslySetInnerHTML={{ __html: item.label }} />
-            <span className="font-bold text-[0.9em]" style={{ color: primaryColor }}>:</span>
 
+            {/* Cột 2 (1fr): value. items-start ở container đảm bảo value luôn bắt đầu
+                ngang hàng dòng đầu của label, dù label wrap bao nhiêu dòng cũng vậy. */}
             <div contentEditable suppressContentEditableWarning
               onBlur={(e) => handleHTMLBlur(e, 'value', (f, v) => handleTextChange(index, f, v))}
-              className={`text-gray-700 flex-1 text-[0.9em] ${contactEditableClass}`}
+              className={`text-gray-700 text-[0.9em] pl-2 w-full ${contactEditableClass}`}
               data-placeholder={item.placeholder || config.placeholders.contactInfo.value}
               dangerouslySetInnerHTML={{ __html: item.value }} />
           </div>
