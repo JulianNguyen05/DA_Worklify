@@ -41,7 +41,7 @@ public class MlCvParsingClient implements CvParsingPort {
         // NER có thể mất vài giây, nhất là lần đầu load model (lazy-load).
         this.restTemplate = builder
                 .setConnectTimeout(Duration.ofSeconds(5))
-                .setReadTimeout(Duration.ofSeconds(30))
+                .setReadTimeout(Duration.ofSeconds(120))
                 .build();
         this.objectMapper = objectMapper;
     }

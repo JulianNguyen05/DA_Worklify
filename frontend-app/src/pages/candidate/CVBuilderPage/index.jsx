@@ -9,7 +9,6 @@ import {
   Loader,
   CheckCircle2,
   ArrowLeft,
-  Upload,
 } from "lucide-react";
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -757,29 +756,6 @@ const CVBuilderPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          
-          <input
-            ref={cvUploadInputRef}
-            type="file"
-            accept="image/jpeg,image/png,application/pdf,.docx"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleUploadCvImage(file);
-            }}
-          />
-          <button
-            onClick={() => cvUploadInputRef.current?.click()}
-            disabled={uiState.isExtracting}
-            className="flex items-center gap-2 px-4 py-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg text-sm font-semibold transition-colors disabled:opacity-55 disabled:cursor-not-allowed"
-          >
-            {uiState.isExtracting ? (
-              <Loader className="w-4 h-4 animate-spin" />
-            ) : (
-              <Upload size={18} />
-            )}
-            {uiState.isExtracting ? "Đang phân tích..." : "Upload ảnh CV"}
-          </button>
           
           <button
             onClick={() => setIsPreviewOpen(true)}

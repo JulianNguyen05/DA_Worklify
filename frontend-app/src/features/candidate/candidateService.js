@@ -346,9 +346,10 @@ const candidateService = {
   extractCv: async (userId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    // Không set Content-Type thủ công — để axios tự thêm boundary cho FormData
-    const response = await axiosClient.post(`/candidates/${userId}/cvs/extract`, formData);
-    return response.data; // = ApiResponse<ParsedCvResponse> nguyên vẹn — caller cần .data để lấy payload
+    const response = await axiosClient.post(`/candidates/${userId}/cvs/extract`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
   },
 };
 
