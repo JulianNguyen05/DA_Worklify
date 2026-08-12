@@ -28,6 +28,22 @@ _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 # Số VN: 0xxxxxxxxx hoặc +84xxxxxxxxx, cho phép khoảng trắng/dấu chấm phân tách
 _PHONE_RE = re.compile(r"(?:\+84|0)(?:[\s.-]?\d){9,10}")
 
+# Thêm cạnh các regex có sẵn (_EMAIL_RE, _PHONE_RE...)
+
+_DOB_RE = re.compile(
+    r"(?:date\s*of\s*birth|dob|ngày\s*sinh)\s*[:\}\|]?\s*"
+    r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+    re.I,
+)
+_GENDER_RE = re.compile(
+    r"(?:gender|giới\s*tính)\s*[:\}\|]?\s*(male|female|nam|nữ|other)",
+    re.I,
+)
+_ADDRESS_RE = re.compile(
+    r"(?:address|địa\s*chỉ)\s*[:\}\|]?\s*(.+)",
+    re.I,
+)
+
 _LINKEDIN_RE = re.compile(r"(?:https?://)?(?:www\.)?linkedin\.com/in/[\w-]+/?", re.I)
 _GITHUB_RE = re.compile(r"(?:https?://)?(?:www\.)?github\.com/[\w-]+/?", re.I)
 _WEBSITE_RE = re.compile(
@@ -73,18 +89,34 @@ _SECTION_HEADINGS = {
     ],
 }
 
+def _first_match_per_line(pattern: re.Pattern, text: str) -> str | None:
+    """Áp dụng regex theo từng dòng — dùng cho field mà value luôn nằm
+    cùng dòng với label (Address, DOB, Gender), tránh việc regex '.+' nuốt
+    luôn nội dung của dòng/field kế tiếp."""
+    for line in text.splitlines():
+        m = pattern.search(line.strip())
+        if m:
+            return m.group(1).strip()
+    return None
+
 
 def extract_contact(text: str) -> ContactInfo:
     email = _first_match(_EMAIL_RE, text)
     phone = _first_match(_PHONE_RE, text)
     linkedin = _first_match(_LINKEDIN_RE, text)
     github = _first_match(_GITHUB_RE, text)
+    dob = _first_match_per_line(_DOB_RE, text)
+    gender = _first_match_per_line(_GENDER_RE, text)
+    address = _first_match_per_line(_ADDRESS_RE, text)
 
     return ContactInfo(
         email=_to_field(email, confidence=0.95 if email else 0.0),
         phone=_to_field(phone, confidence=0.9 if phone else 0.0),
         linkedin_url=_to_field(linkedin, confidence=0.9 if linkedin else 0.0),
         github_url=_to_field(github, confidence=0.9 if github else 0.0),
+        date_of_birth=_to_field(dob, confidence=0.85 if dob else 0.0),
+        gender=_to_field(gender, confidence=0.85 if gender else 0.0),
+        address=_to_field(address, confidence=0.7 if address else 0.0),
     )
 
 
@@ -193,6 +225,17 @@ def _add_matched(found: list[SkillItem], seen_ids: set[int], name: str, skill_id
     seen_ids.add(skill_id)
     found.append(SkillItem(name=name, matched_skill_id=skill_id, confidence=0.9))
 
+def extract_simple_items(block: str) -> list[str]:
+    """
+    Baseline cho các section không có sub-structure phức tạp
+    (Hobbies, Projects, Awards, Certifications, Activities) — coi mỗi đoạn
+    cách nhau bởi dòng trống là 1 mục, trả về raw text. Tương tự
+    extract_educations/extract_experiences — chờ NER nếu sau này gán nhãn
+    thêm cho các entity type này.
+    """
+    if not block:
+        return []
+    return [c.strip() for c in re.split(r"\n\s*\n", block) if c.strip()]
 
 def extract_educations(education_block: str) -> list[EducationItem]:
     """

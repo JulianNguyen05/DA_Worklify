@@ -52,6 +52,11 @@ class ParserService:
         education_block = sections.get("education", "")
         experience_block = sections.get("experience", "")
         summary_block = sections.get("summary")
+        hobbies_block = sections.get("hobbies", "")
+        projects_block = sections.get("projects", "")
+        awards_block = sections.get("awards", "")
+        certifications_block = sections.get("certifications", "")
+        activities_block = sections.get("activities", "")
 
         skill_catalog = self._skill_catalog_provider()
 
@@ -94,10 +99,13 @@ class ParserService:
             location=location,
             educations=educations,
             experiences=experiences,
-            # Skills LUÔN dùng dictionary matching, không dùng NER — xem
-            # docstring đầu file.
             skills=rbe.extract_skills(skills_block, skill_catalog),
             summary_text=summary_block,
+            hobbies=rbe.extract_simple_items(hobbies_block),
+            projects=rbe.extract_simple_items(projects_block),
+            awards=rbe.extract_simple_items(awards_block),
+            certifications=rbe.extract_simple_items(certifications_block),
+            activities=rbe.extract_simple_items(activities_block),
             warnings=warnings,
         )
 

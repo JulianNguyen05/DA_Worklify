@@ -1,28 +1,41 @@
 import os
 
-# Danh sách các file cốt lõi cần để debug lỗi rớt dữ liệu map CV
+# Danh sách các file cốt lõi cần để debug pipeline ML và mapping
 TARGET_FILES = [
-    # 1. File trung tâm xử lý mapping dữ liệu
-    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js",
+    # Xem OCR ra text thô như thế nào
+    "backend-ml/app/services/text_extractor.py",
     
-    # 2. Schema gốc từ ML trả về để đối chiếu field name
+    # Rule-based cho Education/Experience trước khi qua NER
+    "backend-ml/app/services/rule_based_extractor.py",
+    
+    # Xử lý output NER
+    "backend-ml/app/services/ner_postprocessor.py",
+    
+    # Pipeline tổng (extract → rule-based → NER)
+    "backend-ml/app/services/parser_service.py",
+    
+    # Cấu trúc ParsedCvResponse (để biết field nào có confidence thấp)
     "backend-ml/app/schemas/parser_schema.py",
     
-    # 3. Component chứa defaultData của template để so sánh cấu trúc
-    "frontend-app/src/components/cv-builder/templates/SimpleTemplate.jsx",
+    # Xem model NER đang load là bản nào
+    "backend-ml/app/models/model_loader.py",
     
-    # 4. Nơi lấy location.state.prefillData lúc mount
-    "frontend-app/src/pages/candidate/CVBuilderPage/index.jsx"
+    # Cấu hình model NER
+    "backend-ml/app/models/ner_model/config.json",
+    
+    # File map dữ liệu ở frontend để loại trừ khả năng lỗi ở tầng map
+    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js"
 ]
 
 # Task này không cần quét toàn bộ thư mục
 TARGET_DIRS = []
 
-OUTPUT_FILE = "exported_cv_mapping_debug.md"
+# Tên file đầu ra
+OUTPUT_FILE = "exported_ml_pipeline_debug.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# CV Data Mapping Debug Context\n\n")
+        outfile.write("# ML Pipeline & Frontend Mapping Debug Context\n\n")
         
         # Xử lý các file lẻ
         for filepath in TARGET_FILES:
@@ -54,6 +67,7 @@ def get_extension(filepath):
     if ext in ['py']: return 'python'
     if ext in ['java']: return 'java'
     if ext in ['js', 'jsx']: return 'javascript'
+    if ext in ['json']: return 'json'
     return 'text'
 
 if __name__ == "__main__":
