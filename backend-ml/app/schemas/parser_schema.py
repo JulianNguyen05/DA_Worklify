@@ -2,7 +2,8 @@
 """
 Schemas cho CV Parser.
 Field names được đặt khớp với các DTO Java hiện có bên backend-core
-(EducationRequest, ExperienceRequest, CandidateSkillRequest, ...)
+(EducationRequest, ExperienceRequest, CandidateSkillRequest, AwardRequest,
+CertificationRequest, ActivityRequest, ProjectRequest, HobbyResponse)
 để backend-core có thể deserialize thẳng response mà không cần mapper riêng.
 """
 from __future__ import annotations
@@ -39,6 +40,9 @@ class ContactInfo(BaseModel):
     linkedin_url: Optional[ExtractedField] = None
     github_url: Optional[ExtractedField] = None
     website_url: Optional[ExtractedField] = None
+    date_of_birth: Optional[ExtractedField] = None
+    gender: Optional[ExtractedField] = None
+    address: Optional[ExtractedField] = None
 
 
 # Name/Location tách riêng khỏi ContactInfo — không phải "cách liên hệ",
@@ -68,6 +72,63 @@ class SkillItem(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, default=0.0)
 
 
+class HobbyItem(BaseModel):
+    """Khớp HobbyResponse.java (name)."""
+    name: str
+
+
+class AwardItem(BaseModel):
+    """Khớp AwardRequest.java (title, issuer, awardedDate, description).
+    awarded_date giữ dạng string thô (vd "12/2023") — CHƯA parse thành
+    LocalDate ở baseline này vì độ tin cậy ngày tháng từ OCR/rule-based
+    còn thấp; nên để backend-core hoặc người dùng xác nhận/parse lại
+    trước khi lưu, tránh insert sai LocalDate mà không ai kiểm tra."""
+    title: str
+    issuer: Optional[str] = None
+    awarded_date: Optional[str] = None
+    description: Optional[str] = None
+    raw_text: str
+
+
+class CertificationItem(BaseModel):
+    """Khớp CertificationRequest.java (name, issuingOrg, issueDate,
+    expiryDate, credentialId, credentialUrl). expiry_date/credential_id/
+    credential_url baseline không trích xuất được (không có heuristic rõ
+    ràng để tách trong text tự do), luôn None — chờ người dùng bổ sung."""
+    name: str
+    issuing_org: Optional[str] = None
+    issue_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    credential_id: Optional[str] = None
+    credential_url: Optional[str] = None
+    raw_text: str
+
+
+class ActivityItem(BaseModel):
+    """Khớp ActivityRequest.java (organization, role, startDate, endDate,
+    description). end_date baseline thường None vì layout phổ biến chỉ ghi
+    1 mốc thời gian cho hoạt động (vd "06/2021"), không phải khoảng."""
+    organization: str
+    role: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None
+    raw_text: str
+
+
+class ProjectItem(BaseModel):
+    """Khớp ProjectRequest.java (projectName, role, techStack, projectUrl,
+    startDate, endDate, description)."""
+    project_name: str
+    role: Optional[str] = None
+    tech_stack: Optional[str] = None
+    project_url: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None
+    raw_text: str
+
+
 # ---------- Response tổng ----------
 
 class ParsedCvResponse(BaseModel):
@@ -79,4 +140,9 @@ class ParsedCvResponse(BaseModel):
     experiences: list[ExperienceItem] = []
     skills: list[SkillItem] = []
     summary_text: Optional[str] = None
+    hobbies: list[HobbyItem] = []
+    projects: list[ProjectItem] = []
+    awards: list[AwardItem] = []
+    certifications: list[CertificationItem] = []
+    activities: list[ActivityItem] = []
     warnings: list[str] = []  # vd: "Không đọc được text từ PDF scan, cần OCR"

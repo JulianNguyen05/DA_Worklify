@@ -12,6 +12,10 @@ fine-tune, xem ml_training/train_ner.py):
   - Skills: LUÔN dùng dictionary matching (rule_based_extractor), KHÔNG
     dùng NER — F1 Skills chỉ 0.03 trên tập test, gần như vô dụng, có thể
     do nhãn "Skills" trong dataset gốc là block text dài không đồng nhất.
+  - Hobbies/Projects/Awards/Certifications/Activities: CHỈ dùng rule-based
+    (NER model hiện tại không có nhãn cho các entity type này — dataset
+    gốc chỉ có 9 loại nhãn, không bao gồm 5 loại này). Chờ gán nhãn thêm
+    dữ liệu nếu cần nâng cấp lên NER cho các field này.
   - Nếu model NER chưa có sẵn (is_available=False): fallback về 100%
     rule-based như Giai đoạn 1, không lỗi, không thiếu response.
 """
@@ -99,13 +103,15 @@ class ParserService:
             location=location,
             educations=educations,
             experiences=experiences,
+            # Skills LUÔN dùng dictionary matching, không dùng NER — xem
+            # docstring đầu file.
             skills=rbe.extract_skills(skills_block, skill_catalog),
             summary_text=summary_block,
-            hobbies=rbe.extract_simple_items(hobbies_block),
-            projects=rbe.extract_simple_items(projects_block),
-            awards=rbe.extract_simple_items(awards_block),
-            certifications=rbe.extract_simple_items(certifications_block),
-            activities=rbe.extract_simple_items(activities_block),
+            hobbies=rbe.extract_hobbies(hobbies_block),
+            projects=rbe.extract_projects(projects_block),
+            awards=rbe.extract_awards(awards_block),
+            certifications=rbe.extract_certifications(certifications_block),
+            activities=rbe.extract_activities(activities_block),
             warnings=warnings,
         )
 
