@@ -16,4 +16,5 @@ public class CvDocumentResponse {
     private Boolean isGenerated;
     private LocalDateTime createdAt;
     private String thumbnailPath;
+    private String digitalPdfPath;
 }

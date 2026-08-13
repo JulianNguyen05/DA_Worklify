@@ -170,6 +170,15 @@ public class CandidateController {
         return ApiResponse.success(candidateService.uploadCvThumbnail(userId, cvId, file), "Lưu ảnh thu nhỏ thành công");
     }
 
+    @PostMapping(value = "/{userId}/cvs/{cvId}/digital-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Tải lên PDF số (text thật) của CV — dùng cho tính năng convert PDF sang CV Live Builder")
+    public ApiResponse<CvDocumentResponse> uploadCvDigitalPdf(
+            @PathVariable("userId") Long userId,
+            @PathVariable("cvId") Long cvId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return ApiResponse.success(candidateService.uploadCvDigitalPdf(userId, cvId, file), "Lưu PDF số thành công");
+    }
+
     // ==========================================
     // 4. ẢNH ĐẠI DIỆN (AVATAR)
     // ==========================================

@@ -467,6 +467,7 @@ public class CandidateServiceImpl implements CandidateService {
                 .filePath(cv.getFilePath())
                 .fileName(finalFileName)
                 .thumbnailPath(cv.getThumbnailPath())
+                .digitalPdfPath(cv.getDigitalPdfPath())
                 .rawText(cv.getRawText())
                 .isGenerated(cv.getIsGenerated())
                 .createdAt(cv.getCreatedAt())
@@ -1239,6 +1240,27 @@ public class CandidateServiceImpl implements CandidateService {
         // Không check profile tồn tại — bước này chỉ để prefill, chưa ghi DB,
         // nên cho phép dùng cả khi user chưa tạo hồ sơ (vd lần đầu vào CV Builder).
         return cvParsingPort.extractCv(file);
+    }
+
+    @Override
+    public CvDocumentResponse uploadCvDigitalPdf(Long userId, Long cvId, MultipartFile file) {
+        CandidateProfile profile = candidateProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hồ sơ ứng viên."));
+
+        CvDocument cv = cvDocumentRepository.findById(cvId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy CV."));
+
+        if (!cv.getCandidateId().equals(profile.getId())) {
+            throw new IllegalArgumentException("Bạn không có quyền sửa CV này.");
+        }
+
+        String customFileName = cvId + ".pdf";
+
+        String savedRelativePath = fileStoragePort.storeFile(file, "cv_digital_pdfs", String.valueOf(userId), customFileName);
+        String digitalPdfPath = "/uploads/" + savedRelativePath;
+
+        cv.updateDigitalPdfPath(digitalPdfPath);
+        return mapToCvResponse(cvDocumentRepository.save(cv));
     }
 
 }

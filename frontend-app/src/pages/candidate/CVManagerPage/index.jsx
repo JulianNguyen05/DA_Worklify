@@ -302,6 +302,18 @@ const styles = `
     font-family: 'Inter', sans-serif;
   }
   .wl-action-edit:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* [MỚI] Nút tải PDF số — cạnh nút Sửa/Xoá trong wl-card-actions */
+  .wl-action-pdf {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #EFF6FF; border: 1px solid #BFDBFE; color: #2563EB;
+    border-radius: 8px; padding: 9px 13px;
+    font-size: 13px; cursor: pointer; transition: background 0.2s, opacity 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+  .wl-action-pdf:hover { background: #DBEAFE; }
+  .wl-action-pdf:disabled { opacity: 0.4; cursor: not-allowed; }
+
   .wl-action-delete {
     display: inline-flex; align-items: center; justify-content: center;
     background: #FFF1F2; border: 1px solid #FECDD3; color: #E11D48;
@@ -377,6 +389,20 @@ const SkeletonCard = () => (
 
 const CvCard = ({ cv, onEdit, onDelete }) => {
   const thumbSrc = cv.thumbnailPath ? `http://localhost:8080${cv.thumbnailPath}` : null;
+  // [MỚI] PDF số (text thật) sinh song song với thumbnail lúc Lưu CV — xem
+  // digitalPdfPath trong CvDocumentResponse (backend) / handleSaveCv (CVBuilderPage).
+  const pdfSrc = cv.digitalPdfPath ? `http://localhost:8080${cv.digitalPdfPath}` : null;
+
+  const handleDownloadPdf = (e) => {
+    e.stopPropagation();
+    if (!pdfSrc) return;
+    // Mở tab mới thay vì dùng <a download> — thẻ download bị trình duyệt bỏ qua
+    // (chỉ mở xem thay vì tải) khi URL khác origin với frontend (localhost:8080
+    // backend vs localhost:3000/5173 frontend), nên window.open là cách chắc ăn
+    // để ít nhất người dùng xem/tải được file qua UI có sẵn của trình duyệt.
+    window.open(pdfSrc, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="wl-card">
       <div className="wl-card-thumb" onClick={onEdit}>
@@ -401,6 +427,14 @@ const CvCard = ({ cv, onEdit, onDelete }) => {
         </p>
         <div className="wl-card-actions">
           <button className="wl-action-edit" onClick={onEdit}>Chỉnh sửa</button>
+          <button
+            className="wl-action-pdf"
+            onClick={handleDownloadPdf}
+            disabled={!pdfSrc}
+            title={pdfSrc ? "Tải file PDF" : "Chưa có PDF số cho CV này"}
+          >
+            📄
+          </button>
           <button className="wl-action-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Xóa CV">🗑️</button>
         </div>
       </div>
@@ -502,6 +536,11 @@ const CVManagerPage = () => {
             <div className="wl-stat">
               <div className="wl-stat-num">{generatedCvs.filter(cv => cv.thumbnailPath).length}</div>
               <div className="wl-stat-label">Có ảnh xem trước</div>
+            </div>
+            {/* [MỚI] Thống kê số CV đã có PDF số — cùng dạng với ô "Có ảnh xem trước" */}
+            <div className="wl-stat">
+              <div className="wl-stat-num">{generatedCvs.filter(cv => cv.digitalPdfPath).length}</div>
+              <div className="wl-stat-label">Có PDF số</div>
             </div>
             <div className="wl-stat">
               <div className="wl-stat-num">{lastUpdated}</div>

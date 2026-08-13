@@ -45,4 +45,7 @@ public class CvDocumentJpaEntity {
 
     @Column(name = "thumbnail_path", length = 500)
     private String thumbnailPath;
+
+    @Column(name = "digital_pdf_path", length = 500)
+    private String digitalPdfPath;
 }

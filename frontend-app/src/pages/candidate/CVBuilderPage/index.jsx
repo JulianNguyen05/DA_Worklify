@@ -13,6 +13,7 @@ import {
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { captureCvThumbnailAsFile } from "../../../components/cv-builder/shared/captureCvThumbnail";
+import { captureCvDigitalPdfAsFile } from "../../../components/cv-builder/shared/captureCvDigitalPdf";
 import mapParsedCvToCvData from "../../../components/cv-builder/shared/mapParsedCvToCvData";
 
 import TabPanel from "../../../components/cv-builder/sidebar/TabPanel";
@@ -28,13 +29,20 @@ import {
   CV_PAGE_HEIGHT_PX,
   applyCvPageBreaks,
 } from "../../../components/cv-builder/templates/cvTemplateCore";
-import HarvardTemplate, { HARVARD_TEMPLATE_CONFIG } from "../../../components/cv-builder/templates/HarvardTemplate";
-import ProfessionalTemplate, { PROFESSIONAL_TEMPLATE_CONFIG } from "../../../components/cv-builder/templates/ProfessionalTemplate";
+import HarvardTemplate, {
+  HARVARD_TEMPLATE_CONFIG,
+} from "../../../components/cv-builder/templates/HarvardTemplate";
+import ProfessionalTemplate, {
+  PROFESSIONAL_TEMPLATE_CONFIG,
+} from "../../../components/cv-builder/templates/ProfessionalTemplate";
 
 const TEMPLATE_REGISTRY = {
   simple: { component: SimpleTemplate, config: SIMPLE_TEMPLATE_CONFIG },
   harvard: { component: HarvardTemplate, config: HARVARD_TEMPLATE_CONFIG },
-  professional: { component: ProfessionalTemplate, config: PROFESSIONAL_TEMPLATE_CONFIG },
+  professional: {
+    component: ProfessionalTemplate,
+    config: PROFESSIONAL_TEMPLATE_CONFIG,
+  },
 };
 
 const wlBuilderStyles = `
@@ -123,7 +131,11 @@ const CVBuilderPage = () => {
   const [activeDragId, setActiveDragId] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
 
-  const [uiState, setUiState] = useState({ isLoading: false, isSaving: false, isExtracting: false });
+  const [uiState, setUiState] = useState({
+    isLoading: false,
+    isSaving: false,
+    isExtracting: false,
+  });
   const [totalPages, setTotalPages] = useState(1);
   const paperRef = useRef(null);
   const cvUploadInputRef = useRef(null);
@@ -198,38 +210,42 @@ const CVBuilderPage = () => {
 
   useEffect(() => {
     const fetchCvData = async () => {
-    if (!cvId) {
-      const prefillData = location.state?.prefillData;
-      const prefillTemplate = location.state?.prefillTemplate || "simple";
+      if (!cvId) {
+        const prefillData = location.state?.prefillData;
+        const prefillTemplate = location.state?.prefillTemplate || "simple";
 
-      let initialCvData = {
-        settings: defaultTemplateConfig.defaultSettings,
-        layout: defaultTemplateConfig.defaultLayout,
-        data: defaultTemplateConfig.defaultData,
-      };
-
-      if (prefillData) {
-        const tplConfig = TEMPLATE_REGISTRY[prefillTemplate]?.config || defaultTemplateConfig;
-        initialCvData = {
-          settings: { ...tplConfig.defaultSettings, template: prefillTemplate },
-          layout: tplConfig.defaultLayout,
-          // prefillData đã spread lên defaultData rỗng ở ProfileToCvPicker, nên merge
-          // lại với defaultData THẬT của template đã chọn để không thiếu field nào
-          // (vd sectionTitles, references...) mà prefillData không đụng tới.
-          data: { ...tplConfig.defaultData, ...prefillData },
+        let initialCvData = {
+          settings: defaultTemplateConfig.defaultSettings,
+          layout: defaultTemplateConfig.defaultLayout,
+          data: defaultTemplateConfig.defaultData,
         };
-        setCvData(initialCvData);
-        // Xóa location.state để F5 lại trang không bị điền lại dữ liệu cũ ngoài ý muốn
-        window.history.replaceState({}, document.title);
-      }
 
-      const initialStr = JSON.stringify({
-        title: "CV chưa có tên",
-        data: initialCvData,
-      });
-      setInitialDataStr(initialStr);
-      return;
-    }
+        if (prefillData) {
+          const tplConfig =
+            TEMPLATE_REGISTRY[prefillTemplate]?.config || defaultTemplateConfig;
+          initialCvData = {
+            settings: {
+              ...tplConfig.defaultSettings,
+              template: prefillTemplate,
+            },
+            layout: tplConfig.defaultLayout,
+            // prefillData đã spread lên defaultData rỗng ở ProfileToCvPicker, nên merge
+            // lại với defaultData THẬT của template đã chọn để không thiếu field nào
+            // (vd sectionTitles, references...) mà prefillData không đụng tới.
+            data: { ...tplConfig.defaultData, ...prefillData },
+          };
+          setCvData(initialCvData);
+          // Xóa location.state để F5 lại trang không bị điền lại dữ liệu cũ ngoài ý muốn
+          window.history.replaceState({}, document.title);
+        }
+
+        const initialStr = JSON.stringify({
+          title: "CV chưa có tên",
+          data: initialCvData,
+        });
+        setInitialDataStr(initialStr);
+        return;
+      }
 
       const currentUser = authService.getCurrentUser();
       if (!currentUser?.userId) return;
@@ -313,44 +329,49 @@ const CVBuilderPage = () => {
   };
 
   const handleUploadCvImage = async (file) => {
-  const currentUser = authService.getCurrentUser();
-  if (!currentUser?.userId) {
-    showToastMsg("Vui lòng đăng nhập để dùng tính năng này.", "error");
-    return;
-  }
-
-  if (isDirty) {
-    const confirmOverwrite = window.confirm(
-      "Dữ liệu từ ảnh CV sẽ THAY THẾ toàn bộ nội dung đang chỉnh sửa. Tiếp tục?"
-    );
-    if (!confirmOverwrite) return;
-  }
-
-  setUiState((prev) => ({ ...prev, isExtracting: true }));
-  try {
-    const apiResponse = await candidateService.extractCv(currentUser.userId, file);
-    const parsedCv = apiResponse.data; // bóc payload khỏi ApiResponse wrapper
-
-    const prefillData = mapParsedCvToCvData(parsedCv);
-    setCvData((prev) => ({ ...prev, data: prefillData }));
-    setIsDirty(true);
-
-    if (parsedCv.warnings?.length) {
-      showToastMsg(parsedCv.warnings[0], "warning");
-    } else {
-      showToastMsg("Đã điền dữ liệu từ CV, vui lòng kiểm tra lại trước khi lưu.");
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser?.userId) {
+      showToastMsg("Vui lòng đăng nhập để dùng tính năng này.", "error");
+      return;
     }
-  } catch (error) {
-    console.error("Lỗi khi trích xuất CV:", error);
-    const message =
-      error?.response?.data?.message ||
-      "Không thể phân tích ảnh/CV này, vui lòng thử file khác.";
-    showToastMsg(message, "error");
-  } finally {
-    setUiState((prev) => ({ ...prev, isExtracting: false }));
-    if (cvUploadInputRef.current) cvUploadInputRef.current.value = "";
-  }
-};
+
+    if (isDirty) {
+      const confirmOverwrite = window.confirm(
+        "Dữ liệu từ ảnh CV sẽ THAY THẾ toàn bộ nội dung đang chỉnh sửa. Tiếp tục?",
+      );
+      if (!confirmOverwrite) return;
+    }
+
+    setUiState((prev) => ({ ...prev, isExtracting: true }));
+    try {
+      const apiResponse = await candidateService.extractCv(
+        currentUser.userId,
+        file,
+      );
+      const parsedCv = apiResponse.data; // bóc payload khỏi ApiResponse wrapper
+
+      const prefillData = mapParsedCvToCvData(parsedCv);
+      setCvData((prev) => ({ ...prev, data: prefillData }));
+      setIsDirty(true);
+
+      if (parsedCv.warnings?.length) {
+        showToastMsg(parsedCv.warnings[0], "warning");
+      } else {
+        showToastMsg(
+          "Đã điền dữ liệu từ CV, vui lòng kiểm tra lại trước khi lưu.",
+        );
+      }
+    } catch (error) {
+      console.error("Lỗi khi trích xuất CV:", error);
+      const message =
+        error?.response?.data?.message ||
+        "Không thể phân tích ảnh/CV này, vui lòng thử file khác.";
+      showToastMsg(message, "error");
+    } finally {
+      setUiState((prev) => ({ ...prev, isExtracting: false }));
+      if (cvUploadInputRef.current) cvUploadInputRef.current.value = "";
+    }
+  };
 
   const handleGoBack = () => {
     if (isDirty) {
@@ -393,6 +414,7 @@ const CVBuilderPage = () => {
 
       await candidateService.renameCv(currentUser.userId, savedCvId, cvTitle);
 
+      let thumbnailOk = true;
       try {
         const thumbnailFile = await captureCvThumbnailAsFile(
           paperRef.current,
@@ -403,18 +425,45 @@ const CVBuilderPage = () => {
           savedCvId,
           thumbnailFile,
         );
-
-        setInitialDataStr(JSON.stringify({ title: cvTitle, data: cvData }));
-        setIsDirty(false);
-        showToastMsg("Lưu CV và tạo ảnh thu nhỏ thành công!");
       } catch (imageError) {
+        thumbnailOk = false;
         console.error("Lỗi khi chụp ảnh CV:", imageError);
-        setInitialDataStr(JSON.stringify({ title: cvTitle, data: cvData }));
-        setIsDirty(false);
+      }
+
+      // [MỚI] Sinh PDF số (text thật) từ cvData, song song/độc lập với bước
+      // chụp thumbnail ở trên — lỗi ở bước này KHÔNG được làm hỏng luồng lưu
+      // chính, vì đây chỉ là dữ liệu phụ trợ cho tính năng convert PDF -> CV
+      // Live Builder sau này, không phải phần bắt buộc để CV hiển thị được.
+      let pdfOk = true;
+      try {
+        const pdfFile = captureCvDigitalPdfAsFile(
+          cvData,
+          `cv_${savedCvId}.pdf`,
+        );
+        await candidateService.uploadCvDigitalPdf(
+          currentUser.userId,
+          savedCvId,
+          pdfFile,
+        );
+      } catch (pdfError) {
+        pdfOk = false;
+        console.error("Lỗi khi tạo PDF số:", pdfError);
+      }
+
+      setInitialDataStr(JSON.stringify({ title: cvTitle, data: cvData }));
+      setIsDirty(false);
+
+      if (thumbnailOk && pdfOk) {
+        showToastMsg("Lưu CV, tạo ảnh thu nhỏ và PDF số thành công!");
+      } else if (!thumbnailOk && !pdfOk) {
         showToastMsg(
-          "Đã lưu dữ liệu CV, nhưng không tạo được ảnh thu nhỏ.",
+          "Đã lưu dữ liệu CV, nhưng không tạo được ảnh thu nhỏ và PDF số.",
           "warning",
         );
+      } else if (!thumbnailOk) {
+        showToastMsg("Đã lưu CV, nhưng không tạo được ảnh thu nhỏ.", "warning");
+      } else {
+        showToastMsg("Đã lưu CV, nhưng không tạo được PDF số.", "warning");
       }
 
       setTimeout(() => {
@@ -756,7 +805,6 @@ const CVBuilderPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          
           <button
             onClick={() => setIsPreviewOpen(true)}
             className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-semibold transition-colors"
@@ -773,12 +821,12 @@ const CVBuilderPage = () => {
             {uiState.isSaving && <Loader className="w-4 h-4 animate-spin" />}
             {uiState.isSaving
               ? "Đang lưu..."
-              // CV chưa có cvId nghĩa là CHƯA từng được lưu lên server dù local
-              // state trùng với baseline khởi tạo (isDirty=false) — không được
-              // hiển thị "Đã lưu" trong trường hợp này, kẻo gây hiểu lầm là đã
-              // lưu thành công. Chỉ coi là "Đã lưu" khi CV đã có cvId (tức đã lưu
-              // ít nhất 1 lần) và hiện không còn thay đổi nào chưa lưu.
-              : isDirty || !cvId
+              : // CV chưa có cvId nghĩa là CHƯA từng được lưu lên server dù local
+                // state trùng với baseline khởi tạo (isDirty=false) — không được
+                // hiển thị "Đã lưu" trong trường hợp này, kẻo gây hiểu lầm là đã
+                // lưu thành công. Chỉ coi là "Đã lưu" khi CV đã có cvId (tức đã lưu
+                // ít nhất 1 lần) và hiện không còn thay đổi nào chưa lưu.
+                isDirty || !cvId
                 ? "Lưu thay đổi"
                 : "Đã lưu"}
           </button>

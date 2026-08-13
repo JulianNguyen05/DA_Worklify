@@ -55,6 +55,15 @@ const candidateService = {
     return response.data;
   },
 
+  uploadCvDigitalPdf: async (userId, cvId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axiosClient.post(`/candidates/${userId}/cvs/${cvId}/digital-pdf`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
   deleteCv: async (userId, cvId) => {
     const response = await axiosClient.delete(`/candidates/${userId}/cvs/${cvId}`);
     return response.data;

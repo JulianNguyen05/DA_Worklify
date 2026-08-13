@@ -168,13 +168,14 @@ const EditableContactList = ({ items, sectionId, primaryColor, onUpdateItems }) 
               <button onClick={() => handleAdd(index)} className="px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium flex items-center gap-0.5 transition-colors shadow-sm" style={{ backgroundColor: primaryColor || THEME.primary }}><Plus size={13} /> Thêm</button>
             </div>
 
-            {/* Cột 1 (auto): label. border-r đóng vai trò dấu ":" cũ — không còn là 1
+            {/* Cột 1 (auto): label. Dùng ::after content ":" làm dấu phân cách thật,
+                thay cho border-r-2 (trước đây bị hiểu nhầm là dấu ']'/'}'); không còn là 1
                 flex-item riêng nên KHÔNG có phần tử nào đứng "ngang hàng" với label để
                 bị label 2 dòng đè lên; grid row tự giãn chiều cao theo cột cao nhất. */}
             <div contentEditable suppressContentEditableWarning
               onBlur={(e) => handleHTMLBlur(e, 'label', (f, v) => handleTextChange(index, f, v))}
-              className={`font-bold text-[0.9em] pr-2 border-r-2 ${contactEditableClass}`}
-              style={{ color: primaryColor, borderColor: primaryColor }}
+              className={`font-bold text-[0.9em] pr-2 after:content-[':'] after:ml-0.5 after:font-bold ${contactEditableClass}`}
+              style={{ color: primaryColor }}
               data-placeholder={config.placeholders.contactInfo.title}
               dangerouslySetInnerHTML={{ __html: item.label }} />
 

@@ -15,6 +15,7 @@ public class CvDocument {
     private String filePath;
     private String fileName;
     private String thumbnailPath;
+    private String digitalPdfPath;
     private String rawText;
     private Boolean isGenerated;
     private LocalDateTime createdAt;
@@ -66,6 +67,10 @@ public class CvDocument {
 
     public void updateThumbnail(String path) {
         this.thumbnailPath = path;
+    }
+
+    public void updateDigitalPdfPath(String path) {
+        this.digitalPdfPath = path;
     }
 
     public void updateRawText(String rawText) {

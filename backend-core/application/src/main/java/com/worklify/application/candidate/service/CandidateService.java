@@ -41,6 +41,8 @@ public interface CandidateService {
 
     CvDocumentResponse uploadCvThumbnail(Long userId, Long cvId, MultipartFile file);
 
+    CvDocumentResponse uploadCvDigitalPdf(Long userId, Long cvId, MultipartFile file);
+
     List<EducationResponse> getEducationsByUserId(Long userId);
     EducationResponse createEducation(Long userId, EducationRequest request);
     EducationResponse updateEducation(Long userId, Long educationId, EducationRequest request);
