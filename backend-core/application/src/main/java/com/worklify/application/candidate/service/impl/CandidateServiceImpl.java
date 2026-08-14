@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worklify.application.candidate.dto.*;
 import com.worklify.application.candidate.service.CandidateService;
+import com.worklify.application.candidate.service.CvDigitalPdfExportRunner;
 import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.port.CvParsingPort;
@@ -53,6 +54,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final HobbyRepository hobbyRepository;
     private final LanguageRepository languageRepository;
     private final CvParsingPort cvParsingPort;
+    private final CvDigitalPdfExportRunner cvDigitalPdfExportRunner;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
@@ -156,6 +158,8 @@ public class CandidateServiceImpl implements CandidateService {
         } catch (Exception e) {
             log.error("Lỗi parse JSON CV Builder skills cho userId: {}", userId, e);
         }
+
+        cvDigitalPdfExportRunner.exportAsync(saved.getId(), rawText);
 
         return mapToCvResponse(saved);
     }
@@ -503,7 +507,11 @@ public class CandidateServiceImpl implements CandidateService {
         }
 
         cv.updateRawText(rawText);
-        return mapToCvResponse(cvDocumentRepository.save(cv));
+        CvDocument saved = cvDocumentRepository.save(cv);
+
+        cvDigitalPdfExportRunner.exportAsync(saved.getId(), rawText);
+
+        return mapToCvResponse(saved);
     }
 
     @Override

@@ -70,3 +70,7 @@ springdoc:
 worklify:
   ml:
     base-url: ${ML_BASE_URL:http://localhost:8000}
+
+  cv-export:
+    print-base-url: http://localhost:5173/cv-print
+    render-timeout-ms: 15000

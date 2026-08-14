@@ -91,6 +91,27 @@ public class LocalFileStorageService implements FileStoragePort {
     }
 
     @Override
+    public String storeBytes(byte[] content, String category, String subFolder, String customFileName) {
+        if (content == null || content.length == 0) {
+            throw new IllegalArgumentException("Không thể lưu file rỗng.");
+        }
+
+        try {
+            Path targetLocation = this.rootLocation.resolve(category).resolve(subFolder);
+            Files.createDirectories(targetLocation);
+
+            Path targetFile = targetLocation.resolve(customFileName);
+            Files.write(targetFile, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            log.info("Lưu file (bytes) thành công theo cấu trúc phân cấp: {}", targetFile);
+
+            return category + "/" + subFolder + "/" + customFileName;
+        } catch (IOException ex) {
+            throw new RuntimeException("Không thể lưu trữ file. Lỗi: " + ex.getMessage(), ex);
+        }
+    }
+
+    @Override
     public byte[] readFile(String filePath) {
         try {
             Path file = this.rootLocation.resolve(filePath).normalize();

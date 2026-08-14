@@ -1,53 +1,45 @@
 import os
 
-# Danh sách các file cốt lõi cần để debug pipeline ML và mapping
 TARGET_FILES = [
-    # Xem OCR ra text thô như thế nào
-    "backend-ml/app/services/text_extractor.py",
-    
-    # Rule-based cho Education/Experience trước khi qua NER
-    "backend-ml/app/services/rule_based_extractor.py",
-    
-    # Xử lý output NER
-    "backend-ml/app/services/ner_postprocessor.py",
-    
-    # Pipeline tổng (extract → rule-based → NER)
-    "backend-ml/app/services/parser_service.py",
-    
-    # Cấu trúc ParsedCvResponse (để biết field nào có confidence thấp)
-    "backend-ml/app/schemas/parser_schema.py",
-    
-    # Xem model NER đang load là bản nào
-    "backend-ml/app/models/model_loader.py",
-    
-    # Cấu hình model NER
-    "backend-ml/app/models/ner_model/config.json",
-    
-    # File map dữ liệu ở frontend để loại trừ khả năng lỗi ở tầng map
-    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js"
+    # 1. CV Builder (UI & Logic)
+    "frontend-app/src/pages/candidate/CVBuilderPage/index.jsx",
+    "frontend-app/src/components/cv-builder/templates/cvTemplateCore.js",
+    "frontend-app/src/components/cv-builder/templates/SimpleTemplate.jsx",
+    "frontend-app/src/components/cv-builder/templates/ProfessionalTemplate.jsx",
+    "frontend-app/src/components/cv-builder/templates/HarvardTemplate.jsx",
+    "frontend-app/src/components/cv-builder/shared/captureCvDigitalPdf.js",
+    "frontend-app/src/components/cv-builder/shared/captureCvThumbnail.js",
+
+    # 2. Mapping ngược
+    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js",
+    "frontend-app/src/components/cv-builder/shared/mapProfileToCvData.js",
+
+    # 3. Backend (Service mới & DTO)
+    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/GeneratedCvRequest.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CvDocumentResponse.java",
+    "backend-core/domain/src/main/java/com/worklify/domain/candidate/model/CvDocument.java",
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/entity/CvDocumentJpaEntity.java",
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/adapter/CvDocumentRepositoryAdapter.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CandidateServiceImpl.java",
+    "backend-core/api/src/main/java/com/worklify/api/controller/candidate/CandidateController.java",
+    "backend-core/application/src/main/java/com/worklify/application/common/port/FileStoragePort.java",
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/storage/LocalFileStorageService.java",
+    "backend-core/api/pom.xml",
+    "backend-core/pom.xml",
+
+    # 4. Tham khảo pattern sẵn có
+    "backend-core/application/src/main/java/com/worklify/application/common/port/CvParsingPort.java",
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/client/MlCvParsingClient.java"
 ]
 
-# Task này không cần quét toàn bộ thư mục
-TARGET_DIRS = []
-
-# Tên file đầu ra
-OUTPUT_FILE = "exported_ml_pipeline_debug.md"
+OUTPUT_FILE = "exported_cv_builder_upgrade.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# ML Pipeline & Frontend Mapping Debug Context\n\n")
+        outfile.write("# Architecture Context: Digital PDF Upgrade\n\n")
         
-        # Xử lý các file lẻ
         for filepath in TARGET_FILES:
             append_file_content(filepath, outfile)
-            
-        # Xử lý các thư mục (để trống nhưng giữ logic đề phòng cần dùng sau)
-        for directory in TARGET_DIRS:
-            if os.path.exists(directory):
-                for root, _, files in os.walk(directory):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        append_file_content(file_path, outfile)
 
 def append_file_content(filepath, outfile):
     if os.path.exists(filepath):
@@ -68,6 +60,7 @@ def get_extension(filepath):
     if ext in ['java']: return 'java'
     if ext in ['js', 'jsx']: return 'javascript'
     if ext in ['json']: return 'json'
+    if ext in ['xml']: return 'xml'
     return 'text'
 
 if __name__ == "__main__":

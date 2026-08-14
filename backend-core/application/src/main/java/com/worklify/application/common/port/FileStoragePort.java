@@ -29,4 +29,7 @@ public interface FileStoragePort {
      * Dùng khi xóa User. VD: category = "cv_thumbnails", subFolder = "11"
      */
     void deleteUserFolder(String category, String subFolder);
+
+    // Thêm vào FileStoragePort.java
+    String storeBytes(byte[] content, String category, String subFolder, String customFileName);
 }

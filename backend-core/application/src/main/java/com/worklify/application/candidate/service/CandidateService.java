@@ -104,4 +104,5 @@ public interface CandidateService {
     CandidateProfileFullResponse getFullProfile(Long userId);
 
     ParsedCvResponse extractCvFromFile(Long userId, MultipartFile file);
+
 }
