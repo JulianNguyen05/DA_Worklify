@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../../components/common/Button";
+import Modal from "../../../components/common/Modal";
 import Toast from "../../../components/common/Toast";
 import candidateService from "../../../features/candidate/candidateService";
 import authService from "../../../features/auth/authService";
@@ -371,6 +372,51 @@ const styles = `
   @media (max-width: 400px) {
     .wl-grid { grid-template-columns: 1fr; }
   }
+
+  /* [MỚI] Modal "Nhập từ PDF" */
+  .wl-import-body { padding: 24px 28px 28px; }
+  .wl-import-hint { font-size: 13px; color: #64748B; margin: 0 0 20px; line-height: 1.6; }
+
+  .wl-tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  .wl-tpl-card {
+    border: 2px solid #E2E8F0; border-radius: 12px; padding: 16px 10px;
+    text-align: center; cursor: pointer; transition: all 0.2s ease; background: #fff;
+  }
+  .wl-tpl-card:hover { border-color: #BFDBFE; background: #F8FAFF; }
+  .wl-tpl-card.selected {
+    border-color: #2563EB;
+    background: linear-gradient(135deg, #EFF6FF 0%, #ECFDF5 100%);
+    box-shadow: 0 0 0 1px #2563EB;
+  }
+  .wl-tpl-card-icon { font-size: 26px; margin-bottom: 8px; }
+  .wl-tpl-card-name { font-size: 13px; font-weight: 700; color: #0F172A; }
+
+  .wl-dropzone {
+    border: 2px dashed #CBD5E1; border-radius: 12px; padding: 28px 16px;
+    text-align: center; cursor: pointer; transition: all 0.2s ease; background: #F8FAFC;
+  }
+  .wl-dropzone:hover { border-color: #2563EB; background: #EFF6FF; }
+  .wl-dropzone.has-file { border-color: #14B8A6; background: #F0FDFA; }
+  .wl-dropzone-icon { font-size: 28px; margin-bottom: 8px; }
+  .wl-dropzone-text { font-size: 13px; color: #475569; font-weight: 500; }
+  .wl-dropzone-filename { font-size: 13px; color: #0F172A; font-weight: 700; margin-top: 4px; }
+
+  .wl-import-error {
+    margin-top: 14px; padding: 10px 14px; border-radius: 8px;
+    background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; font-size: 13px;
+  }
+
+  .wl-import-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+  .wl-import-cancel-btn {
+    padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    background: #F1F5F9; color: #475569; border: none; cursor: pointer;
+  }
+  .wl-import-submit-btn {
+    padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, #2563EB 0%, #14B8A6 100%); border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .wl-import-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
 
 const SkeletonCard = () => (
@@ -478,6 +524,134 @@ const CvCard = ({ cv, onEdit, onDelete }) => {
   );
 };
 
+// [MỚI] Modal "Nhập CV từ file PDF" — chỉ áp dụng cho PDF tải xuống trực tiếp
+// từ Worklify. Cùng cơ chế prefillData/prefillTemplate với ProfileToCvPicker:
+// CVBuilderPage tự merge vào defaultData/defaultLayout của template đã chọn.
+const IMPORT_TEMPLATES = [
+  { key: "simple", icon: "📄", name: "Simple" },
+  { key: "harvard", icon: "🎓", name: "Harvard" },
+  { key: "professional", icon: "💼", name: "Professional" },
+];
+
+const ImportPdfModal = ({ isOpen, onClose, userId, navigate }) => {
+  const [selectedTemplate, setSelectedTemplate] = useState("simple");
+  const [file, setFile] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef(null);
+
+  const resetState = () => {
+    setSelectedTemplate("simple");
+    setFile(null);
+    setError("");
+    setIsImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleClose = () => {
+    if (isImporting) return; // không cho đóng modal giữa lúc đang gọi API
+    resetState();
+    onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files?.[0];
+    setError("");
+    if (selected && selected.type !== "application/pdf") {
+      setError("Vui lòng chọn file PDF.");
+      setFile(null);
+      return;
+    }
+    setFile(selected || null);
+  };
+
+  const handleSubmit = async () => {
+    if (!file) {
+      setError("Vui lòng chọn file PDF đã tải xuống từ Worklify.");
+      return;
+    }
+    setIsImporting(true);
+    setError("");
+    try {
+      const apiResponse = await candidateService.importDigitalPdf(userId, file);
+      const { rawText } = apiResponse.data; // bóc payload khỏi ApiResponse wrapper
+      const parsedCvData = JSON.parse(rawText); // {settings, layout, data}
+
+      resetState();
+      onClose();
+
+      navigate("/candidate/cv-builder", {
+        state: {
+          prefillData: parsedCvData.data,
+          prefillTemplate: selectedTemplate,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi khi import PDF:", err);
+      const message =
+        err?.response?.data?.message ||
+        "Không thể đọc file này. Chỉ hỗ trợ file PDF tải trực tiếp từ Worklify.";
+      setError(message);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Nhập CV từ file PDF">
+      <div className="wl-import-body">
+        <p className="wl-import-hint">
+          Chỉ áp dụng cho file PDF <strong>tải xuống trực tiếp từ Worklify</strong>{" "}
+          (không hỗ trợ PDF từ nguồn khác). Chọn mẫu bạn muốn dùng, nội dung CV
+          sẽ được điền lại — bạn có thể chỉnh sửa trước khi lưu.
+        </p>
+
+        <div className="wl-tpl-grid">
+          {IMPORT_TEMPLATES.map((tpl) => (
+            <div
+              key={tpl.key}
+              className={`wl-tpl-card ${selectedTemplate === tpl.key ? "selected" : ""}`}
+              onClick={() => setSelectedTemplate(tpl.key)}
+            >
+              <div className="wl-tpl-card-icon">{tpl.icon}</div>
+              <div className="wl-tpl-card-name">{tpl.name}</div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          className={`wl-dropzone ${file ? "has-file" : ""}`}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="wl-dropzone-icon">{file ? "✅" : "📎"}</div>
+          <div className="wl-dropzone-text">
+            {file ? "Đã chọn file:" : "Nhấn để chọn file PDF"}
+          </div>
+          {file && <div className="wl-dropzone-filename">{file.name}</div>}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+        </div>
+
+        {error && <div className="wl-import-error">{error}</div>}
+
+        <div className="wl-import-actions">
+          <button className="wl-import-cancel-btn" onClick={handleClose} disabled={isImporting}>
+            Hủy
+          </button>
+          <button className="wl-import-submit-btn" onClick={handleSubmit} disabled={isImporting}>
+            {isImporting ? "Đang xử lý..." : "Nhập CV"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 const CVManagerPage = () => {
   const navigate = useNavigate();
   const currentUser = authService?.getCurrentUser
@@ -488,6 +662,7 @@ const CVManagerPage = () => {
   const [cvList, setCvList] = useState([]);
   const [isFetching, setIsFetching] = useState(true);
   const [status, setStatus] = useState({ type: null, message: "" });
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const loadCvs = async () => {
     if (!userId) return;
@@ -574,6 +749,12 @@ const CVManagerPage = () => {
               >
                 + Tạo CV mới
               </button>
+              <button
+                className="wl-btn-ghost"
+                onClick={() => setIsImportModalOpen(true)}
+              >
+                📥 Nhập từ PDF
+              </button>
               {!isFetching && generatedCvs.length > 0 && (
                 <span className="wl-btn-ghost" style={{ cursor: "default" }}>
                   📄 {generatedCvs.length} CV đang có
@@ -659,6 +840,13 @@ const CVManagerPage = () => {
           )}
         </div>
       </div>
+
+      <ImportPdfModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        userId={userId}
+        navigate={navigate}
+      />
     </>
   );
 };

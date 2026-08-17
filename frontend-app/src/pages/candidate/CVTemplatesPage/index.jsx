@@ -14,7 +14,6 @@ import {
   FilePlus2,
 } from 'lucide-react';
 import { mapProfileToCvData } from '../../../components/cv-builder/shared/mapProfileToCvData';
-import mapParsedCvToCvData from '../../../components/cv-builder/shared/mapParsedCvToCvData';
 import { SIMPLE_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/SimpleTemplate';
 import { HARVARD_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/HarvardTemplate';
 import { PROFESSIONAL_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/ProfessionalTemplate';
@@ -64,7 +63,7 @@ const CVTemplatesPage = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [isLoading, setIsLoading] = useState(false); // loading khi lấy từ Profile
-  const [isExtracting, setIsExtracting] = useState(false); // loading khi upload CV
+  const [isImporting, setIsImporting] = useState(false); // loading khi import PDF Worklify
   const [error, setError] = useState(null);
 
   // Modal chọn nguồn dữ liệu + mẫu đang được chọn để tạo CV
@@ -90,7 +89,7 @@ const CVTemplatesPage = () => {
   };
 
   const closeSourceModal = () => {
-    if (isLoading || isExtracting) return; // đang xử lý dở thì không cho đóng
+    if (isLoading || isImporting) return; // đang xử lý dở thì không cho đóng
     setIsSourceModalOpen(false);
     setSelectedTemplate(null);
   };
@@ -128,7 +127,11 @@ const CVTemplatesPage = () => {
     });
   };
 
-  // 3b. Nguồn: UPLOAD ẢNH/CV — mở file picker ẩn
+  // 3b. Nguồn: NHẬP TỪ FILE PDF WORKLIFY — mở file picker ẩn.
+  // [MỚI] Thay cho cơ chế upload ảnh/CV cũ (OCR + AI qua extractCv/mapParsedCvToCvData).
+  // Chỉ chấp nhận PDF tải xuống trực tiếp từ Worklify (cùng cơ chế importDigitalPdf
+  // với ImportPdfModal ở CVManagerPage) — rawText đã là JSON đúng schema CV, không
+  // cần OCR/NER nên độ chính xác tuyệt đối so với cơ chế cũ.
   const handleChooseUpload = () => {
     cvUploadInputRef.current?.click();
   };
@@ -137,44 +140,41 @@ const CVTemplatesPage = () => {
     const file = e.target.files?.[0];
     if (!file || !selectedTemplate) return;
 
+    if (file.type !== 'application/pdf') {
+      setError('Vui lòng chọn file PDF.');
+      if (cvUploadInputRef.current) cvUploadInputRef.current.value = '';
+      return;
+    }
+
     const userId = getUserId();
     if (!userId) {
       setError('Vui lòng đăng nhập để tạo CV.');
       return;
     }
 
-    setIsExtracting(true);
+    setIsImporting(true);
     setError(null);
 
     try {
-      const apiResponse = await candidateService.extractCv(userId, file);
-      const parsedCv = apiResponse?.data || apiResponse; // bóc payload khỏi ApiResponse wrapper
-      console.log('RAW parsedCv:', JSON.stringify(parsedCv, null, 2));
-
-      const tplConfig = TEMPLATE_CONFIG_REGISTRY[selectedTemplate.id] || SIMPLE_TEMPLATE_CONFIG;
-      const prefillData = {
-        ...tplConfig.defaultData,
-        ...mapParsedCvToCvData(parsedCv),
-      };
+      const apiResponse = await candidateService.importDigitalPdf(userId, file);
+      const { rawText } = apiResponse.data; // bóc payload khỏi ApiResponse wrapper
+      const parsedCvData = JSON.parse(rawText); // {settings, layout, data}
 
       setIsSourceModalOpen(false);
       navigate('/candidate/cv-builder', {
-        state: { prefillData, prefillTemplate: selectedTemplate.id },
+        state: {
+          prefillData: parsedCvData.data,
+          prefillTemplate: selectedTemplate.id,
+        },
       });
-
-      if (parsedCv.warnings?.length) {
-        // Không có toast global ở trang này — log lại để dev/QA thấy, CVBuilderPage
-        // vẫn hiển thị đủ dữ liệu, người dùng tự review trước khi lưu.
-        console.warn('Cảnh báo từ pipeline trích xuất CV:', parsedCv.warnings);
-      }
     } catch (err) {
-      console.error('Lỗi khi trích xuất CV:', err);
+      console.error('Lỗi khi import PDF:', err);
       setError(
         err?.response?.data?.message ||
-        'Không thể phân tích file này, vui lòng thử ảnh/PDF khác.'
+        'Không thể đọc file này. Chỉ hỗ trợ file PDF tải trực tiếp từ Worklify.'
       );
     } finally {
-      setIsExtracting(false);
+      setIsImporting(false);
       if (cvUploadInputRef.current) cvUploadInputRef.current.value = '';
     }
   };
@@ -291,14 +291,14 @@ const CVTemplatesPage = () => {
           <input
             ref={cvUploadInputRef}
             type="file"
-            accept="image/jpeg,image/png,application/pdf,.docx"
+            accept="application/pdf"
             className="hidden"
             onChange={handleUploadFileChange}
           />
 
           <button
             onClick={handleChooseUpload}
-            disabled={isExtracting || isLoading}
+            disabled={isImporting || isLoading}
             className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
@@ -306,17 +306,17 @@ const CVTemplatesPage = () => {
             </span>
             <span>
               <span className="block font-semibold text-gray-800">
-                {isExtracting ? 'Đang phân tích CV...' : 'Upload ảnh / CV có sẵn'}
+                {isImporting ? 'Đang xử lý...' : 'Nhập từ file PDF Worklify'}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">
-                Tự động điền từ ảnh, PDF hoặc file Word (OCR + AI)
+                Chỉ áp dụng cho PDF tải xuống trực tiếp từ Worklify
               </span>
             </span>
           </button>
 
           <button
             onClick={handleChooseFromProfile}
-            disabled={isLoading || isExtracting}
+            disabled={isLoading || isImporting}
             className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -334,7 +334,7 @@ const CVTemplatesPage = () => {
 
           <button
             onClick={handleChooseBlank}
-            disabled={isExtracting || isLoading}
+            disabled={isImporting || isLoading}
             className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">

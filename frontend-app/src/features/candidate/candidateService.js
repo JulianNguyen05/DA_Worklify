@@ -360,6 +360,15 @@ const candidateService = {
     });
     return response.data;
   },
+
+  importDigitalPdf: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axiosClient.post(`/candidates/${userId}/cvs/import-digital-pdf`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
 };
 
 export default candidateService;
