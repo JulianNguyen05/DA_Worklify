@@ -73,4 +73,4 @@ worklify:
 
   cv-export:
     print-base-url: http://localhost:5173/cv-print
-    render-timeout-ms: 15000
+    render-timeout-ms: 30000

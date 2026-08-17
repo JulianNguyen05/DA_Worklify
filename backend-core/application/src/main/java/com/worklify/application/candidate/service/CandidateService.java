@@ -105,4 +105,6 @@ public interface CandidateService {
 
     ParsedCvResponse extractCvFromFile(Long userId, MultipartFile file);
 
+    CvDigitalImportResponse importCvFromDigitalPdf(Long userId, MultipartFile file);
+
 }

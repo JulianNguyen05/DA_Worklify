@@ -558,4 +558,14 @@ public class CandidateController {
             @RequestParam("file") MultipartFile file) {
         return ApiResponse.success(candidateService.extractCvFromFile(userId, file), "Trích xuất CV thành công");
     }
+
+    @PostMapping(value = "/{userId}/cvs/import-digital-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Khôi phục dữ liệu CV từ file PDF số do Worklify tạo ra (đọc JSON ẩn) — KHÔNG lưu vào DB")
+    public ApiResponse<CvDigitalImportResponse> importDigitalPdf(
+            @PathVariable("userId") Long userId,
+            @RequestParam("file") MultipartFile file) {
+        return ApiResponse.success(
+                candidateService.importCvFromDigitalPdf(userId, file),
+                "Khôi phục dữ liệu CV thành công");
+    }
 }

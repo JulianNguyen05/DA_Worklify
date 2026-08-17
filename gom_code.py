@@ -1,42 +1,37 @@
 import os
 
+# Danh sách các file Backend và Frontend cần thiết cho tính năng Import/Export JSON trong PDF
 TARGET_FILES = [
-    # 1. CV Builder (UI & Logic)
-    "frontend-app/src/pages/candidate/CVBuilderPage/index.jsx",
-    "frontend-app/src/components/cv-builder/templates/cvTemplateCore.js",
-    "frontend-app/src/components/cv-builder/templates/SimpleTemplate.jsx",
-    "frontend-app/src/components/cv-builder/templates/ProfessionalTemplate.jsx",
-    "frontend-app/src/components/cv-builder/templates/HarvardTemplate.jsx",
-    "frontend-app/src/components/cv-builder/shared/captureCvDigitalPdf.js",
-    "frontend-app/src/components/cv-builder/shared/captureCvThumbnail.js",
-
-    # 2. Mapping ngược
-    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js",
-    "frontend-app/src/components/cv-builder/shared/mapProfileToCvData.js",
-
-    # 3. Backend (Service mới & DTO)
-    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/GeneratedCvRequest.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CvDocumentResponse.java",
+    # ================= BACKEND =================
+    # PDF Export Logic
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/pdf/PlaywrightCvPdfExportAdapter.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/service/CvDigitalPdfExportRunner.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CvDigitalPdfExportRunnerImpl.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/port/CvPdfExportPort.java",
+    
+    # Entity & Database
     "backend-core/domain/src/main/java/com/worklify/domain/candidate/model/CvDocument.java",
     "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/entity/CvDocumentJpaEntity.java",
     "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/adapter/CvDocumentRepositoryAdapter.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CandidateServiceImpl.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CvDocumentResponse.java",
+    
+    # Controller & Pom (Check Dependency)
     "backend-core/api/src/main/java/com/worklify/api/controller/candidate/CandidateController.java",
-    "backend-core/application/src/main/java/com/worklify/application/common/port/FileStoragePort.java",
-    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/storage/LocalFileStorageService.java",
+    "backend-core/infrastructure/pom.xml",
     "backend-core/api/pom.xml",
-    "backend-core/pom.xml",
 
-    # 4. Tham khảo pattern sẵn có
-    "backend-core/application/src/main/java/com/worklify/application/common/port/CvParsingPort.java",
-    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/client/MlCvParsingClient.java"
+    # ================= FRONTEND =================
+    "frontend-app/src/pages/candidate/CVManagerPage/index.jsx",
+    "frontend-app/src/pages/candidate/CVBuilderPage/index.jsx",
+    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js",
+    "frontend-app/src/features/candidate/candidateService.js"
 ]
 
-OUTPUT_FILE = "exported_cv_builder_upgrade.md"
+OUTPUT_FILE = "exported_cv_json_pdf_flow.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# Architecture Context: Digital PDF Upgrade\n\n")
+        outfile.write("# Codebase Context: Embed JSON into PDF & Import Flow\n\n")
         
         for filepath in TARGET_FILES:
             append_file_content(filepath, outfile)
@@ -44,7 +39,12 @@ def gather_files():
 def append_file_content(filepath, outfile):
     if os.path.exists(filepath):
         outfile.write(f"## File: `{filepath}`\n\n")
-        outfile.write("```" + get_extension(filepath) + "\n")
+        
+        # Xác định extension để highlight syntax
+        ext = filepath.split('.')[-1].lower()
+        syntax = "java" if ext == "java" else "javascript" if ext in ["js", "jsx"] else "xml" if ext == "xml" else "text"
+        
+        outfile.write(f"```{syntax}\n")
         try:
             with open(filepath, "r", encoding="utf-8") as infile:
                 outfile.write(infile.read() + "\n")
@@ -53,15 +53,6 @@ def append_file_content(filepath, outfile):
         outfile.write("```\n\n")
     else:
         print(f"⚠️ Warning: File not found: {filepath}")
-
-def get_extension(filepath):
-    ext = filepath.split('.')[-1].lower()
-    if ext in ['py']: return 'python'
-    if ext in ['java']: return 'java'
-    if ext in ['js', 'jsx']: return 'javascript'
-    if ext in ['json']: return 'json'
-    if ext in ['xml']: return 'xml'
-    return 'text'
 
 if __name__ == "__main__":
     gather_files()

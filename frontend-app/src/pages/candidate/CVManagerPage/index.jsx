@@ -377,21 +377,39 @@ const SkeletonCard = () => (
   <div className="wl-card-skeleton">
     <div className="wl-skeleton" style={{ height: 290 }} />
     <div style={{ padding: "16px 18px 18px" }}>
-      <div className="wl-skeleton" style={{ height: 16, width: "70%", marginBottom: 8 }} />
-      <div className="wl-skeleton" style={{ height: 12, width: "45%", marginBottom: 16 }} />
+      <div
+        className="wl-skeleton"
+        style={{ height: 16, width: "70%", marginBottom: 8 }}
+      />
+      <div
+        className="wl-skeleton"
+        style={{ height: 12, width: "45%", marginBottom: 16 }}
+      />
       <div style={{ display: "flex", gap: 8 }}>
-        <div className="wl-skeleton" style={{ height: 36, flex: 1, borderRadius: 8 }} />
-        <div className="wl-skeleton" style={{ height: 36, width: 44, borderRadius: 8 }} />
+        <div
+          className="wl-skeleton"
+          style={{ height: 36, flex: 1, borderRadius: 8 }}
+        />
+        <div
+          className="wl-skeleton"
+          style={{ height: 36, width: 44, borderRadius: 8 }}
+        />
       </div>
     </div>
   </div>
 );
 
+const buildFileUrl = (path) => {
+  if (!path) return null;
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `http://localhost:8080${normalized}`;
+};
+
 const CvCard = ({ cv, onEdit, onDelete }) => {
-  const thumbSrc = cv.thumbnailPath ? `http://localhost:8080${cv.thumbnailPath}` : null;
+  const thumbSrc = buildFileUrl(cv.thumbnailPath);
   // [MỚI] PDF số (text thật) sinh song song với thumbnail lúc Lưu CV — xem
   // digitalPdfPath trong CvDocumentResponse (backend) / handleSaveCv (CVBuilderPage).
-  const pdfSrc = cv.digitalPdfPath ? `http://localhost:8080${cv.digitalPdfPath}` : null;
+  const pdfSrc = buildFileUrl(cv.digitalPdfPath);
 
   const handleDownloadPdf = (e) => {
     e.stopPropagation();
@@ -416,17 +434,26 @@ const CvCard = ({ cv, onEdit, onDelete }) => {
         )}
         <div className="wl-glass-overlay">
           <div className="wl-glass-cta">
-            <button className="wl-glass-btn" onClick={onEdit}>Chỉnh sửa CV</button>
+            <button className="wl-glass-btn" onClick={onEdit}>
+              Chỉnh sửa CV
+            </button>
           </div>
         </div>
       </div>
       <div className="wl-card-body">
         <h4 className="wl-card-name">{cv.fileName || "CV_Tu_Tao"}</h4>
         <p className="wl-card-date">
-          Cập nhật {new Date(cv.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+          Cập nhật{" "}
+          {new Date(cv.createdAt).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}
         </p>
         <div className="wl-card-actions">
-          <button className="wl-action-edit" onClick={onEdit}>Chỉnh sửa</button>
+          <button className="wl-action-edit" onClick={onEdit}>
+            Chỉnh sửa
+          </button>
           <button
             className="wl-action-pdf"
             onClick={handleDownloadPdf}
@@ -435,7 +462,16 @@ const CvCard = ({ cv, onEdit, onDelete }) => {
           >
             📄
           </button>
-          <button className="wl-action-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Xóa CV">🗑️</button>
+          <button
+            className="wl-action-delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title="Xóa CV"
+          >
+            🗑️
+          </button>
         </div>
       </div>
     </div>
@@ -444,7 +480,9 @@ const CvCard = ({ cv, onEdit, onDelete }) => {
 
 const CVManagerPage = () => {
   const navigate = useNavigate();
-  const currentUser = authService?.getCurrentUser ? authService.getCurrentUser() : null;
+  const currentUser = authService?.getCurrentUser
+    ? authService.getCurrentUser()
+    : null;
   const userId = currentUser?.userId || currentUser?.id;
 
   const [cvList, setCvList] = useState([]);
@@ -464,7 +502,9 @@ const CVManagerPage = () => {
     }
   };
 
-  useEffect(() => { loadCvs(); }, [userId]);
+  useEffect(() => {
+    loadCvs();
+  }, [userId]);
 
   useEffect(() => {
     if (!status.type) return;
@@ -485,22 +525,34 @@ const CVManagerPage = () => {
     }
   };
 
-  const lastUpdated = generatedCvs.length > 0
-    ? new Date(Math.max(...generatedCvs.map(cv => new Date(cv.createdAt))))
-        .toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
-    : "—";
+  const lastUpdated =
+    generatedCvs.length > 0
+      ? new Date(
+          Math.max(...generatedCvs.map((cv) => new Date(cv.createdAt))),
+        ).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
+      : "—";
 
-  if (!userId) return (
-    <div style={{ minHeight: "100vh", background: "#F0F4FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <p style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>Vui lòng đăng nhập để xem CV của bạn.</p>
-    </div>
-  );
+  if (!userId)
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#F0F4FF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <p style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
+          Vui lòng đăng nhập để xem CV của bạn.
+        </p>
+      </div>
+    );
 
   return (
     <>
       <style>{styles}</style>
       <div className="wl-manager">
-
         {status.type && (
           <div style={{ position: "fixed", top: 24, right: 24, zIndex: 9999 }}>
             <Toast type={status.type} message={status.message} />
@@ -512,9 +564,14 @@ const CVManagerPage = () => {
           <div className="wl-hero-inner">
             <div className="wl-hero-badge">✦ CV của tôi</div>
             <h1>Hồ sơ CV của bạn</h1>
-            <p>Tạo, chỉnh sửa và quản lý CV chuyên nghiệp ngay trên Worklify.</p>
+            <p>
+              Tạo, chỉnh sửa và quản lý CV chuyên nghiệp ngay trên Worklify.
+            </p>
             <div className="wl-hero-actions">
-              <button className="wl-btn-primary" onClick={() => navigate("/candidate/cv-templates")}>
+              <button
+                className="wl-btn-primary"
+                onClick={() => navigate("/candidate/cv-templates")}
+              >
                 + Tạo CV mới
               </button>
               {!isFetching && generatedCvs.length > 0 && (
@@ -530,16 +587,22 @@ const CVManagerPage = () => {
         <div className="wl-stats-strip">
           <div className="wl-stats-inner">
             <div className="wl-stat">
-              <div className="wl-stat-num"><span>{generatedCvs.length}</span></div>
+              <div className="wl-stat-num">
+                <span>{generatedCvs.length}</span>
+              </div>
               <div className="wl-stat-label">CV đã tạo</div>
             </div>
             <div className="wl-stat">
-              <div className="wl-stat-num">{generatedCvs.filter(cv => cv.thumbnailPath).length}</div>
+              <div className="wl-stat-num">
+                {generatedCvs.filter((cv) => cv.thumbnailPath).length}
+              </div>
               <div className="wl-stat-label">Có ảnh xem trước</div>
             </div>
             {/* [MỚI] Thống kê số CV đã có PDF số — cùng dạng với ô "Có ảnh xem trước" */}
             <div className="wl-stat">
-              <div className="wl-stat-num">{generatedCvs.filter(cv => cv.digitalPdfPath).length}</div>
+              <div className="wl-stat-num">
+                {generatedCvs.filter((cv) => cv.digitalPdfPath).length}
+              </div>
               <div className="wl-stat-label">Có PDF số</div>
             </div>
             <div className="wl-stat">
@@ -563,20 +626,28 @@ const CVManagerPage = () => {
 
           {isFetching ? (
             <div className="wl-grid">
-              {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+              {[1, 2, 3].map((i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
           ) : generatedCvs.length === 0 ? (
             <div className="wl-empty">
               <div className="wl-empty-icon">✨</div>
               <h3>Chưa có CV nào</h3>
-              <p>Bắt đầu tạo CV chuyên nghiệp đầu tiên với Worklify CV Builder — miễn phí, đẹp và dễ dùng.</p>
-              <button className="wl-empty-cta" onClick={() => navigate("/candidate/cv-templates")}>
+              <p>
+                Bắt đầu tạo CV chuyên nghiệp đầu tiên với Worklify CV Builder —
+                miễn phí, đẹp và dễ dùng.
+              </p>
+              <button
+                className="wl-empty-cta"
+                onClick={() => navigate("/candidate/cv-templates")}
+              >
                 ✦ Bắt đầu tạo CV
               </button>
             </div>
           ) : (
             <div className="wl-grid">
-              {generatedCvs.map(cv => (
+              {generatedCvs.map((cv) => (
                 <CvCard
                   key={cv.id}
                   cv={cv}

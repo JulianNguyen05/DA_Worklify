@@ -3,9 +3,11 @@ package com.worklify.application.candidate.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.worklify.application.candidate.dto.*;
+import com.worklify.application.candidate.port.CvPdfImportPort;
 import com.worklify.application.candidate.service.CandidateService;
 import com.worklify.application.candidate.service.CvDigitalPdfExportRunner;
 import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.common.exception.CvPdfImportException;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.port.CvParsingPort;
 import com.worklify.application.common.port.FileStoragePort;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,6 +58,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final LanguageRepository languageRepository;
     private final CvParsingPort cvParsingPort;
     private final CvDigitalPdfExportRunner cvDigitalPdfExportRunner;
+    private final CvPdfImportPort cvPdfImportPort;
 
     @Override
     public CandidateProfileResponse createProfile(Long userId, CandidateProfileRequest request) {
@@ -1271,4 +1275,17 @@ public class CandidateServiceImpl implements CandidateService {
         return mapToCvResponse(cvDocumentRepository.save(cv));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CvDigitalImportResponse importCvFromDigitalPdf(Long userId, MultipartFile file) {
+        log.info("userId={} yêu cầu khôi phục CV từ file PDF số: {}", userId, file.getOriginalFilename());
+        try {
+            String rawTextJson = cvPdfImportPort.extractEmbeddedCvJson(file.getBytes());
+            return CvDigitalImportResponse.builder()
+                    .rawText(rawTextJson)
+                    .build();
+        } catch (IOException e) {
+            throw new CvPdfImportException("Không thể đọc file đã tải lên.", e);
+        }
+    }
 }

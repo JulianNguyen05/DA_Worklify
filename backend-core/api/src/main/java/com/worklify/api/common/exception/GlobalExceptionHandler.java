@@ -1,6 +1,7 @@
 package com.worklify.api.common.exception;
 
 import com.worklify.api.common.response.ApiResponse;
+import com.worklify.application.common.exception.CvPdfImportException;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
 import org.springframework.http.HttpStatus;
@@ -71,6 +72,17 @@ public class GlobalExceptionHandler {
         ex.printStackTrace();
 
         return ApiResponse.error(500, "Hệ thống SmartMatch gặp sự cố bất ngờ: " + ex.getMessage());
+    }
+
+    /**
+     * 5. Bắt lỗi khi PDF người dùng upload không phải PDF số do Worklify tạo ra
+     * (thiếu marker/embedded JSON) — dùng 422 vì request hợp lệ về mặt hình thức
+     * (đúng là 1 file PDF), chỉ sai về mặt nội dung/nguồn gốc.
+     */
+    @ExceptionHandler(CvPdfImportException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY) // HTTP 422
+    public ApiResponse<Void> handleCvPdfImportException(CvPdfImportException ex) {
+        return ApiResponse.error(422, ex.getMessage());
     }
 
     /**

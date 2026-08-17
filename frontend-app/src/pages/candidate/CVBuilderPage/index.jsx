@@ -13,7 +13,6 @@ import {
 import { DndContext, closestCenter, DragOverlay } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { captureCvThumbnailAsFile } from "../../../components/cv-builder/shared/captureCvThumbnail";
-import { captureCvDigitalPdfAsFile } from "../../../components/cv-builder/shared/captureCvDigitalPdf";
 import mapParsedCvToCvData from "../../../components/cv-builder/shared/mapParsedCvToCvData";
 
 import TabPanel from "../../../components/cv-builder/sidebar/TabPanel";
@@ -430,40 +429,16 @@ const CVBuilderPage = () => {
         console.error("Lỗi khi chụp ảnh CV:", imageError);
       }
 
-      // [MỚI] Sinh PDF số (text thật) từ cvData, song song/độc lập với bước
-      // chụp thumbnail ở trên — lỗi ở bước này KHÔNG được làm hỏng luồng lưu
-      // chính, vì đây chỉ là dữ liệu phụ trợ cho tính năng convert PDF -> CV
-      // Live Builder sau này, không phải phần bắt buộc để CV hiển thị được.
-      let pdfOk = true;
-      try {
-        const pdfFile = captureCvDigitalPdfAsFile(
-          cvData,
-          `cv_${savedCvId}.pdf`,
-        );
-        await candidateService.uploadCvDigitalPdf(
-          currentUser.userId,
-          savedCvId,
-          pdfFile,
-        );
-      } catch (pdfError) {
-        pdfOk = false;
-        console.error("Lỗi khi tạo PDF số:", pdfError);
-      }
-
+      // PDF số giờ được backend-core tự render bất đồng bộ ngay sau khi
+      // rawText được lưu (xem CvDigitalPdfExportRunnerImpl bên backend) —
+      // không còn cần client tự tạo/upload PDF ở đây nữa.
       setInitialDataStr(JSON.stringify({ title: cvTitle, data: cvData }));
       setIsDirty(false);
 
-      if (thumbnailOk && pdfOk) {
-        showToastMsg("Lưu CV, tạo ảnh thu nhỏ và PDF số thành công!");
-      } else if (!thumbnailOk && !pdfOk) {
-        showToastMsg(
-          "Đã lưu dữ liệu CV, nhưng không tạo được ảnh thu nhỏ và PDF số.",
-          "warning",
-        );
-      } else if (!thumbnailOk) {
-        showToastMsg("Đã lưu CV, nhưng không tạo được ảnh thu nhỏ.", "warning");
+      if (thumbnailOk) {
+        showToastMsg("Lưu CV và tạo ảnh thu nhỏ thành công!");
       } else {
-        showToastMsg("Đã lưu CV, nhưng không tạo được PDF số.", "warning");
+        showToastMsg("Đã lưu CV, nhưng không tạo được ảnh thu nhỏ.", "warning");
       }
 
       setTimeout(() => {

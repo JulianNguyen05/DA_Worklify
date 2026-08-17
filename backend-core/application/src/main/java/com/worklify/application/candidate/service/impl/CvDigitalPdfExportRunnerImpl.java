@@ -50,7 +50,7 @@ public class CvDigitalPdfExportRunnerImpl implements CvDigitalPdfExportRunner {
 
         String relativePath = fileStoragePort.storeBytes(
                 pdfBytes, "cv_digital_pdf", String.valueOf(cv.getCandidateId()), "cv_" + cv.getId() + ".pdf");
-        cv.updateDigitalPdfPath(relativePath);
+        cv.updateDigitalPdfPath("/uploads/" + relativePath);   // thêm tiền tố /uploads/
         cvDocumentRepository.save(cv);
     }
 }

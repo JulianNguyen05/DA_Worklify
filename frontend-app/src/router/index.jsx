@@ -35,6 +35,7 @@ import CVBuilderPage from "../pages/candidate/CVBuilderPage";
 import MyApplicationsPage from "../pages/candidate/MyApplicationsPage";
 import CandidateProfile from "../pages/candidate/ProfilePage";
 import CandidateSettings from "../pages/candidate/SettingsPage";
+import CvPrintPage from "../pages/candidate/CvPrintPage";
 
 // ==========================================
 // 5. IMPORT EMPLOYER PAGES
@@ -138,5 +139,12 @@ export const router = createBrowserRouter([
       { path: "reports", element: <ReportExportPage /> },
       { path: "demo-products", element: <DemoProductManagementPage /> },
     ],
+  },
+
+  // --- NHÓM 5: CV PRINT (route trần, không layout/auth — chỉ để headless
+  // browser bên backend-core mở và chụp PDF, xem PlaywrightCvPdfExportAdapter) ---
+  {
+    path: "/cv-print",
+    element: <CvPrintPage />,
   },
 ]);
