@@ -33,21 +33,21 @@ const TEMPLATES = [
     name: 'Mẫu Tiêu Chuẩn',
     categories: ['Tiêu chuẩn'],
     color: '#1f2937', // Màu mặc định: Đen xám
-    thumbnail: 'http://localhost:8080/uploads/logos/user.jpg',
+    thumbnail: 'http://localhost:8080/uploads/templates/simple.png',
   },
   {
     id: 'professional',
     name: 'Mẫu Chuyên Nghiệp',
     categories: ['Chuyên nghiệp'],
     color: '#1e3a8a', // Màu mặc định: Xanh Navy
-    thumbnail: 'http://localhost:8080/uploads/logos/user.jpg',
+    thumbnail: 'http://localhost:8080/uploads/templates/professional.png',
   },
   {
     id: 'harvard',
     name: 'Mẫu Harvard',
     categories: ['Harvard'],
     color: '#000000', // Màu mặc định: Đen
-    thumbnail: 'http://localhost:8080/uploads/logos/user.jpg',
+    thumbnail: 'http://localhost:8080/uploads/templates/harvard.png',
   }
 ];
 
@@ -216,7 +216,7 @@ const CVTemplatesPage = () => {
               onClick={() => setActiveCategory(category.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm border transition-all duration-200 ${
                 isActive
-                  ? 'bg-[#00b14f] text-white border-[#00b14f] shadow-sm'
+                  ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-sm'
                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
             >
@@ -233,7 +233,7 @@ const CVTemplatesPage = () => {
           <div key={template.id} className="flex flex-col gap-3">
 
             {/* VÙNG CHỨA ẢNH (Nền xám nhạt, border bo góc) */}
-            <div className="group relative bg-[#f3f4f6] p-4 rounded-xl border border-gray-200 transition-all hover:border-[#00b14f] hover:shadow-md">
+            <div className="group relative bg-[#f3f4f6] p-4 rounded-xl border border-gray-200 transition-all hover:border-[#2563EB] hover:shadow-md">
 
               {/* Thumbnail CV khổ A4 (Tỷ lệ 21/29.7) */}
               <div className="relative w-full aspect-[21/29.7] bg-white shadow-sm overflow-hidden border border-gray-200">
@@ -247,7 +247,7 @@ const CVTemplatesPage = () => {
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
                   <button
                     onClick={() => handleUseTemplate(template)}
-                    className="bg-[#00b14f] hover:bg-[#009643] text-white font-semibold py-2 px-6 rounded-full transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-semibold py-2 px-6 rounded-full transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg"
                   >
                     Sử dụng mẫu này
                   </button>
@@ -299,7 +299,7 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseUpload}
             disabled={isImporting || isLoading}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
               <Upload className="w-5 h-5" />
@@ -317,7 +317,7 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseFromProfile}
             disabled={isLoading || isImporting}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <UserRound className="w-5 h-5" />
@@ -335,7 +335,7 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseBlank}
             disabled={isImporting || isLoading}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#00b14f] hover:bg-[#00b14f]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
               <FilePlus2 className="w-5 h-5" />

@@ -49,6 +49,7 @@ import ApplicationListPage from "../pages/employer/ApplicationListPage";
 import ApplicationDetailPage from "../pages/employer/ApplicationDetailPage";
 import CandidateSearchPage from "../pages/employer/CandidateSearchPage";
 import EmployerSettings from "../pages/employer/SettingsPage";
+import CandidateProfileViewPage from "../pages/employer/CandidateProfileViewPage";
 
 // ==========================================
 // 6. IMPORT ADMIN PAGES
@@ -116,6 +117,7 @@ export const router = createBrowserRouter([
       { path: "applications", element: <ApplicationListPage /> },
       { path: "applications/:id", element: <ApplicationDetailPage /> },
       { path: "candidates/search", element: <CandidateSearchPage /> },
+      { path: "candidates/:userId", element: <CandidateProfileViewPage /> },
       { path: "settings", element: <EmployerSettings /> },
     ],
   },

@@ -545,6 +545,7 @@ public class CandidateController {
     }
 
     @GetMapping("/{userId}/profile/full")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     @Operation(summary = "Lấy toàn bộ dữ liệu ProfilePage (layout + 9 block danh sách) trong 1 lần gọi — phục vụ sandbox kéo-thả")
     public ApiResponse<CandidateProfileFullResponse> getFullProfile(
             @PathVariable("userId") Long userId) {

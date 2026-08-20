@@ -66,7 +66,7 @@ const employerService = {
     return response.data;
   },
 
-// File: frontend-app/src/features/employer/employerService.js
+  // File: frontend-app/src/features/employer/employerService.js
   getAllCompanies: async (page = 0, size = 5, userId = null) => {
     let url = `/employers?page=${page}&size=${size}`;
     if (userId) {
@@ -76,7 +76,7 @@ const employerService = {
     return response.data;
   },
 
-// API Like công ty
+  // API Like công ty
   likeCompany: async (companyId, userId) => {
     // Truyền userId lên BE thông qua query string (?userId=...)
     const response = await axiosClient.post(`/employers/${companyId}/like?userId=${userId}`);
@@ -126,6 +126,12 @@ const employerService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // --- Xem hồ sơ ứng viên (cho search) ---
+  getCandidateFullProfile: async (userId) => {
+    const response = await axiosClient.get(`/candidates/${userId}/profile/full`);
+    return response.data;
   },
 };
 

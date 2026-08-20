@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, MapPin, Briefcase, Award, Filter, 
-  FileText, User, Mail, Phone, Loader2, Sparkles 
+import {
+  Search, MapPin, Briefcase, Award, Filter,
+  FileText, User, Mail, Phone, Loader2, Sparkles
 } from 'lucide-react';
 import employerService from '../../../features/employer/employerService';
 import Toast from '../../../components/common/Toast';
@@ -15,31 +15,32 @@ export default function CandidateSearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
 
-  // Nạp ngẫu nhiên một vài ứng viên khi vừa vào trang (Tùy chọn)
+  // Nạp ngẫu nhiên một vài ứng viên khi vừa vào trang
   useEffect(() => {
-    handleSearch(new Event('submit'), true);
+    handleSearch(null, { isInitialLoad: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSearch = async (e, isInitialLoad = false) => {
+  // [SỬA] Nhận keywordOverride để tránh đọc state "keyword" cũ khi bấm Lọc nhanh
+  const handleSearch = async (e, options = {}) => {
     if (e) e.preventDefault();
-    
-    // Bỏ qua nếu tìm kiếm trống và không phải load lần đầu
-    if (!isInitialLoad && !keyword.trim()) {
+    const { isInitialLoad = false, keywordOverride } = options;
+    const searchKeyword = keywordOverride !== undefined ? keywordOverride : keyword;
+
+    if (!isInitialLoad && !searchKeyword.trim()) {
       setStatusMsg({ type: 'warning', message: 'Vui lòng nhập từ khóa tìm kiếm.' });
       return;
     }
 
     setIsLoading(true);
     setHasSearched(!isInitialLoad);
-    
+
     try {
-      // Gọi API thật từ Backend
-      const response = await employerService.searchCandidates(keyword, 0, 20);
+      const response = await employerService.searchCandidates(searchKeyword, 0, 20);
       const data = response.data?.content || response.data || [];
       setCandidates(data);
     } catch (error) {
       console.error(error);
-      // Nếu BE chưa có API, nó sẽ báo lỗi 404. Bạn có thể tạm thời bẫy lỗi ở đây.
       setStatusMsg({ type: 'error', message: 'Lỗi tải dữ liệu hoặc API Backend chưa sẵn sàng!' });
       setCandidates([]);
     } finally {
@@ -47,10 +48,18 @@ export default function CandidateSearchPage() {
     }
   };
 
-  // Hàm tạo avatar chữ cái đầu
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  // [MỚI] Điều hướng sang trang xem hồ sơ đầy đủ
+  const handleViewProfile = (candidate) => {
+    if (!candidate.userId) {
+      setStatusMsg({ type: 'error', message: 'Ứng viên này thiếu userId, không thể xem hồ sơ.' });
+      return;
+    }
+    navigate(`/employer/candidates/${candidate.userId}`);
   };
 
   return (
@@ -59,16 +68,16 @@ export default function CandidateSearchPage() {
         <Toast type={statusMsg.type} message={statusMsg.message} onClose={() => setStatusMsg({ type: null, message: '' })} />
       )}
 
-      {/* HEADER & THANH TÌM KIẾM */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-12 text-white shadow-lg relative overflow-hidden">
+      {/* HEADER & THANH TÌM KIẾM — đồng bộ gradient Worklify #2563EB → #14B8A6 */}
+      <div className="bg-gradient-to-r from-[#2563EB] to-[#14B8A6] rounded-3xl p-8 sm:p-12 text-white shadow-lg relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="relative z-10 max-w-3xl">
           <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-yellow-300" />
+            <Sparkles className="w-8 h-8 text-white" />
             Tìm kiếm nhân tài
           </h1>
-          <p className="text-indigo-100 text-lg mb-8">
+          <p className="text-white/85 text-lg mb-8">
             Khám phá kho dữ liệu hàng ngàn ứng viên chất lượng cao, phù hợp với mọi vị trí mà doanh nghiệp bạn đang tìm kiếm.
           </p>
 
@@ -82,13 +91,13 @@ export default function CandidateSearchPage() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Nhập kỹ năng, chức danh, ngôn ngữ lập trình..."
-                className="block w-full pl-11 pr-4 py-4 rounded-xl border-0 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-yellow-300 transition-shadow text-lg shadow-sm"
+                className="block w-full pl-11 pr-4 py-4 rounded-xl border-0 text-[#0F172A] placeholder-gray-400 focus:ring-4 focus:ring-[#14B8A6]/40 transition-shadow text-lg shadow-sm"
               />
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-8 py-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
+              className="bg-white hover:bg-[#F8FAFC] text-[#2563EB] font-bold px-8 py-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Tìm ứng viên'}
             </button>
@@ -96,16 +105,16 @@ export default function CandidateSearchPage() {
         </div>
       </div>
 
-      {/* BỘ LỌC NHANH (UI DEMO) */}
+      {/* BỘ LỌC NHANH */}
       <div className="flex items-center gap-3 overflow-x-auto pb-2">
-        <div className="flex items-center gap-2 text-gray-500 font-medium px-2">
+        <div className="flex items-center gap-2 text-[#64748B] font-medium px-2">
           <Filter className="w-4 h-4" /> Lọc nhanh:
         </div>
         {['Java', 'ReactJS', 'Node.js', 'Spring Boot', 'Python', 'Thực tập sinh'].map(skill => (
-          <button 
+          <button
             key={skill}
-            onClick={() => { setKeyword(skill); handleSearch(null, false); }}
-            className="px-4 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors whitespace-nowrap"
+            onClick={() => { setKeyword(skill); handleSearch(null, { keywordOverride: skill }); }}
+            className="px-4 py-1.5 bg-white border border-[#E2E8F0] text-[#64748B] rounded-full text-sm font-medium hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:border-[#BFDBFE] transition-colors whitespace-nowrap"
           >
             {skill}
           </button>
@@ -115,9 +124,9 @@ export default function CandidateSearchPage() {
       {/* KẾT QUẢ TÌM KIẾM */}
       <div>
         <div className="flex justify-between items-end mb-6 px-2">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-[#0F172A]">
             {hasSearched ? `Kết quả tìm kiếm cho "${keyword}"` : 'Ứng viên nổi bật'}
-            <span className="ml-2 text-sm font-medium text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+            <span className="ml-2 text-sm font-medium text-[#64748B] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
               {candidates.length}
             </span>
           </h2>
@@ -126,54 +135,54 @@ export default function CandidateSearchPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 animate-pulse flex gap-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-full shrink-0" />
+              <div key={i} className="bg-white p-6 rounded-2xl border border-[#E2E8F0] animate-pulse flex gap-4">
+                <div className="w-16 h-16 bg-[#F1F5F9] rounded-full shrink-0" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-5 bg-gray-200 rounded w-1/3" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mt-4" />
+                  <div className="h-5 bg-[#F1F5F9] rounded w-1/3" />
+                  <div className="h-4 bg-[#F1F5F9] rounded w-1/2" />
+                  <div className="h-4 bg-[#F1F5F9] rounded w-3/4 mt-4" />
                 </div>
               </div>
             ))}
           </div>
         ) : candidates.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-gray-100 border-dashed p-16 text-center">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-10 h-10 text-gray-300" />
+          <div className="bg-white rounded-3xl border border-[#E2E8F0] border-dashed p-16 text-center">
+            <div className="w-20 h-20 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-[#CBD5E1]" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Không tìm thấy ứng viên</h3>
-            <p className="text-gray-500 max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-[#0F172A] mb-2">Không tìm thấy ứng viên</h3>
+            <p className="text-[#64748B] max-w-md mx-auto">
               Không có ứng viên nào khớp với từ khóa "{keyword}". Hãy thử tìm kiếm với các từ khóa ngắn gọn hoặc phổ biến hơn.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {candidates.map((candidate) => (
-              <div key={candidate.id} className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:border-indigo-100 transition-all group flex flex-col justify-between">
-                
+              <div key={candidate.id} className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-xl hover:border-[#BFDBFE] transition-all group flex flex-col justify-between">
+
                 <div className="flex gap-5 items-start mb-4">
                   {/* Avatar */}
-                  <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-extrabold text-xl shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <div className="w-16 h-16 bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl flex items-center justify-center text-[#2563EB] font-extrabold text-xl shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
                     {getInitials(candidate.fullName || candidate.name)}
                   </div>
-                  
+
                   {/* Thông tin chính */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-2">
-                      <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                      <h3 className="text-lg font-bold text-[#0F172A] truncate group-hover:text-[#2563EB] transition-colors">
                         {candidate.fullName || candidate.name || 'Ứng viên ẩn danh'}
                       </h3>
                       {candidate.experience && (
-                        <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                        <span className="bg-[#F0FDFA] text-[#0D9488] px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
                           {candidate.experience} KN
                         </span>
                       )}
                     </div>
-                    <p className="text-sm font-medium text-gray-500 mt-1 truncate">
-                      {candidate.title || candidate.summary || 'Chưa cập nhật chức danh'}
+                    <p className="text-sm font-medium text-[#64748B] mt-1 truncate">
+                      {candidate.headline || candidate.title || candidate.summary || 'Chưa cập nhật chức danh'}
                     </p>
-                    
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+
+                    <div className="flex items-center gap-4 mt-3 text-xs text-[#64748B]">
                       {(candidate.address || candidate.location) && (
                         <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {candidate.address || candidate.location}</span>
                       )}
@@ -184,30 +193,30 @@ export default function CandidateSearchPage() {
                   </div>
                 </div>
 
-                {/* Kỹ năng (nếu Backend có trả về mảng skills) */}
+                {/* Kỹ năng */}
                 <div className="mb-6">
                   <div className="flex flex-wrap gap-2">
                     {(candidate.skills || ['Giao tiếp', 'Làm việc nhóm', 'Thích nghi nhanh']).slice(0, 4).map((skill, idx) => (
-                      <span key={idx} className="px-2.5 py-1 bg-gray-50 text-gray-600 border border-gray-100 rounded-md text-xs font-medium">
+                      <span key={idx} className="px-2.5 py-1 bg-[#F8FAFC] text-[#334155] border border-[#E2E8F0] rounded-md text-xs font-medium">
                         {skill}
                       </span>
                     ))}
-                    {candidate.skills?.length > 4 && <span className="px-2 py-1 text-gray-400 text-xs font-medium">+{candidate.skills.length - 4}</span>}
+                    {candidate.skills?.length > 4 && <span className="px-2 py-1 text-[#94A3B8] text-xs font-medium">+{candidate.skills.length - 4}</span>}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-50 mt-auto">
-                  <button 
-                    onClick={() => setStatusMsg({ type: 'warning', message: 'Tính năng xem hồ sơ đang được hoàn thiện!' })}
-                    className="flex-1 bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                <div className="flex items-center gap-3 pt-4 border-t border-[#F1F5F9] mt-auto">
+                  <button
+                    onClick={() => handleViewProfile(candidate)}
+                    className="flex-1 bg-white text-[#2563EB] border-2 border-[#BFDBFE] hover:bg-[#EFF6FF] font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                   >
                     <User className="w-4 h-4" /> Xem hồ sơ
                   </button>
                   {candidate.cvId && (
-                     <button 
+                     <button
                        onClick={() => window.open(`http://localhost:8080/api/v1/files/cv/${candidate.cvId}`, '_blank')}
-                       className="flex-1 bg-indigo-600 text-white border-2 border-indigo-600 hover:bg-indigo-700 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                       className="flex-1 bg-[#2563EB] text-white border-2 border-[#2563EB] hover:bg-[#1D4ED8] font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                      >
                        <FileText className="w-4 h-4" /> Tải CV
                      </button>

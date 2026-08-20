@@ -13,10 +13,12 @@ const REFERENCE_BLOCK_TYPES = ['SKILL', 'LANGUAGE'];
 const LIST_BLOCK_TYPES = Object.keys(BLOCK_FORM_CONFIGS); // Experience, Education, Project, Certification, Award, Activity, Hobby
 
 /**
- * Card đại diện cho 1 block trên sandbox ProfilePage — style Blueprint Dossier:
- * nền trắng, viền mảnh, nhãn góc kiểu chú thích bản vẽ kỹ thuật (VD "EXP · 02").
- * Kéo-thả/resize do react-grid-layout quản lý qua class "block-drag-handle".
+ * Card đại diện cho 1 block trên sandbox ProfilePage.
+ * [ĐỔI MÀU] Đồng bộ theo bảng màu Worklify (#2563EB xanh dương / #14B8A6 teal /
+ * #0F172A - #64748B slate) thay cho theme "Blueprint Dossier" (graphite/ink/paper) cũ,
+ * khớp với Navbar, AuthLayout và các trang employer khác.
  *
+ * Kéo-thả/resize do react-grid-layout quản lý qua class "block-drag-handle".
  * Cả 12 block giờ đều nhập TRỰC TIẾP trong card (không còn modal) — component
  * này chỉ đóng vai trò khung + rẽ nhánh sang đúng "Inline*" component theo blockType.
  *
@@ -84,28 +86,28 @@ const ProfileBlockCard = ({
 
   return (
     <div
-      className={`h-full w-full flex flex-col bg-white border border-graphite/12 rounded-xl overflow-hidden
+      className={`h-full w-full flex flex-col bg-white border border-[#E2E8F0] rounded-xl overflow-hidden
         transition-opacity ${visible ? '' : 'opacity-40 saturate-0'}`}
-      style={{ boxShadow: '0 1px 2px rgba(28,35,51,0.04), 0 1px 8px rgba(28,35,51,0.03)' }}
+      style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 1px 8px rgba(15,23,42,0.03)' }}
     >
-      {/* ─── Header: nhãn góc kiểu bản vẽ kỹ thuật ─── */}
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-graphite/10 shrink-0 bg-paper/60">
+      {/* ─── Header ─── */}
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#E2E8F0] shrink-0 bg-[#F8FAFC]">
         {isEditMode && (
           <span
-            className="block-drag-handle flex items-center cursor-grab active:cursor-grabbing text-graphite/45 hover:text-ink shrink-0"
+            className="block-drag-handle flex items-center cursor-grab active:cursor-grabbing text-[#94A3B8] hover:text-[#2563EB] shrink-0"
             title="Kéo để di chuyển"
           >
             <GripVertical size={15} strokeWidth={2} />
           </span>
         )}
 
-        {Icon && <Icon size={13} strokeWidth={2} className="text-ink shrink-0" />}
+        {Icon && <Icon size={13} strokeWidth={2} className="text-[#2563EB] shrink-0" />}
 
-        <h3 className="flex-1 text-[14px] font-semibold text-graphite/90 uppercase tracking-wider truncate font-body">
+        <h3 className="flex-1 text-[14px] font-semibold text-[#0F172A] uppercase tracking-wider truncate font-body">
           {meta.label}
         </h3>
 
-        <span className="text-[13px] font-medium text-ink bg-ink-light rounded px-1.5 py-0.5 shrink-0 font-tag">
+        <span className="text-[13px] font-medium text-[#2563EB] bg-[#EFF6FF] rounded px-1.5 py-0.5 shrink-0 font-tag">
           {BLOCK_TAG[blockType]}{itemCount !== null ? ` · ${String(itemCount).padStart(2, '0')}` : ''}
         </span>
 
@@ -113,7 +115,7 @@ const ProfileBlockCard = ({
           <button
             type="button"
             onClick={() => onToggleVisibility(blockType, !visible)}
-            className="p-1 text-graphite/60 hover:text-ink transition-colors shrink-0"
+            className="p-1 text-[#64748B] hover:text-[#2563EB] transition-colors shrink-0"
             title={visible ? 'Ẩn khỏi ProfilePage' : 'Hiện trên ProfilePage'}
           >
             {visible ? <Eye size={13} strokeWidth={2} /> : <EyeOff size={13} strokeWidth={2} />}

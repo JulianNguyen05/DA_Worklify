@@ -1,37 +1,33 @@
 import os
 
-# Danh sách các file Backend và Frontend cần thiết cho tính năng Import/Export JSON trong PDF
+# Danh sách các file Backend và Frontend cần thiết cho tính năng Employer xem hồ sơ Candidate
 TARGET_FILES = [
-    # ================= BACKEND =================
-    # PDF Export Logic
-    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/pdf/PlaywrightCvPdfExportAdapter.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/service/CvDigitalPdfExportRunner.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CvDigitalPdfExportRunnerImpl.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/port/CvPdfExportPort.java",
+    # ================= 1. FRONTEND =================
+    "frontend-app/src/features/employer/employerService.js",
+    "frontend-app/src/router/index.jsx",
+    "frontend-app/src/components/layout/EmployerLayout/index.jsx",
+    "frontend-app/src/components/layout/MainLayout/index.jsx",
+    "frontend-app/src/components/layout/Navbar/index.jsx",
+    "frontend-app/src/components/layout/AuthLayout/index.jsx", # Để bạn đối chiếu bảng màu chuẩn xanh dương/teal
     
-    # Entity & Database
-    "backend-core/domain/src/main/java/com/worklify/domain/candidate/model/CvDocument.java",
-    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/entity/CvDocumentJpaEntity.java",
-    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/persistence/adapter/CvDocumentRepositoryAdapter.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CvDocumentResponse.java",
-    
-    # Controller & Pom (Check Dependency)
+    # ================= 2. BACKEND =================
+    "backend-core/api/src/main/java/com/worklify/api/controller/employer/EmployerController.java",
+    "backend-core/application/src/main/java/com/worklify/application/employer/service/impl/EmployerServiceImpl.java",
     "backend-core/api/src/main/java/com/worklify/api/controller/candidate/CandidateController.java",
-    "backend-core/infrastructure/pom.xml",
-    "backend-core/api/pom.xml",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CandidateServiceImpl.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CandidateProfileFullResponse.java",
+    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CandidateProfileResponse.java",
 
-    # ================= FRONTEND =================
-    "frontend-app/src/pages/candidate/CVManagerPage/index.jsx",
-    "frontend-app/src/pages/candidate/CVBuilderPage/index.jsx",
-    "frontend-app/src/components/cv-builder/shared/mapParsedCvToCvData.js",
-    "frontend-app/src/features/candidate/candidateService.js"
+    # ================= 3. THAM KHẢO UI =================
+    "frontend-app/src/pages/candidate/ProfilePage/index.jsx",
+    "frontend-app/src/pages/candidate/CVManagerPage/index.jsx" # Trang chuẩn màu để copy token, spacing, class
 ]
 
-OUTPUT_FILE = "exported_cv_json_pdf_flow.md"
+OUTPUT_FILE = "exported_employer_candidate_view.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# Codebase Context: Embed JSON into PDF & Import Flow\n\n")
+        outfile.write("# Codebase Context: Tính năng Employer Search & View Candidate Profile\n\n")
         
         for filepath in TARGET_FILES:
             append_file_content(filepath, outfile)
