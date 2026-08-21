@@ -6,6 +6,7 @@ import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
 import RichTextEditor from '../../../components/common/RichTextEditor';
+import JobPreviewCard from '../../../components/shared/JobPreviewCard';
 
 // Loại bỏ thẻ HTML để kiểm tra rỗng — dùng cho validate vì
 // RichTextEditor lưu HTML nên input required native không còn tác dụng
@@ -14,6 +15,9 @@ const stripHtml = (html) => html?.replace(/<[^>]*>/g, '').trim() || '';
 export default function JobCreatePage() {
   const navigate = useNavigate();
   const [companyId, setCompanyId] = useState(null);
+  // Tách riêng companyInfo (chỉ dùng cho preview) khỏi companyId (dùng để submit)
+  // để không phải sửa các chỗ khác đang check `!companyId`
+  const [companyInfo, setCompanyInfo] = useState({ companyName: '', logoUrl: '' });
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -41,6 +45,16 @@ export default function JobCreatePage() {
         if (isMounted) {
           if (profile?.data?.id) {
             setCompanyId(profile.data.id);
+
+            const rawLogo = profile.data.logoUrl || profile.data.logo_url;
+            const resolvedLogo = rawLogo
+              ? (rawLogo.startsWith('http') ? rawLogo : `http://localhost:8080${rawLogo.startsWith('/') ? '' : '/'}${rawLogo}`)
+              : '';
+
+            setCompanyInfo({
+              companyName: profile.data.companyName || profile.data.name || '',
+              logoUrl: resolvedLogo,
+            });
           } else {
             handleMissingProfile();
           }
@@ -103,7 +117,7 @@ export default function JobCreatePage() {
 
   return (
     <div className="min-h-screen bg-gray-50/30 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-4xl mx-auto transition-all">
+      <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-6xl mx-auto transition-all">
         
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
@@ -141,108 +155,118 @@ export default function JobCreatePage() {
             <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
           </div>
         ) : companyId ? (
-          <form onSubmit={handleSubmit} className="space-y-8">
-            
-            {/* Nhóm 1: Thông tin cơ bản */}
-            <div className="space-y-6">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
+            <form onSubmit={handleSubmit} className="lg:col-span-4 space-y-8">
               
-              <Input 
-                label="Tiêu đề công việc" 
-                name="title" 
-                value={formData.title} 
-                onChange={handleChange} 
-                required 
-                maxLength={255}
-                placeholder="VD: Senior ReactJS Developer" 
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nhóm 1: Thông tin cơ bản */}
+              <div className="space-y-6">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
+                
                 <Input 
-                  label="Địa điểm làm việc" 
-                  name="location" 
-                  value={formData.location} 
+                  label="Tiêu đề công việc" 
+                  name="title" 
+                  value={formData.title} 
                   onChange={handleChange} 
                   required 
                   maxLength={255}
-                  placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
+                  placeholder="VD: Senior ReactJS Developer" 
                 />
-                <Input 
-                  label="Mức lương (Tùy chọn)" 
-                  name="salaryRange" 
-                  value={formData.salaryRange} 
-                  onChange={handleChange} 
-                  maxLength={100}
-                  placeholder="VD: 15,000,000 - 25,000,000 VND" 
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-gray-700">Hình thức làm việc</label>
-                  <select 
-                    name="workType" 
-                    value={formData.workType} 
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input 
+                    label="Địa điểm làm việc" 
+                    name="location" 
+                    value={formData.location} 
                     onChange={handleChange} 
-                    required
-                    className={inputClassName}
-                  >
-                    <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
-                    <option value="PART_TIME">Bán thời gian (Part-time)</option>
-                    <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
-                    <option value="REMOTE">Làm việc từ xa (Remote)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
-                  <input 
-                    type="datetime-local" 
-                    name="expiresAt" 
-                    value={formData.expiresAt} 
+                    required 
+                    maxLength={255}
+                    placeholder="VD: Tòa nhà AB, Quận 1, TP.HCM" 
+                  />
+                  <Input 
+                    label="Mức lương (Tùy chọn)" 
+                    name="salaryRange" 
+                    value={formData.salaryRange} 
                     onChange={handleChange} 
-                    required
-                    className={inputClassName}
+                    maxLength={100}
+                    placeholder="VD: 15,000,000 - 25,000,000 VND" 
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-gray-700">Hình thức làm việc</label>
+                    <select 
+                      name="workType" 
+                      value={formData.workType} 
+                      onChange={handleChange} 
+                      required
+                      className={inputClassName}
+                    >
+                      <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
+                      <option value="PART_TIME">Bán thời gian (Part-time)</option>
+                      <option value="INTERNSHIP">Thực tập sinh (Internship)</option>
+                      <option value="REMOTE">Làm việc từ xa (Remote)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
+                    <input 
+                      type="datetime-local" 
+                      name="expiresAt" 
+                      value={formData.expiresAt} 
+                      onChange={handleChange} 
+                      required
+                      className={inputClassName}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Nhóm 2: Chi tiết & Yêu cầu */}
-            <div className="space-y-6 pt-4">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">2. Chi tiết công việc</h3>
+              {/* Nhóm 2: Chi tiết & Yêu cầu */}
+              <div className="space-y-6 pt-4">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">2. Chi tiết công việc</h3>
+                
+                <RichTextEditor
+                  label="Mô tả công việc (Job Description)"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
+                />
+
+                <RichTextEditor
+                  label="Yêu cầu ứng viên (Requirements)"
+                  name="requirements"
+                  value={formData.requirements}
+                  onChange={handleChange}
+                  required
+                  placeholder="- Tốt nghiệp chuyên ngành CNTT&#10;- Có kinh nghiệm 2 năm với ReactJS&#10;- Kỹ năng làm việc nhóm tốt..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end pt-8 border-t border-gray-100">
+                <Button 
+                  type="submit" 
+                  isLoading={isLoading}
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 transition-all font-semibold"
+                >
+                  Gửi Yêu Cầu Kiểm Duyệt
+                </Button>
+              </div>
               
-              <RichTextEditor
-                label="Mô tả công việc (Job Description)"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                placeholder="Mô tả chi tiết các công việc, nhiệm vụ hàng ngày ứng viên cần thực hiện..."
-              />
+            </form>
 
-              <RichTextEditor
-                label="Yêu cầu ứng viên (Requirements)"
-                name="requirements"
-                value={formData.requirements}
-                onChange={handleChange}
-                required
-                placeholder="- Tốt nghiệp chuyên ngành CNTT&#10;- Có kinh nghiệm 2 năm với ReactJS&#10;- Kỹ năng làm việc nhóm tốt..."
+            <div className="lg:col-span-6">
+              <JobPreviewCard
+                formData={formData}
+                companyName={companyInfo.companyName}
+                logoUrl={companyInfo.logoUrl}
               />
             </div>
-
-            {/* Actions */}
-            <div className="flex justify-end pt-8 border-t border-gray-100">
-              <Button 
-                type="submit" 
-                isLoading={isLoading}
-                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 transition-all font-semibold"
-              >
-                Gửi Yêu Cầu Kiểm Duyệt
-              </Button>
-            </div>
-            
-          </form>
+          </div>
         ) : (
           <div className="py-20 text-center text-gray-500 font-medium">
             Không tìm thấy thông tin doanh nghiệp.

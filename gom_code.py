@@ -1,33 +1,24 @@
 import os
 
-# Danh sách các file Backend và Frontend cần thiết cho tính năng Employer xem hồ sơ Candidate
+# Danh sách các file cần thiết để làm tính năng Live Preview cho form Job (Employer)
 TARGET_FILES = [
-    # ================= 1. FRONTEND =================
-    "frontend-app/src/features/employer/employerService.js",
-    "frontend-app/src/router/index.jsx",
-    "frontend-app/src/components/layout/EmployerLayout/index.jsx",
-    "frontend-app/src/components/layout/MainLayout/index.jsx",
-    "frontend-app/src/components/layout/Navbar/index.jsx",
-    "frontend-app/src/components/layout/AuthLayout/index.jsx", # Để bạn đối chiếu bảng màu chuẩn xanh dương/teal
+    # Bắt buộc — để preview khớp với trang thật và xử lý Rich Text chuẩn xác
+    "frontend-app/src/pages/public/JobDetailPage/index.jsx",
+    "frontend-app/src/components/common/RichTextEditor/index.jsx",
     
-    # ================= 2. BACKEND =================
-    "backend-core/api/src/main/java/com/worklify/api/controller/employer/EmployerController.java",
-    "backend-core/application/src/main/java/com/worklify/application/employer/service/impl/EmployerServiceImpl.java",
-    "backend-core/api/src/main/java/com/worklify/api/controller/candidate/CandidateController.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CandidateServiceImpl.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CandidateProfileFullResponse.java",
-    "backend-core/application/src/main/java/com/worklify/application/candidate/dto/CandidateProfileResponse.java",
-
-    # ================= 3. THAM KHẢO UI =================
-    "frontend-app/src/pages/candidate/ProfilePage/index.jsx",
-    "frontend-app/src/pages/candidate/CVManagerPage/index.jsx" # Trang chuẩn màu để copy token, spacing, class
+    # Nên có — để đồng bộ UI và xem xét tái sử dụng thành Component chung
+    "frontend-app/src/pages/employer/JobEditPage/index.jsx",
+    "frontend-app/src/components/shared/JobCard/index.jsx",
+    
+    # Backend DTO — confirm data fields (logo, company name, requirements,...)
+    "backend-core/application/src/main/java/com/worklify/application/job/dto/JobPostingResponse.java"
 ]
 
-OUTPUT_FILE = "exported_employer_candidate_view.md"
+OUTPUT_FILE = "exported_job_preview_context.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# Codebase Context: Tính năng Employer Search & View Candidate Profile\n\n")
+        outfile.write("# Codebase Context: Tính năng Live Preview Job (Employer)\n\n")
         
         for filepath in TARGET_FILES:
             append_file_content(filepath, outfile)
@@ -38,7 +29,7 @@ def append_file_content(filepath, outfile):
         
         # Xác định extension để highlight syntax
         ext = filepath.split('.')[-1].lower()
-        syntax = "java" if ext == "java" else "javascript" if ext in ["js", "jsx"] else "xml" if ext == "xml" else "text"
+        syntax = "java" if ext == "java" else "javascript" if ext in ["js", "jsx"] else "text"
         
         outfile.write(f"```{syntax}\n")
         try:

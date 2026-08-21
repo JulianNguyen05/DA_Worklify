@@ -15,17 +15,45 @@ const GRID_MARGIN = [16, 16]; // [x, y] khoảng cách giữa các block (px)
 const STORAGE_PREFIX = 'worklify_profile_grid_v1';
 
 /**
- * Sinh layout lưới mặc định (x, y, w, h) cho các block CHƯA từng được người
- * dùng tự sắp xếp. Dùng compactType="vertical" của RGL nên chỉ cần set x/w
- * hợp lý theo hàng ngang — RGL tự dồn các item lên trên khi có khoảng trống.
+ * [SỬA] Layout mặc định giờ gán mỗi block vào 1 trong 3 CỘT CỐ ĐỊNH (x = 0/4/8,
+ * mỗi cột rộng 4/12) thay vì để cursorX trôi tự do trên hàng ngang. Trước đây
+ * mọi block đều có y:0 và x cộng dồn theo w rồi wrap khi vượt COLS — khiến các
+ * block không thẳng cột, compactType="vertical" dồn lệch tạo khoảng trắng lớn
+ * và thứ tự lộn xộn ngay lần đầu hiển thị (khi user chưa từng tự kéo-thả).
+ * Giờ y được cộng dồn RIÊNG theo từng cột nên các block trong cùng 1 cột xếp
+ * chồng gọn gàng ngay từ đầu.
  */
+const DEFAULT_COLUMN_MAP = {
+  AVATAR: 0,
+  PERSONAL_INFO: 0,
+  SOCIAL_LINKS: 0,
+  SKILL: 0,
+  EDUCATION: 4,
+  EXPERIENCE: 4,
+  PROJECT: 4,
+  CERTIFICATION: 8,
+  AWARD: 8,
+  LANGUAGE: 8,
+  HOBBY: 8,
+  ACTIVITY: 8,
+};
+const COLUMN_WIDTH = 4;
+
 const buildDefaultGrid = (layoutItems) => {
-  let cursorX = 0;
+  const cursorY = { 0: 0, 4: 0, 8: 0 };
   return layoutItems.map((item) => {
     const size = DEFAULT_GRID_SIZE[item.blockType] || { w: 4, h: 6 };
-    if (cursorX + size.w > COLS) cursorX = 0;
-    const gridItem = { i: item.blockType, x: cursorX, y: 0, w: size.w, h: size.h, minW: 2, minH: 3 };
-    cursorX += size.w;
+    const col = DEFAULT_COLUMN_MAP[item.blockType] ?? 0;
+    const gridItem = {
+      i: item.blockType,
+      x: col,
+      y: cursorY[col],
+      w: COLUMN_WIDTH,
+      h: size.h,
+      minW: 2,
+      minH: 3,
+    };
+    cursorY[col] += size.h;
     return gridItem;
   });
 };
