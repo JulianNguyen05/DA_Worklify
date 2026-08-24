@@ -14,6 +14,7 @@ import {
   Clock,
   User,
   Briefcase,
+  Eye,
 } from "lucide-react";
 
 export default function ApplicationDetailPage() {
@@ -71,6 +72,18 @@ export default function ApplicationDetailPage() {
     } catch (error) {
       setStatusMsg({ type: "error", message: "Cập nhật trạng thái thất bại." });
     }
+  };
+
+  // [MỚI] Điều hướng sang trang xem hồ sơ đầy đủ của ứng viên
+  const handleViewProfile = () => {
+    if (!application?.candidateId) {
+      setStatusMsg({
+        type: "error",
+        message: "Không xác định được ứng viên để xem hồ sơ.",
+      });
+      return;
+    }
+    navigate(`/employer/candidates/${application.candidateId}`);
   };
 
   const getStatusBadge = (status) => {
@@ -177,6 +190,14 @@ export default function ApplicationDetailPage() {
               {application.jobTitle || "Chưa cập nhật"}
             </span>
           </p>
+
+          {/* [MỚI] Nút xem hồ sơ đầy đủ của ứng viên */}
+          <button
+            onClick={handleViewProfile}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-300 rounded-xl text-sm font-bold transition-colors"
+          >
+            <User className="w-4 h-4" /> Xem hồ sơ ứng viên
+          </button>
         </div>
 
         <div className="flex flex-col items-end gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100 min-w-[200px]">

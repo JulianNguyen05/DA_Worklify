@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: mysql:3306
--- Generation Time: Aug 20, 2026 at 03:17 AM
+-- Generation Time: Aug 24, 2026 at 01:35 AM
 -- Server version: 8.4.8
 -- PHP Version: 8.3.30
 
@@ -68,7 +68,17 @@ CREATE TABLE `candidate_activities` (
 --
 
 INSERT INTO `candidate_activities` (`id`, `candidate_id`, `organization`, `role`, `start_date`, `end_date`, `is_current`, `description`, `display_order`) VALUES
-(3, 1, 'Cộng đồng IT Vietnam', 'Speaker', '2021-06-01', NULL, 0, 'Tham gia làm diễn giả chia sẻ về kinh nghiệm tối ưu hoá hệ thống chịu tải cao.', 0);
+(3, 1, 'Cộng đồng IT Vietnam', 'Speaker', '2021-06-01', NULL, 0, 'Tham gia làm diễn giả chia sẻ về kinh nghiệm tối ưu hoá hệ thống chịu tải cao.', 0),
+(4, 3, 'ReactVN Community', 'Contributor', '2022-01-01', NULL, 1, 'Đóng góp bài viết kỹ thuật và tổ chức workshop ReactJS cho cộng đồng.', 0),
+(5, 4, 'Java User Group Vietnam', 'Member', '2020-05-01', NULL, 1, 'Tham gia các buổi meetup chia sẻ kiến thức về Spring Boot và kiến trúc hệ thống.', 0),
+(6, 5, 'UX Vietnam Meetup', 'Speaker', '2023-03-01', NULL, 1, 'Chia sẻ chủ đề nghiên cứu người dùng tại các buổi meetup thiết kế.', 0),
+(7, 6, 'AWS User Group Hanoi', 'Organizer', '2021-09-01', NULL, 1, 'Tổ chức các buổi chia sẻ kỹ thuật hàng tháng về điện toán đám mây.', 0),
+(8, 7, 'Data Science Vietnam', 'Member', '2022-05-01', NULL, 1, 'Tham gia các buổi thảo luận chuyên đề về phân tích dữ liệu và machine learning.', 0),
+(9, 8, 'Flutter Vietnam Community', 'Contributor', '2022-03-01', NULL, 1, 'Viết bài chia sẻ kinh nghiệm tối ưu hiệu năng ứng dụng Flutter.', 0),
+(10, 9, 'Vietnam Software Testing Board', 'Member', '2020-06-01', NULL, 1, 'Tham gia biên soạn tài liệu đào tạo kiểm thử phần mềm cơ bản.', 0),
+(11, 10, 'Product Vietnam Community', 'Speaker', '2021-02-01', NULL, 1, 'Chia sẻ kinh nghiệm phát triển sản phẩm tài chính số tại các sự kiện cộng đồng.', 0),
+(12, 11, 'CLB Lập trình Đại học Cần Thơ', 'Thành viên', '2021-09-01', NULL, 1, 'Tham gia các buổi sinh hoạt chia sẻ kiến thức lập trình cùng bạn bè trong CLB.', 0),
+(13, 12, 'HR Vietnam Network', 'Thành viên tích cực', '2019-04-01', NULL, 1, 'Tham gia các sự kiện kết nối chuyên viên nhân sự trong ngành công nghệ.', 0);
 
 -- --------------------------------------------------------
 
@@ -91,7 +101,17 @@ CREATE TABLE `candidate_awards` (
 --
 
 INSERT INTO `candidate_awards` (`id`, `candidate_id`, `title`, `issuer`, `awarded_date`, `description`, `display_order`) VALUES
-(3, 1, 'Nhân viên xuất sắc năm 2023', 'Global E-commerce', '2023-12-25', 'Vinh danh cá nhân có đóng góp kỹ thuật quan trọng nhất trong năm.', 0);
+(3, 1, 'Nhân viên xuất sắc năm 2023', 'Global E-commerce', '2023-12-25', 'Vinh danh cá nhân có đóng góp kỹ thuật quan trọng nhất trong năm.', 0),
+(4, 3, 'Nhân viên có sáng kiến tốt nhất Quý 2/2023', 'Vietnam Digital Agency', '2023-07-01', 'Đề xuất và triển khai hệ thống design token giúp đồng bộ UI toàn công ty.', 0),
+(5, 4, 'Giải Nhì Hackathon Fintech Việt Nam 2022', 'Ban tổ chức Hackathon Fintech VN', '2022-10-20', 'Xây dựng giải pháp chống gian lận giao dịch bằng machine learning trong 48 giờ.', 0),
+(6, 5, 'Giải Nhất cuộc thi Thiết kế UI Sinh viên toàn quốc 2020', 'Hội Mỹ thuật Việt Nam', '2020-11-15', 'Thiết kế ứng dụng hỗ trợ người khuyết tật tiếp cận dịch vụ công.', 0),
+(7, 6, 'Đội thi xuất sắc nhất AWS Hackathon 2022', 'Amazon Web Services Vietnam', '2022-08-15', 'Xây dựng giải pháp auto-scaling tiết kiệm 35% chi phí hạ tầng cloud.', 0),
+(8, 7, 'Nhân viên xuất sắc Quý 4/2023', 'Shopee Vietnam', '2024-01-10', 'Đóng góp mô hình dự báo giúp giảm 20% tồn kho dư thừa.', 0),
+(9, 8, 'Giải Ba cuộc thi Mobile App Innovation 2023', 'Sở Khoa học Công nghệ Đà Nẵng', '2023-11-05', 'Ứng dụng hỗ trợ nông dân theo dõi giá nông sản theo thời gian thực.', 0),
+(10, 9, 'Đội QA xuất sắc nhất năm 2023', 'KMS Technology', '2023-12-20', 'Đạt tỷ lệ phát hiện lỗi sớm cao nhất trong số các dự án của công ty.', 0),
+(11, 10, 'Sản phẩm xuất sắc của năm 2021', 'Tiki Corporation', '2021-12-15', 'TikiXu được vinh danh là sản phẩm có tốc độ tăng trưởng tốt nhất năm.', 0),
+(12, 11, 'Học bổng Khuyến khích học tập học kỳ 2 năm 2023', 'Đại học Cần Thơ', '2023-08-01', 'Đạt thành tích học tập xuất sắc trong học kỳ.', 0),
+(13, 12, 'Chuyên viên tuyển dụng xuất sắc năm 2022', 'Employment Hero Vietnam', '2022-12-10', 'Hoàn thành vượt chỉ tiêu tuyển dụng 130% trong năm.', 0);
 
 -- --------------------------------------------------------
 
@@ -116,7 +136,17 @@ CREATE TABLE `candidate_certifications` (
 --
 
 INSERT INTO `candidate_certifications` (`id`, `candidate_id`, `name`, `issuing_org`, `issue_date`, `expiry_date`, `credential_id`, `credential_url`, `display_order`) VALUES
-(2, 1, 'AWS Certified Solutions Architect', 'Amazon Web Services', '2023-05-10', '2026-05-10', 'AWS-12345-XYZ', 'https://aws.amazon.com/verification', 1);
+(2, 1, 'AWS Certified Solutions Architect', 'Amazon Web Services', '2023-05-10', '2026-05-10', 'AWS-12345-XYZ', 'https://aws.amazon.com/verification', 1),
+(3, 3, 'Meta Front-End Developer Professional Certificate', 'Meta (Coursera)', '2022-04-01', NULL, 'META-FE-88213', NULL, 1),
+(4, 4, 'Oracle Certified Professional: Java SE 11 Developer', 'Oracle', '2021-09-15', '2027-09-15', 'OCP-JAVA11-55421', NULL, 1),
+(5, 5, 'Google UX Design Professional Certificate', 'Google (Coursera)', '2021-05-20', NULL, 'GOOGLE-UX-44192', NULL, 1),
+(6, 6, 'AWS Certified DevOps Engineer - Professional', 'Amazon Web Services', '2022-11-01', '2025-11-01', 'AWS-DEVOPS-77102', NULL, 1),
+(7, 7, 'Google Data Analytics Professional Certificate', 'Google (Coursera)', '2021-03-10', NULL, 'GOOGLE-DA-33871', NULL, 1),
+(8, 8, 'Flutter Certified Application Developer', 'Google Developers', '2022-06-01', NULL, 'FLUTTER-CAD-19203', NULL, 1),
+(9, 9, 'ISTQB Certified Tester Foundation Level', 'ISTQB', '2019-05-15', NULL, 'ISTQB-CTFL-60214', NULL, 1),
+(10, 10, 'Certified Scrum Product Owner (CSPO)', 'Scrum Alliance', '2020-03-01', '2026-03-01', 'CSPO-30122', NULL, 1),
+(11, 11, 'Node.js Application Development', 'freeCodeCamp', '2023-08-01', NULL, 'FCC-NODE-71029', NULL, 1),
+(12, 12, 'LinkedIn Certified Professional Recruiter', 'LinkedIn Learning', '2021-02-01', NULL, 'LI-CPR-90233', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -145,7 +175,17 @@ CREATE TABLE `candidate_educations` (
 --
 
 INSERT INTO `candidate_educations` (`id`, `candidate_id`, `school_name`, `major`, `degree`, `start_date`, `end_date`, `is_current`, `gpa`, `description`, `display_order`, `created_at`, `updated_at`) VALUES
-(2, 1, 'Đại học Khoa học Tự nhiên TP.HCM', 'Công nghệ thông tin', 'Đại học', '2014-09-01', '2018-07-30', 0, 3.40, 'Tốt nghiệp loại Khá. Từng đạt giải Nhì cuộc thi Hackathon trường.', 0, '2026-07-20 01:39:10', '2026-07-30 02:55:54');
+(2, 1, 'Đại học Khoa học Tự nhiên TP.HCM', 'Công nghệ thông tin', 'Đại học', '2014-09-01', '2018-07-30', 0, 3.40, 'Tốt nghiệp loại Khá. Từng đạt giải Nhì cuộc thi Hackathon trường.', 0, '2026-07-20 01:39:10', '2026-07-30 02:55:54'),
+(3, 3, 'Đại học Bách Khoa TP.HCM', 'Khoa học máy tính', 'Đại học', '2016-09-01', '2020-06-30', 0, 3.20, 'Tốt nghiệp loại Giỏi. Thành viên CLB Lập trình trường.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(4, 4, 'Đại học Công nghệ Thông tin - ĐHQG TP.HCM', 'Kỹ thuật phần mềm', 'Đại học', '2015-09-01', '2019-06-30', 0, 3.35, 'Đồ án tốt nghiệp đạt loại Xuất sắc, đề tài hệ thống đặt vé trực tuyến.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(5, 5, 'Đại học Kiến trúc TP.HCM', 'Thiết kế đồ hoạ', 'Đại học', '2017-09-01', '2021-06-30', 0, 3.50, 'Tốt nghiệp loại Giỏi, giải Nhất cuộc thi thiết kế UI sinh viên toàn quốc 2020.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(6, 6, 'Học viện Công nghệ Bưu chính Viễn thông', 'Công nghệ thông tin', 'Đại học', '2014-09-01', '2018-06-30', 0, 3.10, 'Tốt nghiệp loại Khá, chuyên ngành mạng máy tính và truyền thông.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(7, 7, 'Đại học Kinh tế Quốc dân', 'Thống kê kinh tế', 'Đại học', '2016-09-01', '2020-06-30', 0, 3.45, 'Tốt nghiệp loại Giỏi, luận văn về mô hình dự báo doanh thu bán lẻ.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(8, 8, 'Đại học Bách Khoa - Đại học Đà Nẵng', 'Công nghệ thông tin', 'Đại học', '2017-09-01', '2021-06-30', 0, 3.15, 'Tốt nghiệp loại Khá, đồ án tốt nghiệp ứng dụng đặt đồ ăn đa nền tảng.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(9, 9, 'Đại học Duy Tân', 'Kỹ thuật phần mềm', 'Đại học', '2015-09-01', '2019-06-30', 0, 3.25, 'Tốt nghiệp loại Khá, chứng chỉ ISTQB Foundation Level trong năm cuối.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(10, 10, 'Đại học Ngoại thương TP.HCM', 'Quản trị kinh doanh', 'Đại học', '2011-09-01', '2015-06-30', 0, 3.30, 'Tốt nghiệp loại Khá, từng là Chủ tịch CLB Khởi nghiệp trường.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(11, 11, 'Đại học Cần Thơ', 'Công nghệ thông tin', 'Đại học', '2020-09-01', '2024-06-30', 0, 3.05, 'Tốt nghiệp loại Khá, đồ án tốt nghiệp hệ thống quản lý thư viện trực tuyến.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(12, 12, 'Đại học Lao động Xã hội', 'Quản trị nhân lực', 'Đại học', '2013-09-01', '2017-06-30', 0, 3.10, 'Tốt nghiệp loại Khá, thực tập tại phòng nhân sự một công ty công nghệ trong năm cuối.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00');
 
 -- --------------------------------------------------------
 
@@ -175,7 +215,26 @@ CREATE TABLE `candidate_experiences` (
 
 INSERT INTO `candidate_experiences` (`id`, `candidate_id`, `company_name`, `position`, `employment_type`, `location`, `start_date`, `end_date`, `is_current`, `description`, `display_order`, `created_at`, `updated_at`) VALUES
 (2, 1, 'Tech Asia Solutions', 'Backend Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2018-08-01', '2022-01-31', 0, 'Phát triển RESTful API cho ứng dụng di động. Tối ưu hoá truy vấn MySQL giúp giảm 30% thời gian load.', 0, '2026-07-20 01:39:10', '2026-07-20 02:22:31'),
-(3, 1, 'Global E-commerce', 'Senior Fullstack Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2022-02-01', NULL, 1, 'Leader nhóm 4 thành viên. Xây dựng kiến trúc microservices và áp dụng CI/CD cho dự án ERP.', 1, '2026-07-20 01:39:10', '2026-07-20 01:39:10');
+(3, 1, 'Global E-commerce', 'Senior Fullstack Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2022-02-01', NULL, 1, 'Leader nhóm 4 thành viên. Xây dựng kiến trúc microservices và áp dụng CI/CD cho dự án ERP.', 1, '2026-07-20 01:39:10', '2026-07-20 01:39:10'),
+(4, 3, 'FPT Software', 'Frontend Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2020-08-01', '2022-12-31', 0, 'Phát triển giao diện cho hệ thống quản lý nội bộ bằng ReactJS, Redux.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(5, 3, 'Vietnam Digital Agency', 'Senior Frontend Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2023-01-01', NULL, 1, 'Xây dựng thư viện component dùng chung cho 5 dự án, giảm 40% thời gian phát triển UI mới.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(6, 4, 'Tiki Corporation', 'Backend Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2019-08-01', '2022-05-31', 0, 'Phát triển và bảo trì hệ thống thanh toán nội bộ phục vụ hàng triệu giao dịch/ngày.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(7, 4, 'MoMo (M_Service)', 'Senior Backend Developer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2022-06-01', NULL, 1, 'Thiết kế kiến trúc microservices cho module ví điện tử, áp dụng Kafka cho xử lý sự kiện bất đồng bộ.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(8, 5, 'Base.vn', 'UI/UX Designer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2021-07-01', '2023-08-31', 0, 'Thiết kế giao diện cho các sản phẩm SaaS quản trị doanh nghiệp, thực hiện user testing định kỳ.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(9, 5, 'Haravan', 'Senior UI/UX Designer', 'FULL_TIME', 'TP. Hồ Chí Minh', '2023-09-01', NULL, 1, 'Dẫn dắt thiết kế hệ thống design system dùng chung cho toàn bộ nền tảng thương mại điện tử.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(10, 6, 'VNG Corporation', 'System Administrator', 'FULL_TIME', 'Hà Nội', '2018-08-01', '2021-03-31', 0, 'Quản trị hệ thống server on-premise, triển khai giám sát bằng Zabbix và Grafana.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(11, 6, 'Momo Fintech', 'DevOps Engineer', 'FULL_TIME', 'Hà Nội', '2021-04-01', NULL, 1, 'Xây dựng pipeline CI/CD trên GitLab CI, quản lý cụm Kubernetes phục vụ 200+ microservices.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(12, 7, 'Vingroup', 'Data Analyst', 'FULL_TIME', 'Hà Nội', '2020-07-01', '2022-10-31', 0, 'Phân tích dữ liệu bán hàng chuỗi siêu thị, xây dựng báo cáo Power BI cho ban lãnh đạo.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(13, 7, 'Shopee Vietnam', 'Senior Data Analyst', 'FULL_TIME', 'Hà Nội', '2022-11-01', NULL, 1, 'Xây dựng mô hình phân khúc khách hàng và dự báo nhu cầu tồn kho theo mùa vụ.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(14, 8, 'Axon Active Vietnam', 'Mobile Developer', 'FULL_TIME', 'Đà Nẵng', '2021-08-01', '2023-04-30', 0, 'Phát triển ứng dụng Flutter cho khách hàng châu Âu trong lĩnh vực logistics.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(15, 8, 'Got It Vietnam', 'Senior Mobile Developer', 'FULL_TIME', 'Đà Nẵng', '2023-05-01', NULL, 1, 'Dẫn dắt đội mobile 3 người xây dựng lại app học tập với kiến trúc Clean Architecture.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(16, 9, 'LogiGear Vietnam', 'Manual Tester', 'FULL_TIME', 'Đà Nẵng', '2019-07-01', '2021-09-30', 0, 'Thực hiện kiểm thử chức năng và kiểm thử hồi quy cho hệ thống quản lý chuỗi cung ứng.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(17, 9, 'KMS Technology', 'Senior QA Automation Engineer', 'FULL_TIME', 'Đà Nẵng', '2021-10-01', NULL, 1, 'Xây dựng framework kiểm thử tự động bằng Selenium và Cypress, tích hợp vào pipeline CI/CD.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(18, 10, 'Grab Vietnam', 'Associate Product Manager', 'FULL_TIME', 'TP. Hồ Chí Minh', '2015-08-01', '2019-06-30', 0, 'Quản lý tính năng đặt xe cho thị trường Việt Nam, phối hợp đội ngũ kỹ thuật và vận hành.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(19, 10, 'Tiki Corporation', 'Senior Product Manager', 'FULL_TIME', 'TP. Hồ Chí Minh', '2019-07-01', NULL, 1, 'Dẫn dắt sản phẩm ví điện tử TikiXu, tăng trưởng người dùng hoạt động 150% sau 1 năm.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(20, 11, 'CanTho Tech Solutions', 'Thực tập sinh Backend', 'INTERNSHIP', 'Cần Thơ', '2023-12-01', '2024-05-31', 0, 'Hỗ trợ phát triển API RESTful cho hệ thống quản lý bán hàng nội bộ bằng Node.js/Express.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(21, 12, 'NashTech Vietnam', 'Nhân viên Tuyển dụng', 'FULL_TIME', 'Hà Nội', '2017-08-01', '2020-11-30', 0, 'Tuyển dụng vị trí kỹ sư phần mềm, quản lý toàn bộ quy trình từ sàng lọc CV đến onboarding.', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(22, 12, 'Employment Hero Vietnam', 'Senior Talent Acquisition Specialist', 'FULL_TIME', 'Hà Nội', '2020-12-01', NULL, 1, 'Xây dựng chiến lược tuyển dụng công nghệ, giảm 25% thời gian tuyển dụng trung bình.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00');
 
 -- --------------------------------------------------------
 
@@ -196,7 +255,27 @@ CREATE TABLE `candidate_hobbies` (
 
 INSERT INTO `candidate_hobbies` (`id`, `candidate_id`, `name`, `display_order`) VALUES
 (3, 1, 'Đọc sách công nghệ', 1),
-(4, 1, 'Chơi Bida', 0);
+(4, 1, 'Chơi Bida', 0),
+(5, 3, 'Vẽ minh hoạ số', 0),
+(6, 3, 'Chạy bộ', 1),
+(7, 4, 'Chơi cờ vua', 0),
+(8, 4, 'Nghe podcast công nghệ', 1),
+(9, 5, 'Nhiếp ảnh đường phố', 0),
+(10, 5, 'Vẽ tranh màu nước', 1),
+(11, 6, 'Leo núi', 0),
+(12, 6, 'Sửa chữa máy tính', 1),
+(13, 7, 'Đọc sách kinh tế', 0),
+(14, 7, 'Yoga', 1),
+(15, 8, 'Chơi bóng đá', 0),
+(16, 8, 'Chơi game di động', 1),
+(17, 9, 'Nấu ăn', 0),
+(18, 9, 'Trồng cây cảnh', 1),
+(19, 10, 'Đọc sách kinh doanh', 0),
+(20, 10, 'Chơi golf', 1),
+(21, 11, 'Chơi bóng chuyền', 0),
+(22, 11, 'Xem phim', 1),
+(23, 12, 'Du lịch', 0),
+(24, 12, 'Đọc sách tâm lý học', 1);
 
 -- --------------------------------------------------------
 
@@ -217,7 +296,17 @@ CREATE TABLE `candidate_languages` (
 --
 
 INSERT INTO `candidate_languages` (`id`, `candidate_id`, `language_id`, `proficiency`, `display_order`) VALUES
-(2, 1, 1, 'Thành thạo', 1);
+(2, 1, 1, 'Thành thạo', 1),
+(3, 3, 1, 'Thành thạo', 1),
+(4, 4, 1, 'Thành thạo', 1),
+(5, 5, 1, 'Thành thạo', 1),
+(6, 6, 1, 'Thành thạo', 1),
+(7, 7, 1, 'Thành thạo', 1),
+(8, 8, 1, 'Thành thạo', 1),
+(9, 9, 1, 'Thành thạo', 1),
+(10, 10, 1, 'Thành thạo', 1),
+(11, 11, 1, 'Thành thạo', 1),
+(12, 12, 1, 'Thành thạo', 1);
 
 -- --------------------------------------------------------
 
@@ -248,7 +337,17 @@ CREATE TABLE `candidate_profiles` (
 
 INSERT INTO `candidate_profiles` (`id`, `user_id`, `full_name`, `avatar_url`, `headline`, `phone`, `email_contact`, `gender`, `dob`, `address`, `website_url`, `linkedin_url`, `github_url`, `summary`) VALUES
 (1, 1, 'Nguyễn HữuTrọng', '/uploads/avatars/1_2854679.jpg', 'Senior Fullstack Developer', '0901234567', 'trong.nguyen@email.com', 'Nam', '1996-05-20', 'Quận 1, TP. Hồ Chí Minh', '', '', 'https://github.com/JulianNguyen05', 'Lập trình viên Fullstack với hơn 5 năm kinh nghiệm phát triển các ứng dụng web. Có kinh nghiệm với Laravel, VueJS và thiết kế hệ thống tối ưu hiệu suất cao.'),
-(2, 2, 'admin', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(2, 2, 'admin', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(3, 6, 'Lê Thị Anh', NULL, 'Frontend Developer', '0912345601', 'lethianh01@gmail.com', 'Nữ', '1998-03-12', 'Quận 3, TP. Hồ Chí Minh', '', 'https://linkedin.com/in/lethianh01', 'https://github.com/lethianh01', 'Frontend Developer với 3 năm kinh nghiệm xây dựng giao diện web hiện đại bằng ReactJS và TypeScript. Yêu thích tối ưu UX/UI và hiệu năng ứng dụng.'),
+(4, 7, 'Trần Văn Minh', NULL, 'Backend Developer (Java)', '0912345602', 'tranvanminh02@gmail.com', 'Nam', '1997-11-05', 'Quận 7, TP. Hồ Chí Minh', '', 'https://linkedin.com/in/tranvanminh02', 'https://github.com/tranvanminh02', 'Backend Developer chuyên sâu Java Spring Boot, có kinh nghiệm thiết kế hệ thống microservices và tối ưu hiệu năng truy vấn cơ sở dữ liệu lớn.'),
+(5, 8, 'Phạm Thị Hương', NULL, 'UI/UX Designer', '0912345603', 'phamthihuong03@gmail.com', 'Nữ', '1999-02-18', 'Quận Bình Thạnh, TP. Hồ Chí Minh', '', 'https://linkedin.com/in/phamthihuong03', 'https://github.com/phamthihuong03', 'UI/UX Designer với niềm đam mê tạo ra trải nghiệm người dùng trực quan, dễ tiếp cận, dựa trên nghiên cứu người dùng và kiểm thử A/B.'),
+(6, 9, 'Hoàng Văn Cường', NULL, 'DevOps Engineer', '0912345604', 'hoangvancuong04@gmail.com', 'Nam', '1996-07-22', 'Quận Cầu Giấy, Hà Nội', '', 'https://linkedin.com/in/hoangvancuong04', 'https://github.com/hoangvancuong04', 'DevOps Engineer với kinh nghiệm triển khai hạ tầng cloud-native, CI/CD pipeline và giám sát hệ thống quy mô lớn trên AWS/Kubernetes.'),
+(7, 10, 'Nguyễn Thị Linh', NULL, 'Data Analyst', '0912345605', 'nguyenthilinh05@gmail.com', 'Nữ', '1998-09-30', 'Quận Thanh Xuân, Hà Nội', '', 'https://linkedin.com/in/nguyenthilinh05', 'https://github.com/nguyenthilinh05', 'Data Analyst với kinh nghiệm phân tích dữ liệu kinh doanh, xây dựng dashboard báo cáo và mô hình dự báo hỗ trợ ra quyết định.'),
+(8, 11, 'Đặng Quốc Bảo', NULL, 'Mobile Developer (Flutter)', '0912345606', 'dangquocbao06@gmail.com', 'Nam', '1999-01-14', 'Quận Hải Châu, Đà Nẵng', '', 'https://linkedin.com/in/dangquocbao06', 'https://github.com/dangquocbao06', 'Mobile Developer chuyên phát triển ứng dụng đa nền tảng bằng Flutter, có kinh nghiệm tích hợp Firebase và tối ưu hiệu năng ứng dụng.'),
+(9, 12, 'Vũ Thị Quỳnh', NULL, 'QA/Tester Engineer', '0912345607', 'vuthiquynh07@gmail.com', 'Nữ', '1997-05-08', 'Quận Ngũ Hành Sơn, Đà Nẵng', '', 'https://linkedin.com/in/vuthiquynh07', 'https://github.com/vuthiquynh07', 'QA Engineer với kinh nghiệm kiểm thử thủ công và tự động hoá kiểm thử, đảm bảo chất lượng phần mềm trong quy trình Agile/Scrum.'),
+(10, 13, 'Bùi Thanh Tùng', NULL, 'Product Manager', '0912345608', 'buithanhtung08@gmail.com', 'Nam', '1993-12-02', 'Quận 2, TP. Hồ Chí Minh', '', 'https://linkedin.com/in/buithanhtung08', 'https://github.com/buithanhtung08', 'Product Manager với hơn 6 năm kinh nghiệm dẫn dắt sản phẩm công nghệ, từ nghiên cứu thị trường đến phát triển và ra mắt sản phẩm.'),
+(11, 14, 'Đoàn Minh Khôi', NULL, 'Fresher Backend Developer', '0912345609', 'doanminhkhoi09@gmail.com', 'Nam', '2002-04-25', 'Quận Ninh Kiều, Cần Thơ', '', 'https://linkedin.com/in/doanminhkhoi09', 'https://github.com/doanminhkhoi09', 'Sinh viên mới tốt nghiệp ngành Công nghệ thông tin, đam mê phát triển backend với Node.js và mong muốn học hỏi trong môi trường chuyên nghiệp.'),
+(12, 15, 'Ngô Phương Thảo', NULL, 'HR Recruiter', '0912345610', 'ngophuongthao10@gmail.com', 'Nữ', '1995-06-19', 'Quận Đống Đa, Hà Nội', '', 'https://linkedin.com/in/ngophuongthao10', '', 'Chuyên viên tuyển dụng với 5 năm kinh nghiệm trong lĩnh vực công nghệ, chuyên tuyển dụng vị trí kỹ thuật cho các công ty phần mềm và startup.');
 
 -- --------------------------------------------------------
 
@@ -294,7 +393,127 @@ INSERT INTO `candidate_profile_layouts` (`id`, `candidate_id`, `block_type`, `po
 (21, 2, 'AWARD', 8, 1, '2026-08-20 03:09:50', '2026-08-20 03:09:50'),
 (22, 2, 'ACTIVITY', 9, 1, '2026-08-20 03:09:50', '2026-08-20 03:09:50'),
 (23, 2, 'LANGUAGE', 10, 1, '2026-08-20 03:09:50', '2026-08-20 03:09:50'),
-(24, 2, 'HOBBY', 11, 1, '2026-08-20 03:09:50', '2026-08-20 03:09:50');
+(24, 2, 'HOBBY', 11, 1, '2026-08-20 03:09:50', '2026-08-20 03:09:50'),
+(25, 3, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(26, 3, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(27, 3, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(28, 3, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(29, 3, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(30, 3, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(31, 3, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(32, 3, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(33, 3, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(34, 3, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(35, 3, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(36, 3, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(37, 4, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(38, 4, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(39, 4, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(40, 4, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(41, 4, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(42, 4, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(43, 4, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(44, 4, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(45, 4, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(46, 4, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(47, 4, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(48, 4, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(49, 5, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(50, 5, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(51, 5, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(52, 5, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(53, 5, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(54, 5, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(55, 5, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(56, 5, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(57, 5, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(58, 5, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(59, 5, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(60, 5, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(61, 6, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(62, 6, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(63, 6, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(64, 6, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(65, 6, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(66, 6, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(67, 6, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(68, 6, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(69, 6, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(70, 6, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(71, 6, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(72, 6, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(73, 7, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(74, 7, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(75, 7, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(76, 7, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(77, 7, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(78, 7, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(79, 7, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(80, 7, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(81, 7, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(82, 7, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(83, 7, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(84, 7, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(85, 8, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(86, 8, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(87, 8, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(88, 8, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(89, 8, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(90, 8, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(91, 8, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(92, 8, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(93, 8, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(94, 8, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(95, 8, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(96, 8, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(97, 9, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(98, 9, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(99, 9, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(100, 9, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(101, 9, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(102, 9, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(103, 9, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(104, 9, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(105, 9, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(106, 9, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(107, 9, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(108, 9, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(109, 10, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(110, 10, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(111, 10, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(112, 10, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(113, 10, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(114, 10, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(115, 10, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(116, 10, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(117, 10, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(118, 10, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(119, 10, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(120, 10, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(121, 11, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(122, 11, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(123, 11, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(124, 11, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(125, 11, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(126, 11, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(127, 11, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(128, 11, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(129, 11, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(130, 11, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(131, 11, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(132, 11, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(133, 12, 'AVATAR', 0, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(134, 12, 'EDUCATION', 1, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(135, 12, 'PERSONAL_INFO', 2, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(136, 12, 'SOCIAL_LINKS', 3, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(137, 12, 'EXPERIENCE', 4, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(138, 12, 'SKILL', 5, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(139, 12, 'PROJECT', 6, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(140, 12, 'AWARD', 7, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(141, 12, 'LANGUAGE', 8, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(142, 12, 'CERTIFICATION', 9, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(143, 12, 'HOBBY', 10, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(144, 12, 'ACTIVITY', 11, 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00');
 
 -- --------------------------------------------------------
 
@@ -323,7 +542,17 @@ CREATE TABLE `candidate_projects` (
 --
 
 INSERT INTO `candidate_projects` (`id`, `candidate_id`, `project_name`, `role`, `tech_stack`, `project_url`, `start_date`, `end_date`, `is_current`, `description`, `display_order`, `created_at`, `updated_at`) VALUES
-(2, 1, 'Hệ thống Quản lý Bán hàng nội bộ', 'Tech Lead', 'Laravel, VueJS, Redis, Docker', 'https://github.com/trongnguyen/erp-system', '2023-01-15', '2023-11-20', 0, 'Hệ thống hỗ trợ quản lý kho, nhân sự và chuỗi cung ứng cho 15.000 user.', 1, '2026-07-20 01:39:10', '2026-07-20 01:39:10');
+(2, 1, 'Hệ thống Quản lý Bán hàng nội bộ', 'Tech Lead', 'Laravel, VueJS, Redis, Docker', 'https://github.com/trongnguyen/erp-system', '2023-01-15', '2023-11-20', 0, 'Hệ thống hỗ trợ quản lý kho, nhân sự và chuỗi cung ứng cho 15.000 user.', 1, '2026-07-20 01:39:10', '2026-07-20 01:39:10'),
+(3, 3, 'Website Thương mại điện tử ThờiTrangViệt', 'Frontend Lead', 'ReactJS, TailwindCSS, Redux Toolkit', 'https://github.com/lethianh01/fashion-ecommerce', '2023-03-01', '2023-09-15', 0, 'Xây dựng giao diện responsive cho sàn TMĐT thời trang, tối ưu Core Web Vitals đạt điểm Lighthouse 95+.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(4, 4, 'Hệ thống Ví điện tử Micro-payment', 'Backend Lead', 'Spring Boot, Kafka, Redis, MySQL', 'https://github.com/tranvanminh02/micro-wallet', '2022-09-01', '2023-06-30', 0, 'Xây dựng hệ thống ví điện tử chịu tải cao, đảm bảo tính nhất quán dữ liệu qua Saga pattern.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(5, 5, 'Design System HaraDS', 'Design Lead', 'Figma, Storybook, ReactJS', 'https://github.com/phamthihuong03/hara-design-system', '2024-01-10', '2024-08-20', 0, 'Xây dựng bộ design system thống nhất áp dụng cho 8 sản phẩm nội bộ, tăng tốc độ thiết kế 50%.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(6, 6, 'Nền tảng CI/CD nội bộ K8s-Pipeline', 'DevOps Lead', 'Kubernetes, Docker, GitLab CI, Terraform', 'https://github.com/hoangvancuong04/k8s-pipeline', '2022-02-01', '2022-12-01', 0, 'Chuẩn hoá quy trình build-deploy tự động cho toàn bộ đội ngũ kỹ thuật, giảm 60% thời gian release.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(7, 7, 'Hệ thống Dashboard Phân tích Bán hàng', 'Data Analyst Lead', 'Python, Power BI, SQL, Pandas', 'https://github.com/nguyenthilinh05/sales-dashboard', '2023-02-01', '2023-07-01', 0, 'Xây dựng dashboard theo dõi KPI bán hàng real-time cho hơn 300 cửa hàng.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(8, 8, 'Ứng dụng Đặt xe Công nghệ DriveNow', 'Mobile Lead', 'Flutter, Firebase, Google Maps API', 'https://github.com/dangquocbao06/drivenow-app', '2023-06-01', '2024-01-15', 0, 'Xây dựng ứng dụng đặt xe với tính năng theo dõi tài xế real-time, hỗ trợ 2 nền tảng iOS/Android.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(9, 9, 'Framework Kiểm thử Tự động QA-Auto', 'Automation Lead', 'Selenium, Cypress, Jenkins, Java', 'https://github.com/vuthiquynh07/qa-auto-framework', '2022-04-01', '2022-10-30', 0, 'Xây dựng framework kiểm thử tự động dùng chung, giảm 70% thời gian kiểm thử hồi quy.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(10, 10, 'Nền tảng Ví điện tử TikiXu', 'Product Lead', 'Product Analytics, SQL, Figma, Jira', 'https://github.com/buithanhtung08/tikixu-case-study', '2020-01-01', '2020-12-31', 0, 'Dẫn dắt từ ý tưởng đến ra mắt sản phẩm ví điện tử, đạt 1 triệu người dùng sau 6 tháng.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(11, 11, 'Hệ thống Quản lý Thư viện Trực tuyến', 'Sinh viên thực hiện', 'Node.js, Express, MongoDB, EJS', 'https://github.com/doanminhkhoi09/library-management', '2023-09-01', '2024-05-15', 0, 'Đồ án tốt nghiệp xây dựng hệ thống mượn/trả sách trực tuyến cho thư viện trường.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(12, 12, 'Chương trình Employer Branding 2023', 'Trưởng dự án', 'LinkedIn Recruiter, ATS, Employer Branding', NULL, '2023-01-01', '2023-06-30', 0, 'Xây dựng chiến dịch thương hiệu tuyển dụng giúp tăng 40% ứng viên chất lượng ứng tuyển.', 1, '2026-08-20 03:00:00', '2026-08-20 03:00:00');
 
 -- --------------------------------------------------------
 
@@ -347,7 +576,26 @@ CREATE TABLE `candidate_skills` (
 INSERT INTO `candidate_skills` (`candidate_id`, `skill_id`, `level`, `years_of_ex`, `note`, `display_order`) VALUES
 (1, 2, 'Thành thạo', 5, 'Dùng hàng ngày làm core backend', 1),
 (1, 3, 'Khá', 3, 'Thành thạo Vue 3 & Nuxt', 2),
-(1, 4, 'Thành thạo', 4, 'Biết cách thiết kế schema và đánh index', 3);
+(1, 4, 'Thành thạo', 4, 'Biết cách thiết kế schema và đánh index', 3),
+(3, 5, 'Thành thạo', 3, NULL, 1),
+(3, 6, 'Khá', 2, NULL, 2),
+(4, 2, 'Thành thạo', 6, NULL, 1),
+(4, 4, 'Thành thạo', 6, NULL, 2),
+(5, 3, 'Khá', 2, NULL, 2),
+(5, 6, 'Thành thạo', 4, NULL, 1),
+(6, 4, 'Khá', 3, NULL, 2),
+(6, 7, 'Thành thạo', 5, NULL, 1),
+(7, 2, 'Cơ bản', 1, NULL, 2),
+(7, 4, 'Thành thạo', 4, NULL, 1),
+(8, 2, 'Cơ bản', 1, NULL, 2),
+(8, 3, 'Khá', 3, NULL, 1),
+(9, 2, 'Cơ bản', 2, NULL, 2),
+(9, 3, 'Khá', 2, NULL, 1),
+(10, 2, 'Cơ bản', 1, NULL, 2),
+(10, 4, 'Cơ bản', 2, NULL, 1),
+(11, 2, 'Cơ bản', 1, NULL, 1),
+(11, 3, 'Cơ bản', 1, NULL, 2),
+(12, 4, 'Cơ bản', 1, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -491,9 +739,12 @@ CREATE TABLE `reference_values` (
 
 INSERT INTO `reference_values` (`id`, `type`, `name`) VALUES
 (1, 'LANGUAGE', 'Tiếng Anh'),
+(7, 'SKILL', 'DevOps / Kubernetes'),
 (3, 'SKILL', 'JavaScript / VueJS'),
 (4, 'SKILL', 'MySQL / Tối ưu hoá DB'),
-(2, 'SKILL', 'PHP / Laravel');
+(2, 'SKILL', 'PHP / Laravel'),
+(5, 'SKILL', 'ReactJS / TypeScript'),
+(6, 'SKILL', 'UI/UX Design & Figma');
 
 -- --------------------------------------------------------
 
@@ -587,7 +838,17 @@ INSERT INTO `users` (`id`, `email`, `phone`, `password_hash`, `role`, `status`, 
 (2, 'admin@gmail.com', NULL, '$2a$10$siBh5GXNBBIlX/81fNtR2uba.hSywYGnIV/ZBqr3eDMpOu208ZtiO', 'ADMIN', 'ACTIVE', 0, '2026-07-15 06:46:12', '2026-07-15 06:58:04'),
 (3, 'employer@gmail.com', '0987654321', '$2a$10$dummyhashpassword123', 'EMPLOYER', 'ACTIVE', 0, '2026-07-24 06:39:32', '2026-07-24 06:39:32'),
 (4, 'hr@technova.vn', '0912345678', '$2a$10$dummyhashpassword123', 'EMPLOYER', 'ACTIVE', 0, '2026-07-27 08:47:50', '2026-07-27 08:47:50'),
-(5, 'ctyA@gmail.com', NULL, '$2a$10$cc9kD4z4PHqKVFUS/WG5oOSuaEjdt2UGv9TIvYzQdcf9sOseWAM.u', 'EMPLOYER', 'ACTIVE', 0, '2026-08-04 06:45:36', '2026-08-04 06:45:36');
+(5, 'ctyA@gmail.com', NULL, '$2a$10$cc9kD4z4PHqKVFUS/WG5oOSuaEjdt2UGv9TIvYzQdcf9sOseWAM.u', 'EMPLOYER', 'ACTIVE', 0, '2026-08-04 06:45:36', '2026-08-04 06:45:36'),
+(6, 'lethianh01@gmail.com', '0912345601', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(7, 'tranvanminh02@gmail.com', '0912345602', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(8, 'phamthihuong03@gmail.com', '0912345603', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(9, 'hoangvancuong04@gmail.com', '0912345604', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(10, 'nguyenthilinh05@gmail.com', '0912345605', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(11, 'dangquocbao06@gmail.com', '0912345606', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(12, 'vuthiquynh07@gmail.com', '0912345607', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(13, 'buithanhtung08@gmail.com', '0912345608', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(14, 'doanminhkhoi09@gmail.com', '0912345609', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00'),
+(15, 'ngophuongthao10@gmail.com', '0912345610', '$2a$10$ZI4mUSszCLaHMJJ3LF7Ke.RII1hLS.taSVWFZI4jFaVdxmlYkUCM.', 'CANDIDATE', 'ACTIVE', 0, '2026-08-20 03:00:00', '2026-08-20 03:00:00');
 
 --
 -- Indexes for dumped tables
@@ -769,61 +1030,61 @@ ALTER TABLE `applications`
 -- AUTO_INCREMENT for table `candidate_activities`
 --
 ALTER TABLE `candidate_activities`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `candidate_awards`
 --
 ALTER TABLE `candidate_awards`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `candidate_certifications`
 --
 ALTER TABLE `candidate_certifications`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `candidate_educations`
 --
 ALTER TABLE `candidate_educations`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `candidate_experiences`
 --
 ALTER TABLE `candidate_experiences`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `candidate_hobbies`
 --
 ALTER TABLE `candidate_hobbies`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `candidate_languages`
 --
 ALTER TABLE `candidate_languages`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `candidate_profiles`
 --
 ALTER TABLE `candidate_profiles`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `candidate_profile_layouts`
 --
 ALTER TABLE `candidate_profile_layouts`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=145;
 
 --
 -- AUTO_INCREMENT for table `candidate_projects`
 --
 ALTER TABLE `candidate_projects`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `company_likes`
@@ -859,7 +1120,7 @@ ALTER TABLE `job_postings`
 -- AUTO_INCREMENT for table `reference_values`
 --
 ALTER TABLE `reference_values`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `reference_value_suggestions`
@@ -883,7 +1144,7 @@ ALTER TABLE `system_logs`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables

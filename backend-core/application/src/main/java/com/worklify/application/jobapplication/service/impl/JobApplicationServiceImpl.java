@@ -123,7 +123,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             }
         }
 
-        CvDocument cv = cvDocumentRepository.findById(app.getCvId()).orElse(null);
+        CvDocument cv = (app.getCvId() != null)
+                ? cvDocumentRepository.findById(app.getCvId()).orElse(null)
+                : null;
         String cvFileName = (cv != null) ? cv.getFileName() : null;
 
         String candidateName = null;
