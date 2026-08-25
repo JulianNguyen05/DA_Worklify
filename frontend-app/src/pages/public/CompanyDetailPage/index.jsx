@@ -169,9 +169,9 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* 2. Layout 2 cột: Giới thiệu & Việc làm */}
-      <div className="max-w-6xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="max-w-6xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-10 gap-10">
         {/* Cột trái */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-4 space-y-8">
           <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
               <Building2 className="w-7 h-7 text-blue-600" />
@@ -192,7 +192,7 @@ export default function CompanyDetailPage() {
         </div>
 
         {/* Cột phải */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-6 space-y-8">
           <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 sticky top-24">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
               <Briefcase className="w-6 h-6 text-blue-600" />

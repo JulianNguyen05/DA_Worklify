@@ -130,4 +130,14 @@ public class EmployerServiceImpl implements EmployerService {
                 .activeJobsCount(0) // TODO: Tích hợp JobRepository để đếm số Job đang ACTIVE
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanyProfileResponse getProfileById(Long companyId) {
+        return mapToResponse(
+                companyProfileRepository.findById(companyId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin doanh nghiệp.")),
+                null
+        );
+    }
 }

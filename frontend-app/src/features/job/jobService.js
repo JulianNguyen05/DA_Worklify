@@ -24,8 +24,7 @@ const jobService = {
 
   // Xem hồ sơ doanh nghiệp (Public)
   getCompanyProfile: async (companyId) => {
-    // Đã xóa tiền tố /api/v1
-    const response = await axiosClient.get(`/employers/${companyId}/profile`);
+    const response = await axiosClient.get(`/employers/company/${companyId}`);
     return response.data;
   }
 };

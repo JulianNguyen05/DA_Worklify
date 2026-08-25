@@ -4,29 +4,29 @@ const authService = {
   register: async (userData) => {
     // Gọi API: http://localhost:8080/api/v1/auth/register
     const response = await axiosClient.post('/auth/register', userData);
-    return response.data; 
+    return response.data;
   },
 
   login: async (credentials) => {
     // Gọi API: http://localhost:8080/api/v1/auth/login
     const response = await axiosClient.post('/auth/login', credentials);
-    
+
     // response.data là cục ApiResponse { code: 200, message: "...", data: { accessToken: "...", role: "..." } }
     const apiResponse = response.data;
-    
+
     // Bóc tách payload thực sự (AuthResponse) nằm bên trong field "data"
-    const authData = apiResponse.data; 
+    const authData = apiResponse.data;
 
     // Kiểm tra và lưu thông tin
     if (authData && authData.accessToken) {
       // Lưu dạng Object cho hàm getCurrentUser
       localStorage.setItem('user', JSON.stringify(authData));
-      
+
       // Lưu 2 biến này để AxiosClient và Navbar hoạt động bình thường
       localStorage.setItem('accessToken', authData.accessToken);
       localStorage.setItem('userRole', authData.role);
     }
-    
+
     return apiResponse;
   },
 

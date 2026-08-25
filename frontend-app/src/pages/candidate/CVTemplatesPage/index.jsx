@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import authService from '../../../features/auth/authService';
-import candidateService from '../../../features/candidate/candidateService';
-import Toast from '../../../components/common/Toast';
-import Modal from '../../../components/common/Modal';
+import React, { useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import authService from "../../../features/auth/authService";
+import candidateService from "../../../features/candidate/candidateService";
+import Toast from "../../../components/common/Toast";
+import Modal from "../../../components/common/Modal";
 import {
   LayoutGrid,
   Briefcase,
@@ -12,11 +12,11 @@ import {
   Upload,
   UserRound,
   FilePlus2,
-} from 'lucide-react';
-import { mapProfileToCvData } from '../../../components/cv-builder/shared/mapProfileToCvData';
-import { SIMPLE_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/SimpleTemplate';
-import { HARVARD_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/HarvardTemplate';
-import { PROFESSIONAL_TEMPLATE_CONFIG } from '../../../components/cv-builder/templates/ProfessionalTemplate';
+} from "lucide-react";
+import { mapProfileToCvData } from "../../../components/cv-builder/shared/mapProfileToCvData";
+import { SIMPLE_TEMPLATE_CONFIG } from "../../../components/cv-builder/templates/SimpleTemplate";
+import { HARVARD_TEMPLATE_CONFIG } from "../../../components/cv-builder/templates/HarvardTemplate";
+import { PROFESSIONAL_TEMPLATE_CONFIG } from "../../../components/cv-builder/templates/ProfessionalTemplate";
 
 // Tra config (defaultData/defaultSettings/defaultLayout) theo id mẫu — dùng để build
 // prefillData đúng schema của TỪNG mẫu (không phải object tự chế như trước).
@@ -29,39 +29,39 @@ const TEMPLATE_CONFIG_REGISTRY = {
 // 1. CẤU HÌNH DỮ LIỆU CHÍNH XÁC 3 MẪU CV (Đã bỏ mảng colors, chỉ giữ 1 màu mặc định)
 const TEMPLATES = [
   {
-    id: 'simple',
-    name: 'Mẫu Tiêu Chuẩn',
-    categories: ['Tiêu chuẩn'],
-    color: '#1f2937', // Màu mặc định: Đen xám
-    thumbnail: 'http://localhost:8080/uploads/templates/simple.png',
+    id: "simple",
+    name: "Mẫu Tiêu Chuẩn",
+    categories: ["Tiêu chuẩn"],
+    color: "#1f2937", // Màu mặc định: Đen xám
+    thumbnail: "http://localhost:8080/uploads/templates/simple.png",
   },
   {
-    id: 'professional',
-    name: 'Mẫu Chuyên Nghiệp',
-    categories: ['Chuyên nghiệp'],
-    color: '#1e3a8a', // Màu mặc định: Xanh Navy
-    thumbnail: 'http://localhost:8080/uploads/templates/professional.png',
+    id: "professional",
+    name: "Mẫu Chuyên Nghiệp",
+    categories: ["Chuyên nghiệp"],
+    color: "#1e3a8a", // Màu mặc định: Xanh Navy
+    thumbnail: "http://localhost:8080/uploads/templates/professional.png",
   },
   {
-    id: 'harvard',
-    name: 'Mẫu Harvard',
-    categories: ['Harvard'],
-    color: '#000000', // Màu mặc định: Đen
-    thumbnail: 'http://localhost:8080/uploads/templates/harvard.png',
-  }
+    id: "harvard",
+    name: "Mẫu Harvard",
+    categories: ["Harvard"],
+    color: "#000000", // Màu mặc định: Đen
+    thumbnail: "http://localhost:8080/uploads/templates/harvard.png",
+  },
 ];
 
 // Danh mục bộ lọc
 const CATEGORIES = [
-  { id: 'Tất cả', icon: LayoutGrid },
-  { id: 'Tiêu chuẩn', icon: LayoutTemplate },
-  { id: 'Chuyên nghiệp', icon: Briefcase },
-  { id: 'Harvard', icon: GraduationCap }
+  { id: "Tất cả", icon: LayoutGrid },
+  { id: "Tiêu chuẩn", icon: LayoutTemplate },
+  { id: "Chuyên nghiệp", icon: Briefcase },
+  { id: "Harvard", icon: GraduationCap },
 ];
 
 const CVTemplatesPage = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState('Tất cả');
+  const [activeCategory, setActiveCategory] = useState("Tất cả");
   const [isLoading, setIsLoading] = useState(false); // loading khi lấy từ Profile
   const [isImporting, setIsImporting] = useState(false); // loading khi import PDF Worklify
   const [error, setError] = useState(null);
@@ -71,13 +71,22 @@ const CVTemplatesPage = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const cvUploadInputRef = useRef(null);
 
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 3000); // 10s thay vì 3.5s
+    return () => clearTimeout(t);
+  }, [error]);
+
   // Lọc template theo danh mục
-  const filteredTemplates = activeCategory === 'Tất cả'
-    ? TEMPLATES
-    : TEMPLATES.filter(t => t.categories.includes(activeCategory));
+  const filteredTemplates =
+    activeCategory === "Tất cả"
+      ? TEMPLATES
+      : TEMPLATES.filter((t) => t.categories.includes(activeCategory));
 
   const getUserId = () => {
-    const currentUser = authService?.getCurrentUser ? authService.getCurrentUser() : null;
+    const currentUser = authService?.getCurrentUser
+      ? authService.getCurrentUser()
+      : null;
     return currentUser?.userId || currentUser?.id;
   };
 
@@ -98,14 +107,15 @@ const CVTemplatesPage = () => {
   const handleChooseFromProfile = async () => {
     const userId = getUserId();
     if (!userId) {
-      setError('Vui lòng đăng nhập để tạo CV.');
+      setError("Vui lòng đăng nhập để tạo CV.");
       return;
     }
 
     setIsLoading(true);
     setError(null);
 
-    const tplConfig = TEMPLATE_CONFIG_REGISTRY[selectedTemplate.id] || SIMPLE_TEMPLATE_CONFIG;
+    const tplConfig =
+      TEMPLATE_CONFIG_REGISTRY[selectedTemplate.id] || SIMPLE_TEMPLATE_CONFIG;
     let prefillData;
 
     try {
@@ -117,12 +127,12 @@ const CVTemplatesPage = () => {
     } catch (err) {
       // Chưa có hồ sơ ứng viên (chưa từng điền ProfilePage) hoặc lỗi mạng tạm thời —
       // vẫn cho tạo CV bình thường, chỉ là không có gì để điền sẵn.
-      console.warn('Không lấy được hồ sơ để điền sẵn CV, tạo CV trống:', err);
+      console.warn("Không lấy được hồ sơ để điền sẵn CV, tạo CV trống:", err);
     }
 
     setIsLoading(false);
     setIsSourceModalOpen(false);
-    navigate('/candidate/cv-builder', {
+    navigate("/candidate/cv-builder", {
       state: { prefillData, prefillTemplate: selectedTemplate.id },
     });
   };
@@ -140,15 +150,15 @@ const CVTemplatesPage = () => {
     const file = e.target.files?.[0];
     if (!file || !selectedTemplate) return;
 
-    if (file.type !== 'application/pdf') {
-      setError('Vui lòng chọn file PDF.');
-      if (cvUploadInputRef.current) cvUploadInputRef.current.value = '';
+    if (file.type !== "application/pdf") {
+      setError("Vui lòng chọn file PDF.");
+      if (cvUploadInputRef.current) cvUploadInputRef.current.value = "";
       return;
     }
 
     const userId = getUserId();
     if (!userId) {
-      setError('Vui lòng đăng nhập để tạo CV.');
+      setError("Vui lòng đăng nhập để tạo CV.");
       return;
     }
 
@@ -161,28 +171,32 @@ const CVTemplatesPage = () => {
       const parsedCvData = JSON.parse(rawText); // {settings, layout, data}
 
       setIsSourceModalOpen(false);
-      navigate('/candidate/cv-builder', {
+      navigate("/candidate/cv-builder", {
         state: {
           prefillData: parsedCvData.data,
           prefillTemplate: selectedTemplate.id,
         },
       });
     } catch (err) {
-      console.error('Lỗi khi import PDF:', err);
-      setError(
+      console.error("Lỗi khi import PDF:", err);
+      const message =
         err?.response?.data?.message ||
-        'Không thể đọc file này. Chỉ hỗ trợ file PDF tải trực tiếp từ Worklify.'
-      );
+        "Không thể đọc file này. Chỉ hỗ trợ file PDF tải trực tiếp từ Worklify.";
+
+      // Đóng modal chọn nguồn trước — không để nó đứng yên như "không phản hồi".
+      setIsSourceModalOpen(false);
+      setSelectedTemplate(null);
+      setError(message);
     } finally {
       setIsImporting(false);
-      if (cvUploadInputRef.current) cvUploadInputRef.current.value = '';
+      if (cvUploadInputRef.current) cvUploadInputRef.current.value = "";
     }
   };
 
   // 3c. Nguồn: MẪU TRỐNG — không set prefillData, CVBuilderPage tự dùng defaultData
   const handleChooseBlank = () => {
     setIsSourceModalOpen(false);
-    navigate('/candidate/cv-builder', {
+    navigate("/candidate/cv-builder", {
       state: { prefillTemplate: selectedTemplate.id },
     });
   };
@@ -195,7 +209,8 @@ const CVTemplatesPage = () => {
           Mẫu CV xin việc tiếng Việt chuẩn 2026
         </h1>
         <p className="text-gray-600">
-          Tuyển chọn {TEMPLATES.length} mẫu CV đa dạng phong cách, giúp bạn tạo dấu ấn cá nhân và kết nối mạnh mẽ hơn với nhà tuyển dụng.
+          Tuyển chọn {TEMPLATES.length} mẫu CV đa dạng phong cách, giúp bạn tạo
+          dấu ấn cá nhân và kết nối mạnh mẽ hơn với nhà tuyển dụng.
         </p>
       </div>
 
@@ -207,7 +222,7 @@ const CVTemplatesPage = () => {
 
       {/* FILTER BAR (Các nút hình viên thuốc) */}
       <div className="flex flex-wrap items-center gap-3 mb-10 pb-4 border-b border-gray-100">
-        {CATEGORIES.map(category => {
+        {CATEGORIES.map((category) => {
           const Icon = category.icon;
           const isActive = activeCategory === category.id;
           return (
@@ -216,8 +231,8 @@ const CVTemplatesPage = () => {
               onClick={() => setActiveCategory(category.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm border transition-all duration-200 ${
                 isActive
-                  ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  ? "bg-[#2563EB] text-white border-[#2563EB] shadow-sm"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -231,10 +246,8 @@ const CVTemplatesPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl">
         {filteredTemplates.map((template) => (
           <div key={template.id} className="flex flex-col gap-3">
-
             {/* VÙNG CHỨA ẢNH (Nền xám nhạt, border bo góc) */}
             <div className="group relative bg-[#f3f4f6] p-4 rounded-xl border border-gray-200 transition-all hover:border-[#2563EB] hover:shadow-md">
-
               {/* Thumbnail CV khổ A4 (Tỷ lệ 21/29.7) */}
               <div className="relative w-full aspect-[21/29.7] bg-white shadow-sm overflow-hidden border border-gray-200">
                 <img
@@ -258,7 +271,9 @@ const CVTemplatesPage = () => {
             {/* VÙNG THÔNG TIN MẪU */}
             <div className="px-1 mt-2">
               {/* Tên mẫu */}
-              <h3 className="text-[17px] font-bold text-gray-800 mb-2">{template.name}</h3>
+              <h3 className="text-[17px] font-bold text-gray-800 mb-2">
+                {template.name}
+              </h3>
 
               {/* Các Tag phân loại */}
               <div className="flex flex-wrap gap-2">
@@ -272,7 +287,6 @@ const CVTemplatesPage = () => {
                 ))}
               </div>
             </div>
-
           </div>
         ))}
       </div>
@@ -281,7 +295,7 @@ const CVTemplatesPage = () => {
       <Modal
         isOpen={isSourceModalOpen}
         onClose={closeSourceModal}
-        title={`Tạo CV với mẫu "${selectedTemplate?.name || ''}"`}
+        title={`Tạo CV với mẫu "${selectedTemplate?.name || ""}"`}
       >
         <div className="p-2 flex flex-col gap-3 min-w-[320px] sm:min-w-[420px]">
           <p className="text-sm text-gray-500 mb-1">
@@ -306,7 +320,7 @@ const CVTemplatesPage = () => {
             </span>
             <span>
               <span className="block font-semibold text-gray-800">
-                {isImporting ? 'Đang xử lý...' : 'Nhập từ file PDF Worklify'}
+                {isImporting ? "Đang xử lý..." : "Nhập từ file PDF Worklify"}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">
                 Chỉ áp dụng cho PDF tải xuống trực tiếp từ Worklify
@@ -324,7 +338,7 @@ const CVTemplatesPage = () => {
             </span>
             <span>
               <span className="block font-semibold text-gray-800">
-                {isLoading ? 'Đang lấy hồ sơ...' : 'Lấy nội dung từ hồ sơ'}
+                {isLoading ? "Đang lấy hồ sơ..." : "Lấy nội dung từ hồ sơ"}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">
                 Điền sẵn từ thông tin ProfilePage đã có
@@ -341,8 +355,12 @@ const CVTemplatesPage = () => {
               <FilePlus2 className="w-5 h-5" />
             </span>
             <span>
-              <span className="block font-semibold text-gray-800">Bắt đầu từ mẫu trống</span>
-              <span className="block text-xs text-gray-500 mt-0.5">Tự nhập toàn bộ nội dung</span>
+              <span className="block font-semibold text-gray-800">
+                Bắt đầu từ mẫu trống
+              </span>
+              <span className="block text-xs text-gray-500 mt-0.5">
+                Tự nhập toàn bộ nội dung
+              </span>
             </span>
           </button>
         </div>

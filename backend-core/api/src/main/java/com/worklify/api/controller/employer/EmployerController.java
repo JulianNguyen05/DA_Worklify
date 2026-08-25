@@ -90,4 +90,11 @@ public class EmployerController {
         // TRUYỀN THÊM userId VÀO SERVICE
         return ApiResponse.success(employerService.getAllProfiles(pageable, userId));
     }
+
+    @GetMapping("/company/{companyId}")
+    @Operation(summary = "Xem hồ sơ doanh nghiệp theo CompanyProfile.id (Public)")
+    public ApiResponse<CompanyProfileResponse> getProfileByCompanyId(
+            @PathVariable("companyId") Long companyId) {
+        return ApiResponse.success(employerService.getProfileById(companyId));
+    }
 }

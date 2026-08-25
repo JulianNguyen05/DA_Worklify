@@ -239,12 +239,12 @@ export default function JobDetailPage() {
           </div>
           
           {/* Cảnh báo an toàn */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
+          {/* <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
             <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800 leading-relaxed">
               <strong>Báo cáo gian lận:</strong> Worklify không bao giờ yêu cầu ứng viên nộp phí. Nếu bạn thấy có dấu hiệu lừa đảo, vui lòng cảnh giác và báo cáo ngay cho chúng tôi.
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* CỘT PHẢI: Tóm tắt & Thông tin chung */}

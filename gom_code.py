@@ -1,24 +1,42 @@
 import os
 
-# Danh sách các file cần thiết để làm tính năng Live Preview cho form Job (Employer)
+# Danh sách các file Backend và Frontend cần thiết để truy vết lỗi import CV PDF
 TARGET_FILES = [
-    # Bắt buộc — để preview khớp với trang thật và xử lý Rich Text chuẩn xác
-    "frontend-app/src/pages/public/JobDetailPage/index.jsx",
-    "frontend-app/src/components/common/RichTextEditor/index.jsx",
+    # --- BACKEND ---
+    # endpoint import-digital-pdf để xem cách bắt exception
+    "backend-core/api/src/main/java/com/worklify/api/controller/candidate/CandidateController.java",
     
-    # Nên có — để đồng bộ UI và xem xét tái sử dụng thành Component chung
-    "frontend-app/src/pages/employer/JobEditPage/index.jsx",
-    "frontend-app/src/components/shared/JobCard/index.jsx",
+    # chỗ log "yêu cầu khôi phục CV từ file PDF số" và logic gọi extractor
+    "backend-core/application/src/main/java/com/worklify/application/candidate/service/impl/CandidateServiceImpl.java",
     
-    # Backend DTO — confirm data fields (logo, company name, requirements,...)
-    "backend-core/application/src/main/java/com/worklify/application/job/dto/JobPostingResponse.java"
+    # nơi thực sự parse JSON ẩn trong PDF, chắc chắn đang throw exception khi không tìm thấy marker
+    "backend-core/infrastructure/src/main/java/com/worklify/infrastructure/pdf/PdfBoxCvJsonExtractorAdapter.java",
+    
+    # exception class, xem có ErrorCode/message cụ thể không
+    "backend-core/application/src/main/java/com/worklify/application/common/exception/CvPdfImportException.java",
+    
+    # map exception → response 422, xem body trả về có field phân biệt được "not a worklify pdf" với các lỗi 422 khác không
+    "backend-core/api/src/main/java/com/worklify/api/common/exception/GlobalExceptionHandler.java",
+    
+    # enum các mã lỗi hiện có
+    "backend-core/api/src/main/java/com/worklify/api/common/exception/ErrorCode.java",
+    
+    # --- FRONTEND ---
+    # File chứa handleUploadFileChange (CVTemplatesPage)
+    "frontend-app/src/pages/candidate/CVTemplatesPage/index.jsx",
+    
+    # File chứa handleUploadFileChange (CVManagerPage)
+    "frontend-app/src/pages/candidate/CVManagerPage/index.jsx",
+    
+    # hàm importDigitalPdf gọi API
+    "frontend-app/src/features/candidate/candidateService.js"
 ]
 
-OUTPUT_FILE = "exported_job_preview_context.md"
+OUTPUT_FILE = "exported_cv_import_error_context.md"
 
 def gather_files():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as outfile:
-        outfile.write("# Codebase Context: Tính năng Live Preview Job (Employer)\n\n")
+        outfile.write("# Codebase Context: Trace CV PDF Import Exception\n\n")
         
         for filepath in TARGET_FILES:
             append_file_content(filepath, outfile)

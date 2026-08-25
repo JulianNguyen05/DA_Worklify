@@ -12,4 +12,5 @@ public interface EmployerService {
     CompanyProfileResponse uploadLogo(Long userId, MultipartFile file);
     PageResponse<CompanyProfileResponse> getAllProfiles(DomainPageable pageable, Long currentUserId);
     void toggleLikeCompany(Long currentUserId, Long companyId);
+    CompanyProfileResponse getProfileById(Long companyId);
 }
