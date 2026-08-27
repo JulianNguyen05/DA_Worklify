@@ -34,7 +34,7 @@ export default function JobPreviewCard({ formData, companyName, logoUrl }) {
   return (
     <div className="sticky top-8">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-        Xem trước — candidate sẽ thấy như thế này
+        Xem trước
       </p>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

@@ -1,0 +1,34 @@
+@startmindmap
+* Worklify Platform
+** Public & Auth Area
+*** Home Page
+*** Job List
+**** Job Detail
+*** Company List
+**** Company Detail
+*** Login
+*** Register
+*** Forgot Password
+** Candidate Space
+*** Dashboard
+*** Profile
+*** CV Builder
+*** My Applications
+*** Settings
+** Employer Space
+*** Dashboard
+*** Company Profile
+*** Job Management
+**** Job Create / Edit
+*** Application List
+**** Application Detail
+*** Candidate Search
+*** Settings
+** Admin Space
+*** Admin Dashboard
+*** User Management
+*** Job Moderation
+*** Company Moderation
+*** Category Management
+*** Report Export
+@endmindmap

@@ -32,15 +32,23 @@ public class FileController {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin CV"));
 
         // 2. Chuẩn hóa đường dẫn: Loại bỏ tiền tố "/uploads/" hoặc "uploads/" nếu có trong DB
+        // CV do người dùng tự upload -> có filePath. CV tạo từ CV Builder (is_generated)
+        // -> filePath rỗng, chỉ có digitalPdfPath (đúng field mà CVManagerPage đang dùng
+        // để mở PDF qua /uploads/...), nên fallback sang đó thay vì để null đi tiếp.
         String cleanPath = cv.getFilePath();
-        if (cleanPath != null) {
-            // Thay thế tất cả các tiền tố gây lỗi về dạng đường dẫn tương đối đúng (VD: "cv/11_Bản-in.pdf")
-            cleanPath = cleanPath.replaceFirst("^/?uploads/", "");
+        if (cleanPath == null || cleanPath.isBlank()) {
+            cleanPath = cv.getDigitalPdfPath();
+        }
+        if (cleanPath == null || cleanPath.isBlank()) {
+            throw new IllegalArgumentException("CV này chưa có file để xem/tải.");
+        }
 
-            // Xóa dấu '/' ở đầu nếu vẫn còn sót lại
-            if (cleanPath.startsWith("/")) {
-                cleanPath = cleanPath.substring(1);
-            }
+        // Thay thế tất cả các tiền tố gây lỗi về dạng đường dẫn tương đối đúng (VD: "cv/11_Bản-in.pdf")
+        cleanPath = cleanPath.replaceFirst("^/?uploads/", "");
+
+        // Xóa dấu '/' ở đầu nếu vẫn còn sót lại
+        if (cleanPath.startsWith("/")) {
+            cleanPath = cleanPath.substring(1);
         }
 
         // 3. Đọc file dưới dạng byte[]
