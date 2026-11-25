@@ -15,7 +15,8 @@ Train từ đầu không khả thi (cần hàng triệu cặp câu và nhiều G
 2. **Runtime → Change runtime type → T4 GPU**.
 3. Ở ô cấu hình, chọn `DATA_SOURCE`:
    - `"demo"`: dữ liệu giả để chạy thử toàn bộ quy trình (kết quả không dùng cho báo cáo)
-   - `"upload"` / `"drive"`: file CSV thật với 3 cột `cv_text`, `jd_text`, `label` (0–1)
+   - `"upload"` / `"drive"`: file CSV thật với 3 cột `cv_text`, `jd_text`, `label` (0–1).
+     Dùng dataset gộp sẵn `backend-ml/data/cv_jd_pairs.csv.gz` (xem [`data/README.md`](../data/README.md)).
 4. **Runtime → Run all**. Notebook sẽ:
    - đo baseline của model có sẵn trên tập test,
    - fine-tune, đo lại trên cùng tập test và in bảng so sánh (Spearman, Pearson),
@@ -28,8 +29,8 @@ Train từ đầu không khả thi (cần hàng triệu cặp câu và nhiều G
 Sau khi chạy với dữ liệu thật, lưu lại bản notebook có output (File → Download .ipynb)
 vào thư mục này để làm minh chứng cho báo cáo.
 
-## Gợi ý nguồn dữ liệu
+## Dữ liệu
 
-- Bộ dữ liệu resume–job description công khai trên Kaggle / Hugging Face
-- CV và JD mẫu tự soạn (có thể nhờ LLM sinh rồi tự gán nhãn lại)
-- Dữ liệu từ chính Worklify: đơn ứng tuyển `ACCEPTED` (nhãn cao) / `REJECTED` (nhãn thấp)
+Dataset gộp từ 4 bộ trên Hugging Face: xem [`data/README.md`](../data/README.md).
+Nên bổ sung thêm cặp tiếng Việt (tự soạn, hoặc đơn ứng tuyển `ACCEPTED`/`REJECTED` từ chính Worklify)
+vì toàn bộ dataset hiện là tiếng Anh.

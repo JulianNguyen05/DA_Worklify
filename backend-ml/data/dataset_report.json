@@ -1,0 +1,36 @@
+{
+  "sources": {
+    "cnamuangtoun": {
+      "rows_raw": 8000,
+      "rows_kept": 7743,
+      "label_mean": 0.394
+    },
+    "0xnbk": {
+      "rows_raw": 6374,
+      "rows_kept": 39,
+      "label_mean": 0.488
+    },
+    "netsol": {
+      "rows_raw": 854,
+      "rows_kept": 651,
+      "label_mean": 0.545
+    },
+    "scmlewis": {
+      "rows_raw": 3000,
+      "rows_kept": 2934,
+      "label_mean": 0.493
+    }
+  },
+  "duplicates_removed": 6791,
+  "total_rows": 11367,
+  "label_distribution": {
+    "low (<0.3)": 5547,
+    "mid (0.3-0.7)": 2311,
+    "high (>0.7)": 3509
+  },
+  "netsol_label_mean_by_group": {
+    "empty_additional_info": 0.489,
+    "match": 0.591,
+    "mismatch": 0.419
+  }
+}

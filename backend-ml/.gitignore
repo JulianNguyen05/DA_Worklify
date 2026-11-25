@@ -1,0 +1,8 @@
+# Dữ liệu tải về và file dataset gộp (tạo lại bằng scripts/build_dataset.py)
+data/raw/
+data/*.csv
+data/*.csv.gz
+
+# Model fine-tune (xem models/README.md)
+models/*/
+.cache/

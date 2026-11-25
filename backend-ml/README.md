@@ -71,7 +71,8 @@ Chạy test: `pytest`
 
 ## Huấn luyện model trên Colab
 
-Xem `notebooks/README.md`.
+- Dữ liệu: `data/README.md` (dataset gộp, tạo bằng `scripts/build_dataset.py`)
+- Notebook: `notebooks/README.md`
 
 ## Cấu trúc
 
@@ -87,7 +88,9 @@ app/
     ├── skills.py      # danh mục và trích xuất kỹ năng
     ├── scorer.py      # ghép điểm và sinh giải thích
     └── text_utils.py
+data/                  # dataset CV–JD gộp (không commit file .csv.gz)
 models/                # model fine-tune (không commit file trọng số)
 notebooks/             # notebook huấn luyện trên Colab
+scripts/               # build_dataset.py: tải và gộp dataset
 tests/
 ```
