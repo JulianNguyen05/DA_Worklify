@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EntityScan(basePackages = {"com.worklify.infrastructure.persistence.entity"})
 @EnableTransactionManagement
 @EnableJpaAuditing
-@EnableAsync // Bật lại: cần cho @Async trong DomainEventRabbitMqDispatcher
+@EnableAsync // Cần cho @Async("cvExportTaskExecutor") trong CvDigitalPdfExportRunnerImpl
 public class WorklifyApplication {
 
     public static void main(String[] args) {

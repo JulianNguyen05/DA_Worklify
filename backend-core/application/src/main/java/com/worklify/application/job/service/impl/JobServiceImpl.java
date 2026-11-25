@@ -4,7 +4,6 @@ import com.worklify.application.common.dto.PageResponse;
 import com.worklify.application.job.dto.JobPostingRequest;
 import com.worklify.application.job.dto.JobPostingResponse;
 import com.worklify.application.job.dto.SavedJobResponse;
-import com.worklify.application.job.port.JobViewEventPublisherPort;
 import com.worklify.application.job.service.JobService;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
@@ -32,7 +31,6 @@ public class JobServiceImpl implements JobService {
     private final JobPostingRepository jobPostingRepository;
     private final SavedJobRepository savedJobRepository;
     private final CompanyProfileRepository companyProfileRepository;
-    private final JobViewEventPublisherPort jobViewEventPublisherPort;
 
     @Override
     public JobPostingResponse createJobPosting(Long companyId, JobPostingRequest request) {
@@ -75,10 +73,6 @@ public class JobServiceImpl implements JobService {
     public JobPostingResponse getJobById(Long jobId) {
         JobPosting job = jobPostingRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng"));
-
-        // [MỚI] Publish event xem job ra Kafka - demo Activity Tracking
-        jobViewEventPublisherPort.publishJobViewed(jobId, null); // null = chưa gắn user thật, demo ở mức ẩn danh
-
         return mapToResponse(job);
     }
 

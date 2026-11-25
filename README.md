@@ -291,7 +291,7 @@ Worklify được xây dựng trên nền tảng kiến trúc **Domain-Driven De
 ┌───────────────▼────────────────┐  ┌────────────▼────────────────────┐
 │      🔷  LAYER 1: DOMAIN       │  │   ⚙️  LAYER 2: INFRASTRUCTURE   │
 │  (Entities, Value Objects,     │  │  (JPA Adapters, Security, JWT,  │
-│   Repository Ports/Interfaces, │  │   RabbitMQ, File Storage)       │
+│   Repository Ports/Interfaces, │  │   PDF, File Storage)            │
 │   Domain Events, Business      │  │   com.worklify.infrastructure.* │
 │   Rules)                       │  │                                 │
 │  com.worklify.domain.*         │  │  [Implements Output Ports from  │
@@ -328,9 +328,8 @@ Tầng này **triển khai (implement)** tất cả các port được định n
 
 - **Persistence Adapters** — Các class `*RepositoryAdapter` sử dụng Spring Data JPA để tương tác với MySQL. JPA Entity riêng biệt hoàn toàn với Domain Entity.
 - **Security** — `JwtService`, `JwtAuthenticationFilter`, `CustomUserDetailsService` xử lý luồng xác thực và phân quyền.
-- **Messaging** — `DomainEventRabbitMqDispatcher` phát và xử lý Domain Event nội bộ, phục vụ cho việc decoupling giữa các bounded context trong hệ thống.
 - **File Storage** — `LocalFileStorageService` xử lý việc lưu trữ file (logo công ty, CV PDF) vào hệ thống file local.
-- **Configuration** — `SecurityConfig`, `RabbitMqConfig`, `AuthConfig`, `WebConfig` cấu hình toàn bộ hạ tầng Spring Boot.
+- **Configuration** — `SecurityConfig`, `AuthConfig`, `WebConfig` cấu hình toàn bộ hạ tầng Spring Boot.
 
 ### 📡 Layer 4: API — Cổng Giao Tiếp
 

@@ -22,8 +22,6 @@ spring:
         format_sql: true
     open-in-view: false
 
-  # ĐÃ XÓA CẤU HÌNH RABBITMQ VÌ KHÔNG CÒN DÙNG AI NỮA
-
   security:
     jwt:
       secret: c21hcnRtYXRjaC1zdXBlci1zZWNyZXQta2V5LTIwMjYtbWluaW11bS0yNTYtYml0cyE=
