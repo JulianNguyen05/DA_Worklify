@@ -32,9 +32,36 @@ services:
     networks:
       - worklify-network
 
+  # Dịch vụ AI (FastAPI). Backend chạy trên IDE gọi vào qua http://localhost:8000.
+  backend-ml:
+    build:
+      context: ../backend-ml
+    container_name: worklify-ml
+    restart: unless-stopped
+    environment:
+      # Backend chạy trên máy host (IDE), nên từ trong container gọi ra qua host.docker.internal
+      CORE_BASE_URL: http://host.docker.internal:8080
+      INTERNAL_API_KEY: local-dev-only-change-me
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend-ml/models:/app/models
+      - ml_model_cache:/app/.cache   # giữ model đã tải từ Hugging Face giữa các lần chạy
+    networks:
+      - worklify-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
 networks:
   worklify-network:
     driver: bridge
 
 volumes:
   mysql_data:
+  ml_model_cache:

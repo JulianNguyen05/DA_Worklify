@@ -71,6 +71,10 @@ services:
       # File Upload
       FILE_UPLOAD_DIR: /app/uploads
       FILE_MAX_SIZE: 52428800 # 50MB
+
+      # Dịch vụ AI
+      ML_BASE_URL: http://backend-ml:8000
+      INTERNAL_API_KEY: local-dev-only-change-me
     volumes:
       - ./uploads:/app/uploads
     depends_on:
@@ -97,11 +101,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      PYTHONUNBUFFERED: 1
-      API_TITLE: Worklify ML Service
-      API_VERSION: 1.0.0
+      CORE_BASE_URL: http://backend-core:8080
+      INTERNAL_API_KEY: local-dev-only-change-me
     volumes:
       - ./backend-ml/app:/app/app
+      - ./backend-ml/models:/app/models
+      - ml_model_cache:/app/.cache   # giữ model đã tải từ Hugging Face giữa các lần chạy
     networks:
       - worklify-network
     healthcheck:
@@ -109,7 +114,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 300s
 
   # ============================================================
   # 5. NODE.JS PDF SERVICE (Puppeteer) ✨ NEW
@@ -190,4 +195,6 @@ networks:
 # ============================================================
 volumes:
   mysql_data:
+    driver: local
+  ml_model_cache:
     driver: local

@@ -7,8 +7,9 @@ Worklify: nền tảng tuyển dụng việc làm với 3 vai trò `CANDIDATE`, 
 
 - `backend-core/`: Java 21 + Spring Boot, Maven multi-module (DDD + Hexagonal).
 - `frontend-app/`: React 18 + Vite 5 + Tailwind 4 (JavaScript/JSX, không dùng TypeScript).
-- `docker-compose.yml` (gốc): stack đầy đủ, tham chiếu cả `backend-ml/` (FastAPI) và `backend-pdf/` (Node/Puppeteer). **Hai thư mục này không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
-- `backend-core/docker-compose.yml`: chỉ hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089). Đây là file dùng khi chạy backend trên IDE.
+- `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
+- `docker-compose.yml` (gốc): stack đầy đủ, còn tham chiếu `backend-pdf/` (Node/Puppeteer) **không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
+- `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089, backend-ml 8000). Đây là file dùng khi chạy backend trên IDE.
 - `worklify_db.sql`, `backend-core/init.sql`: schema + dữ liệu mẫu.
 - `gom_code.py`: script gom code để debug, không thuộc ứng dụng.
 
@@ -33,19 +34,21 @@ npm run dev      # http://localhost:5173
 npm run build
 ```
 
-Hiện **chưa có test** (cả backend lẫn frontend) và chưa có linter. Cách kiểm tra thay đổi: build backend (`./mvnw -q compile`), chạy `npm run build` cho frontend, rồi thử trên giao diện hoặc Swagger.
+backend-ml: `docker compose up -d --build backend-ml` (trong `backend-core/`); test chạy bằng `pytest` trong `backend-ml/` (máy dev không có Python thì chạy trong container `python:3.11-slim`).
+
+Backend Java và frontend **chưa có test** và chưa có linter. Cách kiểm tra thay đổi: build backend (`./mvnw -q compile`), chạy `npm run build` cho frontend, rồi thử trên giao diện hoặc Swagger.
 
 ## Backend: kiến trúc và quy ước
 
 Package gốc `com.worklify.<module>`. Chiều phụ thuộc: `api → application → domain`, `infrastructure → application, domain`.
 
 - **domain**: model nghiệp vụ thuần (không annotation JPA), interface repository, domain event, `DomainPageable`. Không import Spring Data/JPA ở đây.
-- **application**: theo từng nghiệp vụ (`auth`, `candidate`, `employer`, `job`, `jobapplication`, `admin`, `referencedata`), mỗi nghiệp vụ có `dto/`, `service/` (interface) + `service/impl/`, `port/` (cổng ra ngoài như `CvParsingPort`, `FileStoragePort`, `CvPdfExportPort`). Exception dùng chung nằm ở `common/exception`.
+- **application**: theo từng nghiệp vụ (`auth`, `candidate`, `employer`, `job`, `jobapplication`, `admin`, `referencedata`, `matching`), mỗi nghiệp vụ có `dto/`, `service/` (interface) + `service/impl/`, `port/` (cổng ra ngoài như `CvParsingPort`, `FileStoragePort`, `CvPdfExportPort`). Exception dùng chung nằm ở `common/exception`.
 - **infrastructure**: các adapter.
   - `persistence/entity` (JPA entity) + `persistence/mapper` (MapStruct) + `persistence/repository` (Spring Data) + `persistence/adapter` (`XxxRepositoryAdapter` implement interface repository của domain).
   - `security/` (JWT, `JwtAuthenticationFilter`), `config/SecurityConfig.java` (danh sách endpoint public).
   - `pdf/`: PDFBox đọc JSON nhúng trong CV PDF; Playwright render `/cv-print` của frontend ra PDF.
-  - `client/MlCvParsingClient`: gọi dịch vụ ML (`worklify.ml.base-url`).
+  - `client/`: gọi backend-ml (`worklify.ml.base-url`) — `MlCvParsingClient` (`/parser/extract`), `MlCvJdScoringClient` (`/scoring/cv-jd`, gửi `worklify.internal.api-key`). Lỗi từ ML ném `AiServiceException` → HTTP 503.
   - `storage/LocalFileStorageService`: lưu file upload, phục vụ qua `/uploads/**`.
 - **api**: controller theo nghiệp vụ, `GlobalExceptionHandler`, `ApiResponse`.
 

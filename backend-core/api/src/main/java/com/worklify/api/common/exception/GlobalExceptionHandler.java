@@ -1,6 +1,7 @@
 package com.worklify.api.common.exception;
 
 import com.worklify.api.common.response.ApiResponse;
+import com.worklify.application.common.exception.AiServiceException;
 import com.worklify.application.common.exception.CvPdfImportException;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
@@ -95,5 +96,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT) // HTTP 409
     public ApiResponse<Void> handleReferenceValueSuggestionPendingException(ReferenceValueSuggestionPendingException ex) {
         return ApiResponse.error(409, ex.getMessage());
+    }
+
+    /**
+     * 6. Dịch vụ AI (backend-ml) tắt hoặc trả lỗi — dùng 503 để FE hiện thông báo "thử lại sau"
+     * thay vì lỗi hệ thống chung.
+     */
+    @ExceptionHandler(AiServiceException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE) // HTTP 503
+    public ApiResponse<Void> handleAiServiceException(AiServiceException ex) {
+        return ApiResponse.error(503, ex.getMessage());
     }
 }

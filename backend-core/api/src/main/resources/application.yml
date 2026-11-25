@@ -69,6 +69,11 @@ worklify:
   ml:
     base-url: ${ML_BASE_URL:http://localhost:8000}
 
+  # Key dùng chung giữa backend-core và backend-ml (header X-Internal-Api-Key).
+  # Giá trị mặc định chỉ dùng cho local dev, phải override bằng biến môi trường khi deploy.
+  internal:
+    api-key: ${INTERNAL_API_KEY:local-dev-only-change-me}
+
   cv-export:
     print-base-url: http://localhost:5173/cv-print
     render-timeout-ms: 30000
