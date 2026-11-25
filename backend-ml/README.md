@@ -49,7 +49,7 @@ cd backend-ml
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements-dev.txt
-pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements-ml.txt
 uvicorn app.main:app --reload --port 8000
 ```

@@ -1,3 +1,5 @@
 # Thư viện cho model embedding. Cài torch bản CPU trước để image nhẹ hơn:
-#   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
-sentence-transformers==3.1.1
+#   pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+# Phải cùng major version với sentence-transformers trên Colab (notebook train), nếu không
+# model fine-tune sẽ không nạp được (định dạng modules.json đổi giữa các major version).
+sentence-transformers==6.3.0
