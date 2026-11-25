@@ -1,47 +1,35 @@
 # Huấn luyện model chấm điểm CV–JD trên Colab
 
-Lưu notebook Colab vào thư mục này để làm minh chứng cho báo cáo.
+Notebook: [`train_cv_jd_scorer.ipynb`](train_cv_jd_scorer.ipynb)
 
-## 1. Chuẩn bị dữ liệu
+## Model có sẵn và model tự fine-tune
 
-Mỗi mẫu là một cặp (CV, JD) kèm nhãn mức độ phù hợp trong khoảng 0–1:
+backend-ml mặc định dùng `paraphrase-multilingual-MiniLM-L12-v2`, một model **có sẵn**
+trên Hugging Face. Notebook này **fine-tune** chính model đó trên dữ liệu cặp (CV, JD,
+mức độ phù hợp) của bạn, để nó hiểu thế nào là "phù hợp" trong bối cảnh tuyển dụng.
+Train từ đầu không khả thi (cần hàng triệu cặp câu và nhiều GPU), nên fine-tune là cách làm chuẩn.
 
-| cv_text | jd_text | label |
-|---|---|---|
-| "Backend 3 năm Java, Spring..." | "Tuyển Java Developer..." | 0.9 |
-| "Kế toán tổng hợp..." | "Tuyển Java Developer..." | 0.1 |
+## Cách dùng
 
-Gợi ý nguồn dữ liệu: bộ dữ liệu resume–job công khai trên Kaggle/Hugging Face,
-CV và JD mẫu tự tạo (có thể nhờ LLM sinh rồi gán nhãn lại thủ công), dữ liệu thật
-từ chính hệ thống Worklify (đơn ứng tuyển được nhà tuyển dụng ACCEPTED/REJECTED).
+1. Mở Colab → **File → Upload notebook** → chọn `train_cv_jd_scorer.ipynb`.
+2. **Runtime → Change runtime type → T4 GPU**.
+3. Ở ô cấu hình, chọn `DATA_SOURCE`:
+   - `"demo"`: dữ liệu giả để chạy thử toàn bộ quy trình (kết quả không dùng cho báo cáo)
+   - `"upload"` / `"drive"`: file CSV thật với 3 cột `cv_text`, `jd_text`, `label` (0–1)
+4. **Runtime → Run all**. Notebook sẽ:
+   - đo baseline của model có sẵn trên tập test,
+   - fine-tune, đo lại trên cùng tập test và in bảng so sánh (Spearman, Pearson),
+   - đề xuất giá trị `SEMANTIC_SIM_LOW` / `SEMANTIC_SIM_HIGH`,
+   - lưu model và tải về file `cv-jd-scorer.zip`.
+5. Giải nén vào `backend-ml/models/` (thành `backend-ml/models/cv-jd-scorer/`), đặt 2 ngưỡng
+   vào `environment` của service `backend-ml` trong docker-compose, rồi khởi động lại.
+   `GET /health` phải trả `"model": "local:cv-jd-scorer"`.
 
-## 2. Fine-tune (chạy trên Colab, bật GPU)
+Sau khi chạy với dữ liệu thật, lưu lại bản notebook có output (File → Download .ipynb)
+vào thư mục này để làm minh chứng cho báo cáo.
 
-```python
-!pip install sentence-transformers==3.1.1
+## Gợi ý nguồn dữ liệu
 
-import pandas as pd
-from sentence_transformers import SentenceTransformer, InputExample, losses
-from torch.utils.data import DataLoader
-
-df = pd.read_csv("cv_jd_pairs.csv")
-examples = [InputExample(texts=[r.cv_text, r.jd_text], label=float(r.label)) for r in df.itertuples()]
-
-model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-loader = DataLoader(examples, shuffle=True, batch_size=16)
-loss = losses.CosineSimilarityLoss(model)
-model.fit(train_objectives=[(loader, loss)], epochs=3, warmup_steps=100)
-
-model.save("cv-jd-scorer")
-!zip -r cv-jd-scorer.zip cv-jd-scorer
-```
-
-Nhớ tách tập test riêng và báo cáo kết quả trước/sau fine-tune
-(vd Spearman correlation giữa điểm dự đoán và nhãn).
-
-## 3. Đưa model vào service
-
-1. Tải `cv-jd-scorer.zip` từ Colab, giải nén vào `backend-ml/models/cv-jd-scorer/`.
-2. Khởi động lại backend-ml; `GET /health` phải trả `"model": "local:cv-jd-scorer"`.
-3. Đo lại `SEMANTIC_SIM_LOW` / `SEMANTIC_SIM_HIGH` trên tập test: đặt LOW gần điểm
-   similarity của cặp không phù hợp, HIGH gần điểm của cặp rất phù hợp.
+- Bộ dữ liệu resume–job description công khai trên Kaggle / Hugging Face
+- CV và JD mẫu tự soạn (có thể nhờ LLM sinh rồi tự gán nhãn lại)
+- Dữ liệu từ chính Worklify: đơn ứng tuyển `ACCEPTED` (nhãn cao) / `REJECTED` (nhãn thấp)
