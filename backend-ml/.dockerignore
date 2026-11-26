@@ -3,5 +3,13 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .cache/
+.env
 notebooks/
 tests/
+scripts/
+data/
+
+# Model fine-tune được gắn vào container qua volume (./models:/app/models trong docker-compose),
+# không chép vào image. Giữ lại README để thư mục models/ vẫn tồn tại khi build.
+models/*
+!models/README.md
