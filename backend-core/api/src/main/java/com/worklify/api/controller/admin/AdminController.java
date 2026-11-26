@@ -54,6 +54,13 @@ public class AdminController {
         return ApiResponse.success(null, "Đã khóa tài khoản người dùng");
     }
 
+    @PatchMapping("/users/{userId}/unban")
+    @Operation(summary = "Mở khóa tài khoản người dùng")
+    public ApiResponse<Void> unbanUser(@PathVariable("userId") Long userId) {
+        adminService.unbanUser(userId);
+        return ApiResponse.success(null, "Đã mở khóa tài khoản người dùng");
+    }
+
     @GetMapping("/companies/pending")
     @Operation(summary = "Lấy danh sách doanh nghiệp đang chờ duyệt")
     public ApiResponse<List<CompanyProfileResponse>> getPendingCompanies() {

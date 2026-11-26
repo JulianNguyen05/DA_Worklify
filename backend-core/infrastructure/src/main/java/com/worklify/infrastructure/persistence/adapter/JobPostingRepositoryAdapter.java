@@ -3,6 +3,7 @@ package com.worklify.infrastructure.persistence.adapter;
 import com.worklify.domain.common.DomainPage;
 import com.worklify.domain.common.DomainPageable;
 import com.worklify.domain.job.model.JobPosting;
+import com.worklify.domain.job.model.JobSearchFilter;
 import com.worklify.domain.job.model.JobStatus;
 import com.worklify.domain.job.repository.JobPostingRepository;
 import com.worklify.infrastructure.persistence.adapter.util.PaginationMapper;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,13 +37,16 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
 
     @Override
     public DomainPage<JobPosting> findByCompanyId(Long companyId, DomainPageable pageable) {
-        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyId(companyId, PaginationMapper.toSpringPageable(pageable));
+        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyIdOrderByCreatedAtDesc(companyId, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
     @Override
-    public DomainPage<JobPosting> searchJobs(String keyword, String location, JobStatus status, DomainPageable pageable) {
-        Page<JobPostingJpaEntity> page = jpaRepository.searchJobs(keyword, location, status, PaginationMapper.toSpringPageable(pageable));
+    public DomainPage<JobPosting> searchOpenJobs(JobSearchFilter filter, LocalDateTime now, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.searchOpenJobs(
+                filter.keyword(), filter.location(), filter.workType(),
+                filter.salaryMin(), filter.salaryMax(),
+                JobStatus.ACTIVE, now, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
@@ -58,12 +63,14 @@ public class JobPostingRepositoryAdapter implements JobPostingRepository {
     }
 
     @Override
-    public DomainPage<JobPosting> findByCompanyIdAndStatus(Long companyId, JobStatus status, DomainPageable pageable) {
-        Page<JobPostingJpaEntity> page = jpaRepository.findByCompanyIdAndStatus(
-                companyId,
-                status,
-                PaginationMapper.toSpringPageable(pageable)
-        );
+    public DomainPage<JobPosting> findOpenJobsByCompany(Long companyId, LocalDateTime now, DomainPageable pageable) {
+        Page<JobPostingJpaEntity> page = jpaRepository.findOpenByCompany(
+                companyId, JobStatus.ACTIVE, now, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
+    }
+
+    @Override
+    public long countOpenJobsByCompany(Long companyId, LocalDateTime now) {
+        return jpaRepository.countOpenByCompany(companyId, JobStatus.ACTIVE, now);
     }
 }

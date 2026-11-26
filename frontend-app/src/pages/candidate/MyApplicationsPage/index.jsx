@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import candidateService from '../../../features/candidate/candidateService';
+import applicationService from '../../../features/application/applicationService';
+import toast from 'react-hot-toast';
 import authService from '../../../features/auth/authService';
 import Pagination from '../../../components/common/Pagination';
 import PageHeader from '../../../components/common/PageHeader';
@@ -13,7 +15,7 @@ import { Skeleton } from '../../../components/common/Spinner';
 import { AppStatusBadge } from '../../../components/shared/StatusBadges';
 import {
   Briefcase, Building2, Calendar, FileText, Search, Clock, CheckCircle2,
-  XCircle, Eye, Users, ArrowUpRight, Inbox, AlertCircle,
+  XCircle, Eye, Users, ArrowUpRight, Inbox, AlertCircle, Undo2,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ const StatsBar = ({ applications }) => {
   );
 };
 
-const ApplicationCard = ({ app }) => {
+const ApplicationCard = ({ app, onWithdraw, isWithdrawing }) => {
   const formattedDate = app.appliedAt
     ? new Date(app.appliedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '—';
@@ -88,6 +90,21 @@ const ApplicationCard = ({ app }) => {
 
       <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
         <AppStatusBadge status={app.status} label={STATUS_CONFIG[app.status]?.label} />
+        {/* Chỉ rút được khi nhà tuyển dụng chưa xem xét */}
+        {app.status === 'PENDING' && onWithdraw && (
+          <Button
+            size="xs"
+            variant="danger-outline"
+            isLoading={isWithdrawing}
+            onClick={(e) => {
+              e.preventDefault(); // nút nằm trong <Link>, không điều hướng
+              e.stopPropagation();
+              onWithdraw(app);
+            }}
+          >
+            <Undo2 className="h-3.5 w-3.5" /> Rút đơn
+          </Button>
+        )}
         <ArrowUpRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-brand-600" />
       </div>
     </Link>
@@ -129,6 +146,21 @@ const MyApplicationsPage = () => {
   }, [userId, currentPage]);
 
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+  const [withdrawingId, setWithdrawingId] = useState(null);
+  const handleWithdraw = async (app) => {
+    if (!window.confirm(`Rút hồ sơ ứng tuyển vị trí "${app.jobTitle || "này"}"? Bạn có thể nộp lại sau nếu tin còn mở.`)) return;
+    setWithdrawingId(app.id);
+    try {
+      await applicationService.withdrawApplication(app.id);
+      toast.success("Đã rút hồ sơ ứng tuyển");
+      fetchApplications();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể rút hồ sơ, vui lòng thử lại.");
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
 
   useEffect(() => {
     let result = applications;
@@ -209,7 +241,14 @@ const MyApplicationsPage = () => {
               </div>
             ))
           : filteredData.length > 0
-            ? filteredData.map(app => <ApplicationCard key={app.id} app={app} />)
+            ? filteredData.map(app => (
+                <ApplicationCard
+                  key={app.id}
+                  app={app}
+                  onWithdraw={handleWithdraw}
+                  isWithdrawing={withdrawingId === app.id}
+                />
+              ))
             : (
               <div className="card border-dashed">
                 <EmptyState

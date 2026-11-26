@@ -60,6 +60,12 @@ const employerService = {
     return response.data;
   },
 
+  // Đóng tin tuyển dụng (ngừng nhận hồ sơ)
+  closeJob: async (companyId, jobId) => {
+    const response = await axiosClient.patch(`/jobs/employers/${companyId}/${jobId}/close`);
+    return response.data;
+  },
+
   // 2. Gửi dữ liệu cập nhật lên Backend (Khớp với PUT /api/v1/jobs/{jobId})
   updateJobPosting: async (companyId, jobId, jobData) => {
     const response = await axiosClient.put(`/jobs/employers/${companyId}/${jobId}`, jobData);

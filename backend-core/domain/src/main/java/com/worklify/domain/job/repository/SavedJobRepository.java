@@ -11,4 +11,5 @@ public interface SavedJobRepository {
     Optional<SavedJob> findByCandidateIdAndJobId(Long candidateId, Long jobId);
     DomainPage<SavedJob> findByCandidateId(Long candidateId, DomainPageable pageable);
     void delete(SavedJob savedJob);
+    java.util.List<Long> findJobIdsByCandidateId(Long candidateId);
 }

@@ -41,7 +41,7 @@ const DashboardPage = () => {
           await Promise.allSettled([
             candidateService.getCvs(currentUser.userId),
             candidateService.getMyApplications(currentUser.userId),
-            jobService.searchJobs("", "", 0, 5),
+            jobService.searchJobs({}, 0, 5),
             employerService.getAllCompanies(0, 5),
           ]);
 

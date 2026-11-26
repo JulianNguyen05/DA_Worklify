@@ -1,6 +1,7 @@
 // EducationRequest.java
 package com.worklify.application.candidate.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -14,6 +15,8 @@ public class EducationRequest {
     private String degree;
     private LocalDate startDate;
     private LocalDate endDate;
+    // Lombok sinh isCurrent() nên Jackson mặc định đặt tên "current"; frontend dùng key "isCurrent"
+    @JsonProperty("isCurrent")
     private boolean isCurrent;
     private BigDecimal gpa;
     private String description;

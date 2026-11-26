@@ -67,7 +67,7 @@ export default function HomePage() {
     let cancelled = false;
     (async () => {
       const [jobsRes, companiesRes] = await Promise.allSettled([
-        jobService.searchJobs('', '', 0, 6),
+        jobService.searchJobs({}, 0, 6),
         employerService.getAllCompanies(0, 1),
       ]);
       if (cancelled) return;

@@ -23,7 +23,7 @@ public class FileController {
     private final LocalFileStorageService fileStorageService;
 
     @GetMapping("/cv/{cvId}")
-    @PreAuthorize("hasAnyRole('EMPLOYER', 'CANDIDATE', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @accessControl.canViewCv(#cvId, authentication.name)")
     @Operation(summary = "Đọc file CV (Dành cho Employer xem hồ sơ)")
     public ResponseEntity<byte[]> getCvFile(@PathVariable("cvId") Long cvId) {
 

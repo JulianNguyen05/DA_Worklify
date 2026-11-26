@@ -37,7 +37,9 @@ export default function JobDetailPage() {
   const [coverLetter, setCoverLetter] = useState('');
   const [isApplying, setIsApplying] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
-  const [isSaved, setIsSaved] = useState(false); // State cho nút Lưu tin
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
 
   // State AI matching: điểm phù hợp giữa hồ sơ ứng viên và tin này
   const currentUser = authService.getCurrentUser();
@@ -77,33 +79,56 @@ export default function JobDetailPage() {
     }
   };
 
+  // Ẩn Toast sau 3 giây
+  useEffect(() => {
+    if (!statusMsg.message) return undefined;
+    const timer = setTimeout(() => setStatusMsg({ type: null, message: '' }), 3000);
+    return () => clearTimeout(timer);
+  }, [statusMsg.message]);
+
   useEffect(() => {
     fetchJobDetail();
-    // Ẩn Toast sau 3 giây
-    if (statusMsg.message) {
-      const timer = setTimeout(() => setStatusMsg({ type: null, message: '' }), 3000);
-      return () => clearTimeout(timer);
+    // Ứng viên: biết tin này đã lưu / đã nộp chưa để hiện đúng trạng thái nút
+    if (currentUser?.role === 'CANDIDATE') {
+      jobService.getSavedJobIds()
+        .then((res) => setIsSaved((res.data || []).includes(Number(id))))
+        .catch(() => {});
+      candidateService.getMyApplications(currentUser.userId, 0, 100)
+        .then((res) => {
+          const apps = res.data?.content || [];
+          setAlreadyApplied(apps.some((a) => a.jobId === Number(id)));
+        })
+        .catch(() => {});
     }
-  }, [id, statusMsg.message]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const fetchJobDetail = async () => {
+    setIsLoading(true);
     try {
       const res = await jobService.getJobDetail(id);
       setJob(res.data);
     } catch (error) {
       console.error(error);
+      setJob(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOpenApplyModal = async () => {
+  const requireCandidate = (action) => {
     const user = authService.getCurrentUser();
     if (!user || user.role !== 'CANDIDATE') {
-      setStatusMsg({ type: 'error', message: 'Vui lòng đăng nhập tài khoản Ứng viên để ứng tuyển!' });
+      setStatusMsg({ type: 'error', message: `Vui lòng đăng nhập tài khoản Ứng viên để ${action}!` });
       setTimeout(() => navigate('/auth/login'), 1500);
-      return;
+      return null;
     }
+    return user;
+  };
+
+  const handleOpenApplyModal = async () => {
+    const user = requireCandidate('ứng tuyển');
+    if (!user) return;
 
     try {
       const res = await candidateService.getMyCVs(user.userId);
@@ -130,16 +155,35 @@ export default function JobDetailPage() {
       });
       setStatusMsg({ type: 'success', message: '🎉 Đã nộp hồ sơ ứng tuyển thành công!' });
       setIsApplyModalOpen(false);
+      setAlreadyApplied(true);
     } catch (err) {
-      setStatusMsg({ type: 'error', message: 'Ứng tuyển thất bại. Bạn có thể đã nộp đơn cho vị trí này rồi.' });
+      // Backend trả lý do cụ thể: đã nộp rồi, tin hết hạn/đã đóng, CV không hợp lệ...
+      const message = err.response?.data?.message || 'Ứng tuyển thất bại, vui lòng thử lại.';
+      setStatusMsg({ type: 'error', message });
+      if (err.response?.status === 409) setAlreadyApplied(true);
     } finally {
       setIsApplying(false);
     }
   };
 
-  const toggleSaveJob = () => {
-    setIsSaved(!isSaved);
-    setStatusMsg({ type: 'success', message: isSaved ? 'Đã bỏ lưu tin.' : 'Đã lưu tin tuyển dụng!' });
+  const toggleSaveJob = async () => {
+    if (!requireCandidate('lưu tin')) return;
+    setIsSaving(true);
+    try {
+      if (isSaved) {
+        await jobService.unsaveJob(job.id);
+        setIsSaved(false);
+        setStatusMsg({ type: 'success', message: 'Đã bỏ lưu tin.' });
+      } else {
+        await jobService.saveJob(job.id);
+        setIsSaved(true);
+        setStatusMsg({ type: 'success', message: 'Đã lưu tin tuyển dụng!' });
+      }
+    } catch (err) {
+      setStatusMsg({ type: 'error', message: err.response?.data?.message || 'Không thể lưu tin, vui lòng thử lại.' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isLoading) return <PageLoader label="Đang tải chi tiết công việc..." />;
@@ -189,8 +233,16 @@ export default function JobDetailPage() {
       : `http://localhost:8080${actualLogoUrl.startsWith('/') ? '' : '/'}${actualLogoUrl}`;
   }
 
-  const workTypeLabel =
-    job.workType === 'FULL_TIME' ? 'Toàn thời gian' : job.workType === 'PART_TIME' ? 'Bán thời gian' : job.workType;
+  const WORK_TYPE_LABEL = {
+    FULL_TIME: 'Toàn thời gian',
+    PART_TIME: 'Bán thời gian',
+    INTERNSHIP: 'Thực tập',
+    REMOTE: 'Làm từ xa',
+  };
+  const workTypeLabel = WORK_TYPE_LABEL[job.workType] || job.workType;
+  // Backend tính sẵn: tin ACTIVE và chưa quá hạn nộp
+  const isOpen = job.openForApplications !== false;
+  const isEmployerOrAdmin = currentUser && currentUser.role !== 'CANDIDATE';
 
   const overview = [
     { icon: Wallet, label: 'Mức lương', value: actualSalaryRange || 'Thỏa thuận' },
@@ -244,14 +296,32 @@ export default function JobDetailPage() {
                 onClick={toggleSaveJob}
                 variant="outline"
                 size="lg"
+                isLoading={isSaving}
+                disabled={isEmployerOrAdmin}
                 className={isSaved ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-50' : ''}
               >
                 <Heart className={`h-[18px] w-[18px] ${isSaved ? 'fill-rose-500' : ''}`} />
                 <span className="hidden sm:inline">{isSaved ? 'Đã lưu tin' : 'Lưu tin'}</span>
               </Button>
-              <Button onClick={handleOpenApplyModal} size="lg" className="flex-1 sm:flex-none sm:px-8">
-                <Send className="h-[18px] w-[18px]" /> Ứng tuyển ngay
-              </Button>
+              {alreadyApplied ? (
+                <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none sm:px-8">
+                  <CheckCircle2 className="h-[18px] w-[18px]" /> Đã ứng tuyển
+                </Button>
+              ) : !isOpen ? (
+                <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none sm:px-8">
+                  <AlertCircle className="h-[18px] w-[18px]" />
+                  {job.status === 'ACTIVE' ? 'Đã hết hạn nộp' : 'Đã ngừng nhận hồ sơ'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleOpenApplyModal}
+                  size="lg"
+                  disabled={isEmployerOrAdmin}
+                  className="flex-1 sm:flex-none sm:px-8"
+                >
+                  <Send className="h-[18px] w-[18px]" /> Ứng tuyển ngay
+                </Button>
+              )}
             </div>
           </div>
         </div>

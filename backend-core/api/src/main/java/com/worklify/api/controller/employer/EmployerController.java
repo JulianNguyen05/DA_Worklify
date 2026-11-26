@@ -25,7 +25,7 @@ public class EmployerController {
     private final EmployerService employerService;
 
     @PostMapping("/{userId}/profile")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('EMPLOYER') and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Tạo hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> createProfile(
             @PathVariable("userId") Long userId,
@@ -34,7 +34,7 @@ public class EmployerController {
     }
 
     @PutMapping("/{userId}/profile")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('EMPLOYER') and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Cập nhật hồ sơ doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> updateProfile(
             @PathVariable("userId") Long userId,
@@ -49,7 +49,7 @@ public class EmployerController {
     }
 
     @PostMapping(value = "/{userId}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PreAuthorize("hasRole('EMPLOYER') and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Tải lên logo doanh nghiệp")
     public ApiResponse<CompanyProfileResponse> uploadLogo(
             @PathVariable("userId") Long userId,
@@ -58,7 +58,7 @@ public class EmployerController {
     }
 
     @PostMapping("/{companyId}/like")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
+    @PreAuthorize("isAuthenticated() and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Thích / Bỏ thích công ty")
     public ApiResponse<Void> toggleLikeCompany(
             @PathVariable("companyId") Long companyId,

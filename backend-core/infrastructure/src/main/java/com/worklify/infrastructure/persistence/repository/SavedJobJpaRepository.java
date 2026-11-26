@@ -11,5 +11,8 @@ import java.util.Optional;
 @Repository
 public interface SavedJobJpaRepository extends JpaRepository<SavedJobJpaEntity, Long> {
     Optional<SavedJobJpaEntity> findByCandidateIdAndJobId(Long candidateId, Long jobId);
-    Page<SavedJobJpaEntity> findByCandidateId(Long candidateId, Pageable pageable);
+    Page<SavedJobJpaEntity> findByCandidateIdOrderBySavedAtDesc(Long candidateId, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT s.jobId FROM SavedJobJpaEntity s WHERE s.candidateId = :candidateId")
+    java.util.List<Long> findJobIdsByCandidateId(@org.springframework.data.repository.query.Param("candidateId") Long candidateId);
 }

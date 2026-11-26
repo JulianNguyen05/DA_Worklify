@@ -35,7 +35,7 @@ public class AuthController {
     }
 
     @PostMapping("/{userId}/mfa/enable")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Kích hoạt xác thực đa yếu tố (MFA)")
     public ApiResponse<Void> enableMfa(@PathVariable("userId") Long userId) { // <--- THÊM "userId" VÀO ĐÂY
         authService.enableMfa(userId);
@@ -60,7 +60,7 @@ public class AuthController {
 
     // ========== BỔ SUNG API ĐỔI MẬT KHẨU ==========
     @PutMapping("/{userId}/password")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and @accessControl.isSelf(#userId, authentication.name)")
     @Operation(summary = "Đổi mật khẩu người dùng")
     public ApiResponse<Void> changePassword(
             @PathVariable("userId") Long userId, // <--- THÊM "userId" VÀO ĐÂY

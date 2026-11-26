@@ -37,6 +37,13 @@ public class JobPostingJpaEntity {
     @Column(name = "salary_range", length = 100)
     private String salaryRange;
 
+    // Khoảng lương (triệu VNĐ/tháng) dùng để lọc; null = thoả thuận / không rõ
+    @Column(name = "salary_min")
+    private Integer salaryMin;
+
+    @Column(name = "salary_max")
+    private Integer salaryMax;
+
     @Column(nullable = false, length = 255)
     private String location;
 

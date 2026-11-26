@@ -14,6 +14,7 @@ import { AppStatusBadge } from '../../../components/shared/StatusBadges';
 import { MatchScoreBadge, MatchScoreCard } from '../../../components/shared/MatchScore';
 // BỔ SUNG: Import thêm icon Eye
 import { Briefcase, Users, FileText, CheckCircle, XCircle, Clock, Eye, Sparkles } from 'lucide-react';
+import { APPLICATION_STATUS_LABEL, STATUS_ACTIONS, getNextStatuses } from '../../../components/shared/applicationFlow';
 
 export default function ApplicationListPage() {
   const navigate = useNavigate();
@@ -91,16 +92,21 @@ export default function ApplicationListPage() {
   }, [activeJobId]);
 
   // 3. CẬP NHẬT TRẠNG THÁI HỒ SƠ
+  const [updatingId, setUpdatingId] = useState(null);
   const handleUpdateStatus = async (appId, newStatus) => {
+    if (newStatus === 'REJECTED' && !window.confirm('Loại hồ sơ này? Thao tác không thể hoàn tác.')) return;
+    setUpdatingId(`${appId}:${newStatus}`);
     try {
-      await employerService.updateApplicationStatus(companyId, appId, newStatus);
-      setStatusMsg({ type: 'success', message: `Đã cập nhật trạng thái thành: ${newStatus}` });
-      
-      setApplications(prev => prev.map(app => 
-        app.id === appId ? { ...app, status: newStatus } : app
+      const res = await employerService.updateApplicationStatus(companyId, appId, newStatus);
+      setStatusMsg({ type: 'success', message: `Đã chuyển hồ sơ sang: ${APPLICATION_STATUS_LABEL[newStatus]}` });
+      // Backend trả đơn đã cập nhật (gồm nextStatuses mới)
+      setApplications(prev => prev.map(app =>
+        app.id === appId ? { ...app, ...(res?.data || { status: newStatus, nextStatuses: undefined }) } : app
       ));
     } catch (error) {
-      setStatusMsg({ type: 'error', message: 'Thao tác cập nhật thất bại!' });
+      setStatusMsg({ type: 'error', message: error.response?.data?.message || 'Thao tác cập nhật thất bại!' });
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -129,7 +135,7 @@ export default function ApplicationListPage() {
     return [...applications].sort((a, b) => scoreOf(b) - scoreOf(a));
   }, [applications, matchByAppId]);
 
-  const STATUS_LABEL = { ACCEPTED: 'Chấp nhận', REJECTED: 'Từ chối', REVIEWED: 'Đã xem', PENDING: 'Chờ duyệt' };
+  const STATUS_LABEL = APPLICATION_STATUS_LABEL;
   const getStatusBadge = (status) => (
     <AppStatusBadge status={STATUS_LABEL[status] ? status : 'PENDING'} label={STATUS_LABEL[status] || 'Chờ duyệt'} />
   );
@@ -222,7 +228,6 @@ export default function ApplicationListPage() {
                     displayedApplications.map((app) => {
                       const aiResult = matchByAppId?.[app.id];
                       const isExpanded = expandedAppId === app.id;
-                      const decided = app.status === 'ACCEPTED' || app.status === 'REJECTED';
                       return (
                         <React.Fragment key={app.id}>
                           <tr className={`transition-colors hover:bg-slate-50/80 ${isExpanded ? 'bg-brand-50/40' : ''}`}>
@@ -263,12 +268,20 @@ export default function ApplicationListPage() {
                                 <Button variant="outline" size="xs" onClick={() => navigate(`/employer/applications/${app.id}`)}>
                                   <Eye className="h-3.5 w-3.5" /> Chi tiết
                                 </Button>
-                                <Button variant="success" size="xs" onClick={() => handleUpdateStatus(app.id, 'ACCEPTED')} disabled={decided}>
-                                  <CheckCircle className="h-3.5 w-3.5" /> Duyệt
-                                </Button>
-                                <Button variant="danger-outline" size="xs" onClick={() => handleUpdateStatus(app.id, 'REJECTED')} disabled={decided}>
-                                  <XCircle className="h-3.5 w-3.5" /> Loại
-                                </Button>
+                                {/* Chỉ hiện các bước hợp lệ theo quy trình (backend trả nextStatuses) */}
+                                {getNextStatuses(app).map((next) => (
+                                  <Button
+                                    key={next}
+                                    variant={STATUS_ACTIONS[next].variant}
+                                    size="xs"
+                                    isLoading={updatingId === `${app.id}:${next}`}
+                                    onClick={() => handleUpdateStatus(app.id, next)}
+                                  >
+                                    {next === 'ACCEPTED' && <CheckCircle className="h-3.5 w-3.5" />}
+                                    {next === 'REJECTED' && <XCircle className="h-3.5 w-3.5" />}
+                                    {STATUS_ACTIONS[next].label}
+                                  </Button>
+                                ))}
                               </div>
                             </td>
                           </tr>

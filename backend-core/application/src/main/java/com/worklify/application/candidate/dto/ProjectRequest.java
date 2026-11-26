@@ -1,5 +1,6 @@
 package com.worklify.application.candidate.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -14,6 +15,8 @@ public class ProjectRequest {
     private String projectUrl;
     private LocalDate startDate;
     private LocalDate endDate;
+    // Lombok sinh isCurrent() nên Jackson mặc định đặt tên "current"; frontend dùng key "isCurrent"
+    @JsonProperty("isCurrent")
     private boolean isCurrent;
     private String description;
     private int displayOrder;

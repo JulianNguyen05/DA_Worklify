@@ -7,6 +7,7 @@ import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
 import RichTextEditor from '../../../components/common/RichTextEditor';
 import JobPreviewCard from '../../../components/shared/JobPreviewCard';
+import SalaryRangeFields, { toSalaryNumber, validateSalaryRange } from '../../../components/shared/SalaryRangeFields';
 
 // Loại bỏ thẻ HTML để kiểm tra rỗng — dùng cho validate vì
 // RichTextEditor lưu HTML nên input required native không còn tác dụng
@@ -22,6 +23,8 @@ export default function JobCreatePage() {
     title: '',
     location: '',
     salaryRange: '',
+    salaryMin: '',
+    salaryMax: '',
     workType: 'FULL_TIME',
     expiresAt: '',
     description: '',
@@ -95,7 +98,17 @@ export default function JobCreatePage() {
     setStatusMsg({ type: null, message: '' });
     
     try {
-      const submitData = { ...formData };
+      const salaryError = validateSalaryRange(formData);
+      if (salaryError) {
+        setStatusMsg({ type: 'error', message: salaryError });
+        setIsLoading(false);
+        return;
+      }
+      const submitData = {
+        ...formData,
+        salaryMin: toSalaryNumber(formData.salaryMin),
+        salaryMax: toSalaryNumber(formData.salaryMax),
+      };
       if (submitData.expiresAt) {
         submitData.expiresAt = submitData.expiresAt.length === 16 
           ? `${submitData.expiresAt}:00` 
@@ -191,6 +204,7 @@ export default function JobCreatePage() {
                     placeholder="VD: 15,000,000 - 25,000,000 VND" 
                   />
                 </div>
+                <SalaryRangeFields values={formData} onChange={handleChange} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">

@@ -16,6 +16,19 @@ import {
   Briefcase,
   Eye,
 } from "lucide-react";
+import { AppStatusBadge } from "../../../components/shared/StatusBadges";
+import {
+  APPLICATION_STATUS_LABEL,
+  STATUS_ACTIONS,
+  getNextStatuses,
+} from "../../../components/shared/applicationFlow";
+
+const NEXT_ACTION_LONG_LABEL = {
+  REVIEWED: "Đánh dấu đã xem",
+  INTERVIEW_SCHEDULED: "Mời phỏng vấn",
+  ACCEPTED: "Nhận ứng viên",
+  REJECTED: "Loại hồ sơ",
+};
 
 export default function ApplicationDetailPage() {
   const { id } = useParams(); // ID của application
@@ -57,20 +70,28 @@ export default function ApplicationDetailPage() {
   }, [id]);
 
   // 2. XỬ LÝ CẬP NHẬT TRẠNG THÁI (DUYỆT/LOẠI)
+  const [updatingStatus, setUpdatingStatus] = useState(null);
   const handleAction = async (newStatus) => {
+    if (newStatus === "REJECTED" && !window.confirm("Loại hồ sơ này? Thao tác không thể hoàn tác.")) return;
+    setUpdatingStatus(newStatus);
     try {
       if (!companyId) throw new Error("Không xác định được công ty sở hữu.");
 
-      await employerService.updateApplicationStatus(companyId, id, newStatus);
+      const res = await employerService.updateApplicationStatus(companyId, id, newStatus);
       setStatusMsg({
         type: "success",
-        message: `Đã cập nhật trạng thái thành: ${newStatus}`,
+        message: `Đã chuyển hồ sơ sang: ${APPLICATION_STATUS_LABEL[newStatus]}`,
       });
 
-      // Cập nhật giao diện ngay lập tức
-      setApplication({ ...application, status: newStatus });
+      // Backend trả đơn đã cập nhật (kèm nextStatuses mới)
+      setApplication((prev) => ({ ...prev, ...(res?.data || { status: newStatus, nextStatuses: undefined }) }));
     } catch (error) {
-      setStatusMsg({ type: "error", message: "Cập nhật trạng thái thất bại." });
+      setStatusMsg({
+        type: "error",
+        message: error.response?.data?.message || error.message || "Cập nhật trạng thái thất bại.",
+      });
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -86,34 +107,9 @@ export default function ApplicationDetailPage() {
     navigate(`/employer/candidates/${application.candidateId}`);
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "ACCEPTED":
-        return (
-          <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
-            <CheckCircle className="w-4 h-4" /> Chấp nhận
-          </span>
-        );
-      case "REJECTED":
-        return (
-          <span className="bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
-            <XCircle className="w-4 h-4" /> Từ chối
-          </span>
-        );
-      case "REVIEWED":
-        return (
-          <span className="bg-brand-100 text-brand-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
-            <Eye className="w-4 h-4" /> Đã xem
-          </span>
-        );
-      default:
-        return (
-          <span className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
-            <Clock className="w-4 h-4" /> Chờ duyệt
-          </span>
-        );
-    }
-  };
+  const getStatusBadge = (status) => (
+    <AppStatusBadge status={status} label={APPLICATION_STATUS_LABEL[status]} />
+  );
 
   // Nếu đang gọi API
   if (isLoading) {
@@ -255,28 +251,29 @@ export default function ApplicationDetailPage() {
             <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">
               Quyết định
             </h3>
+            {/* Các bước hợp lệ theo quy trình: Chờ duyệt → Đã xem → Mời phỏng vấn → Nhận / Loại */}
             <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => handleAction("ACCEPTED")}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex justify-center items-center gap-2 py-3 rounded-xl shadow-sm font-bold"
-                disabled={
-                  application.status === "ACCEPTED" ||
-                  application.status === "REJECTED"
-                }
-              >
-                <CheckCircle className="w-5 h-5" /> Chấp nhận ứng viên
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleAction("REJECTED")}
-                className="w-full text-rose-600 border-2 border-rose-100 hover:bg-rose-50 flex justify-center items-center gap-2 py-3 rounded-xl font-bold transition-colors"
-                disabled={
-                  application.status === "ACCEPTED" ||
-                  application.status === "REJECTED"
-                }
-              >
-                <XCircle className="w-5 h-5" /> Từ chối hồ sơ
-              </Button>
+              {getNextStatuses(application).length === 0 ? (
+                <p className="rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500">
+                  Hồ sơ đã có kết quả: <b>{APPLICATION_STATUS_LABEL[application.status]}</b>.
+                </p>
+              ) : (
+                getNextStatuses(application).map((next) => (
+                  <Button
+                    key={next}
+                    variant={STATUS_ACTIONS[next].variant}
+                    isLoading={updatingStatus === next}
+                    onClick={() => handleAction(next)}
+                    className="w-full"
+                  >
+                    {next === "ACCEPTED" && <CheckCircle className="w-5 h-5" />}
+                    {next === "REJECTED" && <XCircle className="w-5 h-5" />}
+                    {next === "REVIEWED" && <Eye className="w-5 h-5" />}
+                    {next === "INTERVIEW_SCHEDULED" && <Clock className="w-5 h-5" />}
+                    {NEXT_ACTION_LONG_LABEL[next]}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -43,9 +43,27 @@ public class Application {
         return application;
     }
 
-    // Business Behavior: Cập nhật trạng thái tự do (dùng cho các bước trong quy trình tuyển dụng)
-    public void updateStatus(ApplicationStatus status) {
-        this.status = status;
+    /**
+     * Business Behavior: chuyển trạng thái theo đúng quy trình tuyển dụng
+     * PENDING → REVIEWED → INTERVIEW_SCHEDULED → ACCEPTED / REJECTED.
+     * Có thể từ chối ở bất kỳ bước nào trước khi có kết quả; ACCEPTED/REJECTED là trạng thái cuối.
+     */
+    public void updateStatus(ApplicationStatus next) {
+        if (next == null) {
+            throw new IllegalArgumentException("Trạng thái mới không được để trống.");
+        }
+        if (!this.status.canMoveTo(next)) {
+            throw new IllegalStateException(String.format(
+                    "Không thể chuyển hồ sơ từ trạng thái %s sang %s.", this.status, next));
+        }
+        this.status = next;
+    }
+
+    /** Ứng viên chỉ rút được đơn khi nhà tuyển dụng chưa xử lý. */
+    public void ensureWithdrawable() {
+        if (this.status != ApplicationStatus.PENDING) {
+            throw new IllegalStateException("Chỉ có thể rút hồ sơ khi nhà tuyển dụng chưa xem xét (đang chờ).");
+        }
     }
 
     // Business Behavior: Employer/Admin chuyển sang đã xem xét

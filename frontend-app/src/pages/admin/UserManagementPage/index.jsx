@@ -82,7 +82,18 @@ export default function UserManagementPage() {
       });
       fetchUsers();
     } catch (err) {
-      setStatusMsg({ type: "error", message: "Không thể khóa tài khoản này." });
+      setStatusMsg({ type: "error", message: err.response?.data?.message || "Không thể khóa tài khoản này." });
+    }
+  };
+
+  const handleUnbanUser = async (userId) => {
+    if (!window.confirm("Mở khóa tài khoản này? Người dùng sẽ đăng nhập lại được.")) return;
+    try {
+      await adminService.unbanUser(userId);
+      setStatusMsg({ type: "success", message: "Đã mở khóa tài khoản." });
+      fetchUsers();
+    } catch (err) {
+      setStatusMsg({ type: "error", message: err.response?.data?.message || "Không thể mở khóa tài khoản này." });
     }
   };
 
@@ -284,19 +295,26 @@ export default function UserManagementPage() {
                       {renderStatusBadge(user.status)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleBanUser(user.id)}
-                        disabled={
-                          user.status === "BANNED" || user.role === "ADMIN"
-                        }
-                        className="px-4 py-2 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 disabled:opacity-40 disabled:hover:bg-white text-xs rounded-xl flex items-center gap-1.5 ml-auto shadow-sm transition-all"
-                      >
-                        <ShieldAlert className="w-4 h-4" />
-                        {user.status === "BANNED"
-                          ? "Đã bị khóa"
-                          : "Khóa tài khoản"}
-                      </Button>
+                      {user.status === "BANNED" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnbanUser(user.id)}
+                          className="ml-auto text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                        >
+                          <ShieldCheck className="w-4 h-4" /> Mở khóa
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="danger-outline"
+                          size="sm"
+                          onClick={() => handleBanUser(user.id)}
+                          disabled={user.role === "ADMIN"}
+                          className="ml-auto"
+                        >
+                          <ShieldAlert className="w-4 h-4" /> Khóa tài khoản
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))

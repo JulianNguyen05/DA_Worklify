@@ -25,11 +25,10 @@ const LoginPage = () => {
     closeToast();
 
     try {
+      // authService.login đã lưu user/accessToken/userRole vào localStorage.
+      // (Trước đây trang này ghi đè accessToken bằng response.data.token = undefined.)
       const response = await authService.login(formData);
-      const { token, role } = response.data; 
-
-      localStorage.setItem('accessToken', token);
-      localStorage.setItem('userRole', role);
+      const { role } = response.data;
 
       setToast({
         show: true,

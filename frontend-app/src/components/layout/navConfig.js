@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Briefcase, Building2, UserRound, FileText, Send, Settings,
-  PlusCircle, Users, UserSearch, ShieldCheck, FileCheck2, Tags, BadgeCheck, BarChart3, Code2,
+  PlusCircle, Users, UserSearch, ShieldCheck, FileCheck2, Tags, BadgeCheck, BarChart3, Code2, Heart,
 } from 'lucide-react';
 
 // Cấu hình điều hướng theo vai trò — dùng chung cho Navbar, Sidebar và menu người dùng.
@@ -17,6 +17,7 @@ export const CANDIDATE_LINKS = [
   { name: 'Hồ sơ', path: '/candidate/profile', icon: UserRound },
   { name: 'CV của tôi', path: '/candidate/cv-manager', icon: FileText },
   { name: 'Đơn ứng tuyển', path: '/candidate/applications', icon: Send },
+  { name: 'Việc đã lưu', path: '/candidate/saved-jobs', icon: Heart },
 ];
 
 export const EMPLOYER_NAV = [

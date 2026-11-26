@@ -4,6 +4,7 @@ import com.worklify.application.admin.dto.AdminJobResponse;
 import com.worklify.application.common.exception.ResourceNotFoundException;
 import com.worklify.application.employer.dto.CompanyProfileResponse;
 import com.worklify.application.referencedata.ReferenceValueType;
+import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.candidate.repository.CandidateProfileRepository;
 import com.worklify.domain.candidate.repository.CandidateSkillRepository;
@@ -309,6 +310,9 @@ public class AdminServiceImpl implements AdminService {
     public void banUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại."));
+        if (user.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Không thể khóa tài khoản quản trị viên.");
+        }
         user.ban();
         userRepository.save(user);
         systemLogRepository.save(SystemLog.record(SYSTEM_ADMIN_ID, "BAN_USER", "User ID: " + userId));

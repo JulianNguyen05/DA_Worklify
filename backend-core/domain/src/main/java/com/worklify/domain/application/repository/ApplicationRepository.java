@@ -12,4 +12,6 @@ public interface ApplicationRepository {
     boolean existsByCandidateIdAndJobId(Long candidateId, Long jobId);
     long countAll();
     long countByStatus(ApplicationStatus status);
+    void delete(Application application);
+    java.util.List<Application> findByCvId(Long cvId);
 }

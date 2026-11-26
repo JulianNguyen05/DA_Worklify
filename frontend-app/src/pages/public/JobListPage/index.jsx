@@ -1,89 +1,100 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, MapPin, SearchX } from 'lucide-react';
+import { Search, MapPin, SearchX, Wallet } from 'lucide-react';
 import jobService from '../../../features/job/jobService';
 import Button from '../../../components/common/Button';
-import Tabs from '../../../components/common/Tabs';
+import Select from '../../../components/common/Select';
 import { Skeleton } from '../../../components/common/Spinner';
 import EmptyState from '../../../components/common/EmptyState';
 import JobCard from '../../../components/shared/JobCard';
-import Pagination from '../../../components/common/Pagination'; 
+import Pagination from '../../../components/common/Pagination';
+
+const WORK_TYPE_OPTIONS = [
+  { value: '', label: 'Mọi hình thức' },
+  { value: 'FULL_TIME', label: 'Toàn thời gian' },
+  { value: 'PART_TIME', label: 'Bán thời gian' },
+  { value: 'INTERNSHIP', label: 'Thực tập' },
+  { value: 'REMOTE', label: 'Làm từ xa' },
+];
+
+// Khoảng lương (triệu VNĐ/tháng) → salaryMin/salaryMax gửi backend
+const SALARY_OPTIONS = [
+  { value: '', label: 'Mọi mức lương' },
+  { value: '0-10', label: 'Dưới 10 triệu' },
+  { value: '10-15', label: '10 - 15 triệu' },
+  { value: '15-25', label: '15 - 25 triệu' },
+  { value: '25-35', label: '25 - 35 triệu' },
+  { value: '35-', label: 'Trên 35 triệu' },
+];
+
+const salaryToParams = (range) => {
+  if (!range) return {};
+  const [min, max] = range.split('-');
+  return { salaryMin: min || undefined, salaryMax: max || undefined };
+};
+
+const FILTER_KEYS = ['keyword', 'location', 'workType', 'salary'];
 
 export default function JobListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const keywordParam = searchParams.get('keyword') || '';
-  const locationParam = searchParams.get('location') || '';
+  const current = Object.fromEntries(FILTER_KEYS.map((k) => [k, searchParams.get(k) || '']));
   const pageParam = parseInt(searchParams.get('page')) || 1;
 
-  // States
-  const [filterForm, setFilterForm] = useState({ 
-    keyword: keywordParam, 
-    location: locationParam 
-  });
-  const [activeWorkType, setActiveWorkType] = useState('ALL');
-  
+  const [filterForm, setFilterForm] = useState({ keyword: current.keyword, location: current.location });
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pageData, setPageData] = useState({
-    totalElements: 0,
-    totalPages: 0,
-    currentPage: 1
-  });
+  const [pageData, setPageData] = useState({ totalElements: 0, totalPages: 0, currentPage: 1 });
 
-  const fetchJobs = async (kw, loc, page) => {
-    setIsLoading(true);
-    try {
-      // Backend Spring Boot đếm từ 0, nên page - 1 là chính xác
-      const res = await jobService.searchJobs(kw, loc, page - 1, 10);
-      
-      if (res && res.data) {
-        const content = res.data.content || res.data.items || [];
-        
-        // Lọc Frontend
-        const filteredContent = activeWorkType === 'ALL' 
-          ? content 
-          : content.filter(job => job.workType === activeWorkType);
-
-        setJobs(filteredContent);
-        setPageData({
-          totalElements: res.data.totalElements || 0,
-          totalPages: res.data.totalPages || 0,
-          currentPage: page // Truyền chuẩn page (1-based index) vào State
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi lấy danh sách việc làm:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Cập nhật URL (nguồn sự thật của bộ lọc); đổi bộ lọc thì về trang 1
+  const updateParams = (patch, page = 1) => {
+    const next = { ...current, ...patch };
+    const params = {};
+    FILTER_KEYS.forEach((k) => { if (next[k]) params[k] = next[k]; });
+    params.page = String(page);
+    setSearchParams(params);
   };
 
   useEffect(() => {
-    fetchJobs(keywordParam, locationParam, pageParam, activeWorkType);
-  }, [keywordParam, locationParam, pageParam, activeWorkType]);
+    setFilterForm({ keyword: current.keyword, location: current.location });
+    const fetchJobs = async () => {
+      setIsLoading(true);
+      try {
+        const res = await jobService.searchJobs(
+          {
+            keyword: current.keyword,
+            location: current.location,
+            workType: current.workType,
+            ...salaryToParams(current.salary),
+          },
+          pageParam - 1, // backend đếm trang từ 0
+          10,
+        );
+        const data = res?.data || {};
+        setJobs(data.content || []);
+        setPageData({
+          totalElements: data.totalElements || 0,
+          totalPages: data.totalPages || 0,
+          currentPage: pageParam,
+        });
+      } catch (error) {
+        console.error('Lỗi lấy danh sách việc làm:', error);
+        setJobs([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
-    const params = {};
-    if (filterForm.keyword) params.keyword = filterForm.keyword;
-    if (filterForm.location) params.location = filterForm.location;
-    params.page = "1"; // Reset về trang 1
-    setSearchParams(params);
+    updateParams({ keyword: filterForm.keyword.trim(), location: filterForm.location.trim() });
   };
 
-  const handlePageChange = (newPage) => {
-    const params = {};
-    if (keywordParam) params.keyword = keywordParam;
-    if (locationParam) params.location = locationParam;
-    params.page = newPage.toString();
-    setSearchParams(params);
-  };
+  const handlePageChange = (newPage) => updateParams({}, newPage);
 
-  const WORK_TYPE_TABS = [
-    { value: 'ALL', label: 'Tất cả' },
-    { value: 'FULL_TIME', label: 'Toàn thời gian' },
-    { value: 'PART_TIME', label: 'Bán thời gian' },
-  ];
+  const hasFilter = FILTER_KEYS.some((k) => current[k]);
 
   return (
     <div>
@@ -138,15 +149,31 @@ export default function JobListPage() {
               <>Tìm thấy <b className="font-semibold text-slate-900">{pageData.totalElements}</b> việc làm phù hợp</>
             )}
           </p>
-          <Tabs
-            variant="pills"
-            items={WORK_TYPE_TABS}
-            value={activeWorkType}
-            onChange={(type) => {
-              setActiveWorkType(type);
-              handlePageChange(1); // Tự động đưa về trang 1
-            }}
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select
+              aria-label="Hình thức làm việc"
+              name="workType"
+              options={WORK_TYPE_OPTIONS}
+              value={current.workType}
+              onChange={(e) => updateParams({ workType: e.target.value })}
+              wrapperClassName="sm:w-44"
+            />
+            <div className="flex items-center gap-2 sm:w-48">
+              <Wallet className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
+              <Select
+                aria-label="Mức lương"
+                name="salary"
+                options={SALARY_OPTIONS}
+                value={current.salary}
+                onChange={(e) => updateParams({ salary: e.target.value })}
+              />
+            </div>
+            {hasFilter && (
+              <Button variant="ghost" size="sm" onClick={() => setSearchParams({})}>
+                Xóa lọc
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
@@ -171,11 +198,7 @@ export default function JobListPage() {
               action={
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setFilterForm({ keyword: '', location: '' });
-                    setActiveWorkType('ALL');
-                    setSearchParams({});
-                  }}
+                  onClick={() => setSearchParams({})}
                 >
                   Xóa tất cả bộ lọc
                 </Button>

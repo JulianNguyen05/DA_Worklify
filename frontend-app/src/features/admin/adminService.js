@@ -17,6 +17,11 @@ const adminService = {
   },
 
   // Khóa tài khoản người dùng
+  unbanUser: async (userId) => {
+    const response = await axiosClient.patch(`/admin/users/${userId}/unban`);
+    return response.data;
+  },
+
   banUser: async (userId) => {
     const response = await axiosClient.patch(`/admin/users/${userId}/ban`);
     return response.data;

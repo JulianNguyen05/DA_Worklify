@@ -2,6 +2,7 @@ package com.worklify.application.auth.service.impl;
 
 import com.worklify.application.auth.dto.*;
 import com.worklify.application.auth.service.AuthService;
+import com.worklify.application.common.exception.ForbiddenOperationException;
 import com.worklify.domain.auth.model.Role;
 import com.worklify.domain.auth.model.User;
 import com.worklify.domain.auth.model.UserStatus;
@@ -76,6 +77,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validateRoleSpecificInvariants(RegisterRequest request) {
+        // Tài khoản ADMIN chỉ được tạo trực tiếp trong DB, không cho tự đăng ký qua API công khai
+        if (request.getRole() != Role.CANDIDATE && request.getRole() != Role.EMPLOYER) {
+            throw new IllegalArgumentException("Vai trò đăng ký không hợp lệ (chỉ Ứng viên hoặc Nhà tuyển dụng).");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu phải chứa ít nhất 6 ký tự");
+        }
         if (request.getRole() == Role.CANDIDATE) {
             if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
                 throw new IllegalArgumentException("Họ và tên không được để trống đối với vai trò Ứng viên.");
@@ -97,6 +105,9 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Email hoặc mật khẩu không chính xác.");
+        }
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new ForbiddenOperationException("Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên.");
         }
 
         // Trích xuất tên hiển thị dựa trên role
@@ -144,12 +155,12 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(String email) {
         EmailAddress emailAddress = new EmailAddress(email);
 
-        userRepository.findByEmail(emailAddress.value())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
-
-        String resetToken = java.util.UUID.randomUUID().toString();
-        // TODO: Gửi email chứa resetToken cho người dùng
-        System.out.println("[FORGOT PASSWORD] Token: " + resetToken + " | Email: " + email);
+        // Không báo "email không tồn tại" để tránh dò tài khoản; luôn trả về thành công.
+        userRepository.findByEmail(emailAddress.value()).ifPresent(user -> {
+            String resetToken = java.util.UUID.randomUUID().toString();
+            // TODO: Gửi email chứa resetToken cho người dùng (chưa có dịch vụ email)
+            System.out.println("[FORGOT PASSWORD] Token: " + resetToken + " | Email: " + email);
+        });
     }
 
     @Override
@@ -158,8 +169,14 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại trên hệ thống."));
 
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải chứa ít nhất 6 ký tự.");
+        }
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác.");
+        }
+        if (request.getNewPassword().equals(request.getOldPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại.");
         }
 
         user.updatePassword(passwordEncoder.encode(request.getNewPassword()));

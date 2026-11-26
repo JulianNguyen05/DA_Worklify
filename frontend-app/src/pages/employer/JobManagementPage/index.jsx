@@ -56,7 +56,7 @@ export default function JobManagementPage() {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      const result = await employerService.getMyJobs(companyId, 0, 10);
+      const result = await employerService.getMyJobs(companyId, 0, 100);
       setJobs(result.data?.content || []);
     } catch (error) {
       console.error('Lỗi khi tải danh sách tin:', error.response?.data || error.message);
@@ -72,16 +72,17 @@ export default function JobManagementPage() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  // Tính năng cập nhật trạng thái tin tuyển dụng (Đóng bài đăng)
+  // Đóng tin tuyển dụng (trước đây gọi nhầm API cập nhật trạng thái ĐƠN ứng tuyển → lỗi 500)
   const handleStatusChange = async (jobId, newStatus) => {
-    if (!companyId) return;
+    if (!companyId || newStatus !== 'CLOSED') return;
+    if (!window.confirm('Đóng tin này? Ứng viên sẽ không thể nộp hồ sơ nữa.')) return;
     try {
-      await employerService.updateApplicationStatus(companyId, jobId, newStatus);
-      showToast('Đã dừng hiển thị tin tuyển dụng thành công.');
-      loadJobs(); 
+      await employerService.closeJob(companyId, jobId);
+      showToast('Đã đóng tin tuyển dụng.');
+      loadJobs();
     } catch (error) {
-      console.error('Lỗi khi đổi trạng thái:', error);
-      showToast('Có lỗi xảy ra khi cập nhật trạng thái.');
+      console.error('Lỗi khi đóng tin:', error);
+      showToast(error.response?.data?.message || 'Có lỗi xảy ra khi đóng tin.');
     }
   };
 
