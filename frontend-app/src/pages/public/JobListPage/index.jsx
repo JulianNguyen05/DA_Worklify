@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Briefcase, Filter, Loader2, Frown } from 'lucide-react';
+import { Search, MapPin, SearchX } from 'lucide-react';
 import jobService from '../../../features/job/jobService';
 import Button from '../../../components/common/Button';
-import Input from '../../../components/common/Input';
+import Tabs from '../../../components/common/Tabs';
+import { Skeleton } from '../../../components/common/Spinner';
+import EmptyState from '../../../components/common/EmptyState';
 import JobCard from '../../../components/shared/JobCard';
 import Pagination from '../../../components/common/Pagination'; 
 
@@ -77,155 +79,122 @@ export default function JobListPage() {
     setSearchParams(params);
   };
 
-  return (
-    <div className="bg-slate-50 min-h-screen font-sans">
-      
-      {/* ================= HERO BANNER ================= */}
-      <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 py-16 lg:py-24 px-4 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl"></div>
-          <div className="absolute bottom-0 right-10 w-80 h-80 rounded-full bg-blue-300 blur-3xl"></div>
-        </div>
+  const WORK_TYPE_TABS = [
+    { value: 'ALL', label: 'Tất cả' },
+    { value: 'FULL_TIME', label: 'Toàn thời gian' },
+    { value: 'PART_TIME', label: 'Bán thời gian' },
+  ];
 
-        <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
-          <h1 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Tìm Kiếm Công Việc Ước Mơ Của Bạn
+  return (
+    <div>
+      {/* ================= THANH TÌM KIẾM ================= */}
+      <section className="border-b border-slate-200 bg-white">
+        <div className="page-container py-8 sm:py-10">
+          <p className="eyebrow">Việc làm</p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Tìm công việc phù hợp với bạn
           </h1>
-          <p className="text-lg text-blue-100 max-w-2xl mx-auto font-light">
-            Khám phá hàng ngàn cơ hội việc làm từ các công ty hàng đầu. Kết nối đam mê với sự nghiệp ngay hôm nay.
+          <p className="mt-1.5 text-sm text-slate-500">
+            Khám phá cơ hội việc làm từ các doanh nghiệp đã được xác minh.
           </p>
 
-          {/* MAIN SEARCH FORM */}
-          <form 
-            onSubmit={handleFilterSubmit} 
-            className="mt-10 bg-white p-2 rounded-2xl shadow-2xl max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-2"
+          <form
+            onSubmit={handleFilterSubmit}
+            className="card mt-6 flex flex-col gap-2 p-2 md:flex-row md:items-center"
           >
-            <div className="flex-1 flex items-center w-full px-4 py-2 border-b md:border-b-0 md:border-r border-gray-100">
-              <Search className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
-              <input 
+            <label className="flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 focus-within:bg-slate-50">
+              <Search className="h-[18px] w-[18px] shrink-0 text-slate-400" />
+              <input
                 type="text"
-                className="w-full focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                className="w-full bg-transparent text-[15px] text-slate-900 placeholder-slate-400 focus:outline-none"
                 placeholder="Tên công việc, kỹ năng, công ty..."
                 value={filterForm.keyword}
                 onChange={(e) => setFilterForm({ ...filterForm, keyword: e.target.value })}
               />
-            </div>
-            
-            <div className="flex-1 flex items-center w-full px-4 py-2">
-              <MapPin className="text-gray-400 w-5 h-5 mr-3 shrink-0" />
-              <input 
+            </label>
+            <div className="hidden h-6 w-px bg-slate-200 md:block" />
+            <label className="flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 focus-within:bg-slate-50">
+              <MapPin className="h-[18px] w-[18px] shrink-0 text-slate-400" />
+              <input
                 type="text"
-                className="w-full focus:outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                className="w-full bg-transparent text-[15px] text-slate-900 placeholder-slate-400 focus:outline-none"
                 placeholder="Tỉnh/Thành phố..."
                 value={filterForm.location}
                 onChange={(e) => setFilterForm({ ...filterForm, location: e.target.value })}
               />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full md:w-auto h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg transition-all"
-            >
-              Tìm Việc
+            </label>
+            <Button type="submit" size="lg" className="w-full md:w-auto">
+              <Search className="h-4 w-4" /> Tìm việc
             </Button>
           </form>
         </div>
-      </div>
+      </section>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <div className="max-w-6xl mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">
-        
-        {/* SIDEBAR FILTERS */}
-        <aside className="w-full lg:w-1/4 shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
-              <Filter className="w-5 h-5 text-gray-700" />
-              <h2 className="text-lg font-bold text-gray-800">Bộ Lọc Mở Rộng</h2>
-            </div>
+      {/* ================= DANH SÁCH ================= */}
+      <div className="page-container py-8">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-600">
+            {isLoading ? 'Đang tìm kiếm...' : (
+              <>Tìm thấy <b className="font-semibold text-slate-900">{pageData.totalElements}</b> việc làm phù hợp</>
+            )}
+          </p>
+          <Tabs
+            variant="pills"
+            items={WORK_TYPE_TABS}
+            value={activeWorkType}
+            onChange={(type) => {
+              setActiveWorkType(type);
+              handlePageChange(1); // Tự động đưa về trang 1
+            }}
+          />
+        </div>
 
-            {/* Lọc theo Hình thức làm việc */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-gray-400" /> Hình thức làm việc
-              </h3>
-              <div className="space-y-2">
-                {['ALL', 'FULL_TIME', 'PART_TIME'].map((type) => (
-                  <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                    <input 
-                      type="radio" 
-                      name="workType" 
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      checked={activeWorkType === type}
-                      onChange={() => {
-                        setActiveWorkType(type);
-                        handlePageChange(1); // Tự động đưa về trang 1
-                      }}
-                    />
-                    <span className="text-gray-600 group-hover:text-blue-600 transition-colors">
-                      {type === 'ALL' ? 'Tất cả hình thức' : type === 'FULL_TIME' ? 'Toàn thời gian' : 'Bán thời gian'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* JOB LIST AREA */}
-        <main className="w-full lg:w-3/4 flex flex-col min-h-[500px]">
-          
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">
-              {isLoading ? 'Đang tìm kiếm...' : `Tìm thấy ${pageData.totalElements} việc làm phù hợp`}
-            </h2>
-          </div>
-
-          {/* Rendering Logic */}
-          {isLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-blue-600 py-20">
-              <Loader2 className="w-12 h-12 animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Đang tải danh sách công việc...</p>
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 border-dashed py-20 px-4 text-center shadow-sm">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <Frown className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Chưa tìm thấy công việc phù hợp</h3>
-              <p className="text-gray-500 max-w-md">
-                Thử thay đổi từ khóa, xóa bớt các bộ lọc hoặc kiểm tra lỗi chính tả để xem thêm các cơ hội khác nhé.
-              </p>
-              <Button 
-                onClick={() => {
-                  setFilterForm({ keyword: '', location: '' });
-                  setActiveWorkType('ALL');
-                  setSearchParams({});
-                }} 
-                className="mt-6 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100"
-              >
-                Xóa tất cả bộ lọc
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4 flex-1">
-              {jobs.map(job => (
-                <div key={job.id} className="transition-all hover:-translate-y-1 hover:shadow-lg rounded-2xl">
-                  <JobCard job={job} />
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="card flex items-center gap-4 p-5">
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-3 w-2/3" />
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* COMPONENT PHÂN TRANG NÂNG CẤP */}
-          {!isLoading && pageData.totalPages > 1 && (
-            <Pagination 
-              currentPage={pageData.currentPage} 
-              totalPages={pageData.totalPages} 
-              onPageChange={handlePageChange} 
+              </div>
+            ))}
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="card border-dashed">
+            <EmptyState
+              icon={SearchX}
+              title="Chưa tìm thấy công việc phù hợp"
+              description="Thử thay đổi từ khóa, xóa bớt bộ lọc hoặc kiểm tra lỗi chính tả để xem thêm cơ hội khác."
+              action={
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterForm({ keyword: '', location: '' });
+                    setActiveWorkType('ALL');
+                    setSearchParams({});
+                  }}
+                >
+                  Xóa tất cả bộ lọc
+                </Button>
+              }
             />
-          )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {jobs.map(job => <JobCard key={job.id} job={job} />)}
+          </div>
+        )}
 
-        </main>
+        {!isLoading && pageData.totalPages > 1 && (
+          <Pagination
+            currentPage={pageData.currentPage}
+            totalPages={pageData.totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </div>
   );

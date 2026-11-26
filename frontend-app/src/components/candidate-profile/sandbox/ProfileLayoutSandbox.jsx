@@ -141,7 +141,7 @@ const ProfileLayoutSandbox = ({
 
   return (
     <div
-      className={isEditMode ? 'border-2 border-[#2563EB] rounded-2xl p-3 sm:p-4' : 'p-3 sm:p-4'}
+      className={isEditMode ? 'border-2 border-brand-600 rounded-2xl p-3 sm:p-4' : 'p-3 sm:p-4'}
       style={isEditMode ? {
         backgroundColor: '#F8FAFC',
         backgroundImage: 'radial-gradient(#2563EB22 1.5px, transparent 1.5px)',

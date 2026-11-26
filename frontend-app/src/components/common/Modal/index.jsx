@@ -1,38 +1,78 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
-export default function Modal({ isOpen, onClose, title, children }) {
+const SIZES = {
+  auto: 'sm:w-auto sm:min-w-[440px] max-w-[95vw]',
+  sm: 'sm:max-w-md',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-4xl',
+  full: 'sm:max-w-[95vw]',
+};
+
+/**
+ * Hộp thoại. API cũ giữ nguyên: isOpen, onClose, title, children (body không padding,
+ * trang tự thêm padding). Thêm: description, footer, size, closeOnBackdrop.
+ * Esc để đóng; khoá cuộn trang khi mở.
+ */
+export default function Modal({ isOpen, onClose, title, description, children, footer, size = 'auto', closeOnBackdrop = false, className }) {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  return (
-    // 1. Lớp phủ (Backdrop): Nền xám trong suốt (bg-slate-900/40) kết hợp làm mờ (backdrop-blur-sm)
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-all duration-300">
-      
-      {/* 2. Khung Modal: Bỏ max-w-md, dùng w-auto và max-w-[95vw] để CV có thể bung rộng. Thêm bg-white/95 để tạo độ trong suốt nhẹ nhàng */}
-      <div className="bg-white/95 backdrop-blur-md border border-white/60 rounded-xl shadow-2xl w-auto min-w-[400px] max-w-[95vw] max-h-[95vh] mx-4 flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="flex justify-between items-center px-5 py-4 border-b border-gray-200/60">
-          <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-          
-          <button 
-            onClick={onClose} 
-            className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-[2px] animate-fade-in sm:items-center sm:p-4"
+      onMouseDown={(e) => {
+        if (closeOnBackdrop && e.target === e.currentTarget) onClose?.();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={cn(
+          'flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-pop animate-pop-in sm:max-h-[90vh] sm:rounded-xl',
+          SIZES[size] || SIZES.auto,
+          className,
+        )}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+            {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
             title="Đóng"
+            aria-label="Đóng"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <X className="h-[18px] w-[18px]" />
           </button>
         </div>
-        
-        {/* Body */}
-        {/* Thêm flex-1 và overflow-y-auto để nội dung bên trong (như CV) tự động có thanh cuộn nếu quá dài */}
-        <div className="p-0 flex-1 overflow-y-auto">
-          {children}
-        </div>
 
+        <div className="flex-1 overflow-y-auto">{children}</div>
+
+        {footer && (
+          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-3">{footer}</div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

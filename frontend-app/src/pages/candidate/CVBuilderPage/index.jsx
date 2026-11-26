@@ -725,8 +725,8 @@ const CVBuilderPage = () => {
       <>
         <style>{wlBuilderStyles}</style>
         <div className="wl-builder wl-builder-root flex h-screen items-center justify-center gap-3">
-          <Loader className="w-8 h-8 text-[#2563EB] animate-spin" />
-          <span className="text-[#475569] font-medium">
+          <Loader className="w-8 h-8 text-brand-600 animate-spin" />
+          <span className="text-slate-600 font-medium">
             Đang tải CV của bạn...
           </span>
         </div>
@@ -744,7 +744,7 @@ const CVBuilderPage = () => {
               ? "bg-red-500/95"
               : toast.type === "warning"
                 ? "bg-amber-500/95"
-                : "bg-gradient-to-r from-[#2563EB] to-[#14B8A6]"
+                : "bg-gradient-to-r from-brand-600 to-accent-500"
           }`}
         >
           {toast.type === "success" && <CheckCircle2 size={20} />}
@@ -782,7 +782,7 @@ const CVBuilderPage = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-semibold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg text-sm font-semibold transition-colors"
           >
             <Eye size={18} />
             Xem trước
@@ -927,7 +927,7 @@ const CVBuilderPage = () => {
         title="Bản xem trước CV"
       >
         <div
-          className="bg-gray-200 overflow-y-auto flex flex-col items-center gap-8 p-4 sm:p-8"
+          className="bg-slate-200 overflow-y-auto flex flex-col items-center gap-8 p-4 sm:p-8"
           style={{
             maxHeight: "85vh",
             width: "100%",
@@ -961,7 +961,7 @@ const CVBuilderPage = () => {
                 />
               </div>
 
-              <span className="absolute bottom-2 right-3 text-[11px] text-gray-400 font-medium bg-white/80 px-1.5 py-0.5 rounded">
+              <span className="absolute bottom-2 right-3 text-[11px] text-slate-400 font-medium bg-white/80 px-1.5 py-0.5 rounded">
                 Trang {pageIndex + 1}/{previewPageCount}
               </span>
             </div>

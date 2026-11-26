@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  MapPin, DollarSign, Briefcase, Clock, Calendar, 
+  MapPin, Wallet, Briefcase, Clock, Calendar, ArrowRight,
   Building2, Send, Heart, CheckCircle2, AlertCircle, Loader2, Sparkles, RefreshCw
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
@@ -14,6 +14,12 @@ import matchingService, { getMatchingErrorMessage } from '../../../features/matc
 import Button from '../../../components/common/Button';
 import Modal from '../../../components/common/Modal';
 import Toast from '../../../components/common/Toast';
+import Card from '../../../components/common/Card';
+import Avatar from '../../../components/common/Avatar';
+import Select from '../../../components/common/Select';
+import Textarea from '../../../components/common/Textarea';
+import EmptyState from '../../../components/common/EmptyState';
+import { PageLoader } from '../../../components/common/Spinner';
 import { MatchScoreCard } from '../../../components/shared/MatchScore';
 import CvAdvicePanel from '../../../components/shared/CvAdvicePanel';
 
@@ -136,16 +142,17 @@ export default function JobDetailPage() {
     setStatusMsg({ type: 'success', message: isSaved ? 'Đã bỏ lưu tin.' : 'Đã lưu tin tuyển dụng!' });
   };
 
-  if (isLoading) {
+  if (isLoading) return <PageLoader label="Đang tải chi tiết công việc..." />;
+
+  if (!job) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-blue-600">
-        <Loader2 className="w-12 h-12 animate-spin mb-4" />
-        <p className="font-medium text-gray-500">Đang tải chi tiết công việc...</p>
+      <div className="page-container py-16">
+        <Card>
+          <EmptyState icon={Briefcase} title="Không tìm thấy công việc này!" description="Tin có thể đã bị gỡ hoặc hết hạn." />
+        </Card>
       </div>
     );
   }
-
-  if (!job) return <div className="text-center py-20 text-xl font-bold text-gray-600">Không tìm thấy công việc này!</div>;
 
   // Render nội dung HTML từ RichTextEditor một cách an toàn (loại bỏ script/thẻ nguy hiểm).
   // Chỉ cho phép các thẻ cơ bản mà RichTextEditor (TipTap StarterKit) có thể sinh ra.
@@ -155,147 +162,135 @@ export default function JobDetailPage() {
     }),
   });
 
-  // =================================================================
-  // ĐÃ CẬP NHẬT: XỬ LÝ ĐỒNG BỘ JSON (HỖ TRỢ ĐA DẠNG CẤU TRÚC BACKEND)
-  // =================================================================
-  const actualCompanyName = 
-    job.company?.companyName || 
-    job.company?.name || 
-    job.companyName || 
-    job.company_name || 
+  // Đồng bộ JSON (hỗ trợ nhiều cấu trúc backend)
+  const actualCompanyName =
+    job.company?.companyName ||
+    job.company?.name ||
+    job.companyName ||
+    job.company_name ||
     `Công ty ID: ${job.companyId || job.company_id}`;
 
-  const actualLogoUrl = 
-    job.company?.logoUrl || 
-    job.company?.logo_url || 
-    job.companyLogo || 
-    job.company_logo || 
-    job.logoUrl || 
+  const actualLogoUrl =
+    job.company?.logoUrl ||
+    job.company?.logo_url ||
+    job.companyLogo ||
+    job.company_logo ||
+    job.logoUrl ||
     job.logo_url;
 
   const actualSalaryRange = job.salaryRange || job.salary_range;
   const actualCreatedAt = job.createdAt || job.created_at;
+  const companyPath = `/companies/${job.companyId || job.company_id || job.company?.id}`;
 
   let displayLogo = null;
   if (actualLogoUrl) {
-    displayLogo = actualLogoUrl.startsWith('http') 
-      ? actualLogoUrl 
+    displayLogo = actualLogoUrl.startsWith('http')
+      ? actualLogoUrl
       : `http://localhost:8080${actualLogoUrl.startsWith('/') ? '' : '/'}${actualLogoUrl}`;
   }
 
+  const workTypeLabel =
+    job.workType === 'FULL_TIME' ? 'Toàn thời gian' : job.workType === 'PART_TIME' ? 'Bán thời gian' : job.workType;
+
+  const overview = [
+    { icon: Wallet, label: 'Mức lương', value: actualSalaryRange || 'Thỏa thuận' },
+    { icon: MapPin, label: 'Địa điểm', value: job.location || 'Chưa cập nhật' },
+    { icon: Briefcase, label: 'Hình thức làm việc', value: workTypeLabel || '—' },
+    { icon: Calendar, label: 'Hạn nộp hồ sơ', value: job.expiresAt ? new Date(job.expiresAt).toLocaleDateString('vi-VN') : 'Đang mở' },
+    { icon: Clock, label: 'Ngày đăng tin', value: actualCreatedAt ? new Date(actualCreatedAt).toLocaleDateString('vi-VN') : 'Mới đây' },
+  ];
+
   return (
-    <div className="bg-slate-50 min-h-screen pb-20 font-sans">
+    <div className="pb-16">
       {statusMsg.type && (
-        <div className="fixed top-24 right-8 z-50">
+        <div className="fixed right-4 top-20 z-[70] w-[min(380px,calc(100vw-2rem))] shadow-raised">
           <Toast type={statusMsg.type} message={statusMsg.message} />
         </div>
       )}
 
-      {/* ================= HERO SECTION (HEADER) ================= */}
-      <div className="bg-white border-b border-gray-200 pt-8 pb-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="flex gap-6 items-center w-full lg:w-2/3">
-            {/* KHUNG HIỂN THỊ LOGO */}
-            <div className="w-24 h-24 shrink-0 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
-              {displayLogo ? (
-                <img 
-                  src={displayLogo} 
-                  alt={actualCompanyName} 
-                  className="w-full h-full object-contain" 
-                  onError={(e) => { 
-                    e.target.onerror = null; 
-                    e.target.src = 'https://via.placeholder.com/150?text=Logo'; 
-                  }}
-                />
-              ) : (
-                <Building2 className="w-10 h-10 text-gray-300" />
-              )}
-            </div>
-            {/* Title & Tags */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{job.title}</h1>
-              <p className="text-lg text-blue-700 font-semibold mb-4 hover:underline cursor-pointer">{actualCompanyName}</p>
-              <div className="flex flex-wrap gap-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-medium border border-green-200">
-                  <DollarSign className="w-4 h-4" /> {actualSalaryRange || 'Thỏa thuận'}
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-medium border border-gray-200">
-                  <MapPin className="w-4 h-4" /> {job.location || 'Chưa cập nhật'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="w-full lg:w-1/3 flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
-            <Button 
-              onClick={handleOpenApplyModal} 
-              className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl shadow-md shadow-blue-200 flex items-center justify-center gap-2"
-            >
-              <Send className="w-5 h-5" /> Ứng tuyển ngay
-            </Button>
-            <Button 
-              onClick={toggleSaveJob}
-              variant="outline" 
-              className={`w-full h-12 font-semibold rounded-xl flex items-center justify-center gap-2 ${isSaved ? 'text-rose-600 border-rose-200 bg-rose-50' : 'text-gray-600 border-gray-300 bg-white hover:bg-gray-50'}`}
-            >
-              <Heart className={`w-5 h-5 ${isSaved ? 'fill-rose-500' : ''}`} /> 
-              {isSaved ? 'Đã lưu tin' : 'Lưu tin này'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= MAIN CONTENT ================= */}
-      <div className="max-w-6xl mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8">
-        
-        {/* CỘT TRÁI: Chi tiết công việc */}
-        <div className="w-full lg:w-2/3 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 border-b border-gray-100 pb-4 mb-6 flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-blue-600" /> Chi tiết tin tuyển dụng
-            </h2>
-            
-            <div className="space-y-8">
-              {/* Mô tả */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-3">Mô tả công việc</h3>
-                <div
-                  className="text-gray-600 leading-relaxed prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={renderHtml(job.description)}
-                />
-              </div>
-
-              {/* Yêu cầu */}
-              {job.requirements && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800 mb-3">Yêu cầu ứng viên</h3>
-                  <div
-                    className="text-gray-600 leading-relaxed prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={renderHtml(job.requirements)}
-                  />
+      {/* ================= HEADER ================= */}
+      <section className="border-b border-slate-200 bg-white">
+        <div className="page-container py-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+              <Avatar src={displayLogo} name={actualCompanyName} size="xl" square className="rounded-2xl" />
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl">{job.title}</h1>
+                <button
+                  type="button"
+                  onClick={() => navigate(companyPath)}
+                  className="mt-1.5 text-left text-[15px] font-medium text-slate-600 hover:text-brand-700"
+                >
+                  {actualCompanyName}
+                </button>
+                <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                    <Wallet className="h-4 w-4" /> {actualSalaryRange || 'Thỏa thuận'}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
+                    <MapPin className="h-4 w-4" /> {job.location || 'Chưa cập nhật'}
+                  </span>
+                  {workTypeLabel && (
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
+                      <Briefcase className="h-4 w-4" /> {workTypeLabel}
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
+            </div>
+
+            <div className="flex shrink-0 gap-2">
+              <Button
+                onClick={toggleSaveJob}
+                variant="outline"
+                size="lg"
+                className={isSaved ? 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-50' : ''}
+              >
+                <Heart className={`h-[18px] w-[18px] ${isSaved ? 'fill-rose-500' : ''}`} />
+                <span className="hidden sm:inline">{isSaved ? 'Đã lưu tin' : 'Lưu tin'}</span>
+              </Button>
+              <Button onClick={handleOpenApplyModal} size="lg" className="flex-1 sm:flex-none sm:px-8">
+                <Send className="h-[18px] w-[18px]" /> Ứng tuyển ngay
+              </Button>
             </div>
           </div>
-          
-          {/* Cảnh báo an toàn */}
-          {/* <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800 leading-relaxed">
-              <strong>Báo cáo gian lận:</strong> Worklify không bao giờ yêu cầu ứng viên nộp phí. Nếu bạn thấy có dấu hiệu lừa đảo, vui lòng cảnh giác và báo cáo ngay cho chúng tôi.
-            </p>
-          </div> */}
         </div>
+      </section>
 
-        {/* CỘT PHẢI: Tóm tắt & Thông tin chung */}
-        <div className="w-full lg:w-1/3 space-y-6">
+      {/* ================= NỘI DUNG ================= */}
+      <div className="page-container mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+        {/* Cột trái: chi tiết */}
+        <Card className="p-6 sm:p-8 lg:col-span-2">
+          <section>
+            <h2 className="text-lg font-semibold text-slate-900">Mô tả công việc</h2>
+            <div
+              className="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed text-slate-600"
+              dangerouslySetInnerHTML={renderHtml(job.description)}
+            />
+          </section>
+
+          {job.requirements && (
+            <section className="mt-8 border-t border-slate-100 pt-8">
+              <h2 className="text-lg font-semibold text-slate-900">Yêu cầu ứng viên</h2>
+              <div
+                className="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed text-slate-600"
+                dangerouslySetInnerHTML={renderHtml(job.requirements)}
+              />
+            </section>
+          )}
+        </Card>
+
+        {/* Cột phải */}
+        <div className="space-y-6 lg:sticky lg:top-24">
           {/* AI MATCHING: chỉ hiện cho khách và ứng viên (nhà tuyển dụng/admin không có hồ sơ ứng viên) */}
           {(!currentUser || currentUser.role === 'CANDIDATE') && (
-            <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-600" /> Mức độ phù hợp với bạn
+            <Card className="overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-brand-50 to-white px-5 py-4">
+                <h3 className="flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-white">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  Mức độ phù hợp với bạn
                 </h3>
                 {match && (
                   <button
@@ -303,133 +298,119 @@ export default function JobDetailPage() {
                     onClick={handleCheckMatch}
                     disabled={isMatching}
                     title="Chấm lại sau khi cập nhật hồ sơ"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-brand-600 disabled:opacity-50"
                   >
-                    <RefreshCw className={`w-4 h-4 ${isMatching ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-4 w-4 ${isMatching ? 'animate-spin' : ''}`} />
                   </button>
                 )}
               </div>
 
-              {match ? (
-                <>
-                  <MatchScoreCard match={match} />
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAdviceOpen(true)}
-                    className="w-full mt-4 h-11 rounded-xl text-indigo-700 border-indigo-200 hover:bg-indigo-50"
-                  >
-                    <Sparkles className="w-4 h-4" /> Nhờ AI gợi ý sửa hồ sơ
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-500 mb-4">
-                    AI so sánh hồ sơ online của bạn với yêu cầu của công việc này và chỉ ra kỹ năng còn thiếu.
-                  </p>
-                  {matchError && (
-                    <div className="mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-lg p-3 flex gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>
-                        {matchError}{' '}
-                        {matchError.includes('hồ sơ') && (
-                          <button type="button" className="font-semibold underline" onClick={() => navigate('/candidate/profile')}>
-                            Cập nhật hồ sơ
-                          </button>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {currentUser ? (
-                    <Button
-                      onClick={handleCheckMatch}
-                      isLoading={isMatching}
-                      className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl"
-                    >
-                      {!isMatching && <Sparkles className="w-4 h-4" />}
-                      {isMatching ? 'AI đang chấm điểm...' : 'Xem mức độ phù hợp'}
+              <div className="p-5">
+                {match ? (
+                  <>
+                    <MatchScoreCard match={match} />
+                    <Button variant="outline" onClick={() => setIsAdviceOpen(true)} className="mt-4 w-full">
+                      <Sparkles className="h-4 w-4 text-brand-600" /> Nhờ AI gợi ý sửa hồ sơ
                     </Button>
-                  ) : (
-                    <Button variant="outline" onClick={() => navigate('/auth/login')} className="w-full h-11 rounded-xl">
-                      Đăng nhập tài khoản ứng viên để xem
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-4 text-sm leading-relaxed text-slate-500">
+                      AI so sánh hồ sơ online của bạn với yêu cầu của công việc này và chỉ ra kỹ năng còn thiếu.
+                    </p>
+                    {matchError && (
+                      <div className="mb-4 flex gap-2 rounded-lg border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>
+                          {matchError}{' '}
+                          {matchError.includes('hồ sơ') && (
+                            <button type="button" className="font-semibold underline" onClick={() => navigate('/candidate/profile')}>
+                              Cập nhật hồ sơ
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {currentUser ? (
+                      <Button onClick={handleCheckMatch} isLoading={isMatching} className="w-full">
+                        {!isMatching && <Sparkles className="h-4 w-4" />}
+                        {isMatching ? 'AI đang chấm điểm...' : 'Xem mức độ phù hợp'}
+                      </Button>
+                    ) : (
+                      <Button variant="outline" onClick={() => navigate('/auth/login')} className="w-full">
+                        Đăng nhập tài khoản ứng viên để xem
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </Card>
           )}
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Tổng quan công việc</h3>
-            
-            <div className="space-y-5">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <Briefcase className="w-5 h-5 text-blue-600" />
+          <Card className="p-5">
+            <h3 className="text-[15px] font-semibold text-slate-900">Tổng quan công việc</h3>
+            <dl className="mt-4 space-y-4">
+              {overview.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <Icon className="h-[18px] w-[18px]" />
+                  </span>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-slate-500">{label}</dt>
+                    <dd className="text-sm font-semibold text-slate-900">{value}</dd>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Hình thức làm việc</p>
-                  <p className="font-semibold text-gray-800">{job.workType === 'FULL_TIME' ? 'Toàn thời gian' : job.workType === 'PART_TIME' ? 'Bán thời gian' : job.workType}</p>
-                </div>
-              </div>
+              ))}
+            </dl>
 
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Hạn nộp hồ sơ</p>
-                  <p className="font-semibold text-gray-800">
-                    {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString('vi-VN') : 'Đang mở'}
-                  </p>
-                </div>
+            <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-5">
+              <Avatar src={displayLogo} name={actualCompanyName} square />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-slate-500">Được đăng bởi</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{actualCompanyName}</p>
               </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Ngày đăng tin</p>
-                  <p className="font-semibold text-gray-800">
-                    {actualCreatedAt ? new Date(actualCreatedAt).toLocaleDateString('vi-VN') : 'Mới đây'}
-                  </p>
-                </div>
-              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate(companyPath)}>
+                Xem <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
-            
-            <hr className="my-6 border-gray-100" />
-            
-            {/* Thông tin cty nhỏ */}
-            <div className="text-center">
-               <p className="text-sm text-gray-500 mb-2">Được đăng bởi</p>
-               <h4 className="font-bold text-gray-800">{actualCompanyName}</h4>
-               <Button variant="link" className="text-blue-600 text-sm mt-1" onClick={() => navigate(`/companies/${job.companyId || job.company_id || job.company?.id}`)}>Xem trang công ty &rarr;</Button>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
 
       {/* ================= MODAL TRỢ LÝ AI SỬA HỒ SƠ ================= */}
-      <Modal isOpen={isAdviceOpen} onClose={handleCloseAdvice} title="Trợ lý AI: gợi ý sửa hồ sơ cho công việc này">
-        <div className="w-[min(900px,92vw)]">
-          {isAdviceOpen && <CvAdvicePanel jobId={id} onApplied={() => setHasAppliedAdvice(true)} />}
-        </div>
+      <Modal isOpen={isAdviceOpen} onClose={handleCloseAdvice} size="xl" title="Trợ lý AI: gợi ý sửa hồ sơ cho công việc này">
+        {isAdviceOpen && <CvAdvicePanel jobId={id} onApplied={() => setHasAppliedAdvice(true)} />}
       </Modal>
 
       {/* ================= MODAL ỨNG TUYỂN ================= */}
-      <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Ứng tuyển công việc này">
-        <div className="p-2 space-y-6">
-          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-800">
-              Bạn đang ứng tuyển vị trí <span className="font-bold">{job.title}</span> tại <span className="font-bold">{actualCompanyName}</span>.
+      <Modal
+        isOpen={isApplyModalOpen}
+        onClose={() => setIsApplyModalOpen(false)}
+        size="md"
+        title="Ứng tuyển công việc này"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setIsApplyModalOpen(false)}>Hủy</Button>
+            <Button onClick={handleApply} isLoading={isApplying} disabled={cvList.length === 0}>
+              <Send className="h-4 w-4" /> Gửi hồ sơ
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5 p-5">
+          <div className="flex items-start gap-3 rounded-lg border border-brand-100 bg-brand-50 p-3.5">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+            <p className="text-sm text-brand-900">
+              Bạn đang ứng tuyển vị trí <span className="font-semibold">{job.title}</span> tại{' '}
+              <span className="font-semibold">{actualCompanyName}</span>.
             </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-700">Chọn CV của bạn <span className="text-red-500">*</span></label>
-            <select 
-              className="w-full border border-gray-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-700 bg-white" 
+          <div>
+            <Select
+              label="Chọn CV của bạn"
+              required
+              name="apply-cv"
               onChange={(e) => setSelectedCvId(e.target.value)}
               value={selectedCvId}
             >
@@ -439,30 +420,20 @@ export default function JobDetailPage() {
                   {cv.fileName || `CV tạo hệ thống (${new Date(cv.createdAt).toLocaleDateString('vi-VN')})`}
                 </option>
               ))}
-            </select>
+            </Select>
             {cvList.length === 0 && (
-              <p className="text-sm text-rose-500 mt-1">Bạn chưa có CV nào. Hãy vào trang cá nhân để Upload hoặc tạo CV nhé.</p>
+              <p className="mt-1.5 text-sm text-rose-600">Bạn chưa có CV nào. Hãy vào trang cá nhân để Upload hoặc tạo CV nhé.</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-700">Thư giới thiệu (Cover Letter)</label>
-            <textarea 
-              className="w-full border border-gray-300 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-700 bg-white resize-none h-32 placeholder-gray-400" 
-              placeholder="Viết vài lời giới thiệu điểm mạnh của bạn để thu hút nhà tuyển dụng..."
-              value={coverLetter}
-              onChange={(e) => setCoverLetter(e.target.value)}
-            />
-          </div>
-
-          <div className="pt-4 flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsApplyModalOpen(false)} className="rounded-xl px-6">
-              Hủy
-            </Button>
-            <Button onClick={handleApply} isLoading={isApplying} disabled={cvList.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 flex items-center gap-2">
-              <Send className="w-4 h-4" /> Gửi hồ sơ
-            </Button>
-          </div>
+          <Textarea
+            label="Thư giới thiệu (Cover Letter)"
+            name="apply-cover"
+            rows={5}
+            placeholder="Viết vài lời giới thiệu điểm mạnh của bạn để thu hút nhà tuyển dụng..."
+            value={coverLetter}
+            onChange={(e) => setCoverLetter(e.target.value)}
+          />
         </div>
       </Modal>
     </div>

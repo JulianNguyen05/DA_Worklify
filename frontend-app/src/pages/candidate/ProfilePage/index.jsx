@@ -84,8 +84,7 @@ const ProfilePage = () => {
         <button
           type="button"
           onClick={() => setIsEditMode((prev) => !prev)}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors shrink-0 font-body
-            ${isEditMode ? 'bg-ink text-white hover:bg-ink-dark' : 'bg-white text-graphite border border-graphite/15 hover:border-ink hover:text-ink'}`}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors shrink-0 font-body ${isEditMode ? 'bg-ink text-white hover:bg-ink-dark' : 'bg-white text-graphite border border-graphite/15 hover:border-ink hover:text-ink'}`}
         >
           {isEditMode ? (
             <><Check size={16} strokeWidth={2} /> Xong</>

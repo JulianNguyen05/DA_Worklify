@@ -86,28 +86,28 @@ const ProfileBlockCard = ({
 
   return (
     <div
-      className={`h-full w-full flex flex-col bg-white border border-[#E2E8F0] rounded-xl overflow-hidden
+      className={`h-full w-full flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden
         transition-opacity ${visible ? '' : 'opacity-40 saturate-0'}`}
       style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 1px 8px rgba(15,23,42,0.03)' }}
     >
       {/* ─── Header ─── */}
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#E2E8F0] shrink-0 bg-[#F8FAFC]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-200 shrink-0 bg-slate-50">
         {isEditMode && (
           <span
-            className="block-drag-handle flex items-center cursor-grab active:cursor-grabbing text-[#94A3B8] hover:text-[#2563EB] shrink-0"
+            className="block-drag-handle flex items-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-brand-600 shrink-0"
             title="Kéo để di chuyển"
           >
             <GripVertical size={15} strokeWidth={2} />
           </span>
         )}
 
-        {Icon && <Icon size={13} strokeWidth={2} className="text-[#2563EB] shrink-0" />}
+        {Icon && <Icon size={13} strokeWidth={2} className="text-brand-600 shrink-0" />}
 
-        <h3 className="flex-1 text-[14px] font-semibold text-[#0F172A] uppercase tracking-wider truncate font-body">
+        <h3 className="flex-1 text-[14px] font-semibold text-slate-900 uppercase tracking-wider truncate font-body">
           {meta.label}
         </h3>
 
-        <span className="text-[13px] font-medium text-[#2563EB] bg-[#EFF6FF] rounded px-1.5 py-0.5 shrink-0 font-tag">
+        <span className="text-[13px] font-medium text-brand-600 bg-brand-50 rounded px-1.5 py-0.5 shrink-0 font-tag">
           {BLOCK_TAG[blockType]}{itemCount !== null ? ` · ${String(itemCount).padStart(2, '0')}` : ''}
         </span>
 
@@ -115,7 +115,7 @@ const ProfileBlockCard = ({
           <button
             type="button"
             onClick={() => onToggleVisibility(blockType, !visible)}
-            className="p-1 text-[#64748B] hover:text-[#2563EB] transition-colors shrink-0"
+            className="p-1 text-slate-500 hover:text-brand-600 transition-colors shrink-0"
             title={visible ? 'Ẩn khỏi ProfilePage' : 'Hiện trên ProfilePage'}
           >
             {visible ? <Eye size={13} strokeWidth={2} /> : <EyeOff size={13} strokeWidth={2} />}

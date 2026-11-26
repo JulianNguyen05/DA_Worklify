@@ -20,7 +20,7 @@ const initials = (name = "") =>
     .toUpperCase();
 
 const AVATAR_HUES = [
-  "bg-blue-50 text-blue-700 ring-blue-100",
+  "bg-brand-50 text-brand-700 ring-brand-100",
   "bg-violet-50 text-violet-700 ring-violet-100",
   "bg-amber-50 text-amber-700 ring-amber-100",
   "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -44,15 +44,11 @@ function useToasts() {
 
 function ToastStack({ toasts }) {
   return (
-    <div className="fixed top-5 right-5 z-[60] flex flex-col gap-2">
+    <div className="fixed top-20 right-5 z-[60] flex flex-col gap-2">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 shadow-lg ${
-            t.type === "success"
-              ? "border-emerald-100 bg-emerald-50 text-emerald-800"
-              : "border-red-100 bg-red-50 text-red-800"
-          }`}
+          className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 shadow-lg ${ t.type === "success" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-red-100 bg-red-50 text-red-800" }`}
         >
           <span className="text-sm font-medium">{t.message}</span>
         </div>
@@ -202,17 +198,17 @@ export default function DemoProductManagementPage() {
   const previewPrice = (Number(formData.price) || 0) * 1000;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
+    <div className="">
       <ToastStack toasts={toasts} />
 
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-blue-600">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand-600">
               Demo
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">
               Quản lý sản phẩm
             </h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -224,8 +220,8 @@ export default function DemoProductManagementPage() {
 
         {/* Stat cards */}
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 font-bold">
+          <div className="card flex items-center gap-4 p-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 font-bold">
               #
             </div>
             <div>
@@ -237,7 +233,7 @@ export default function DemoProductManagementPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="card flex items-center gap-4 p-5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 font-bold">
               đ
             </div>
@@ -270,7 +266,7 @@ export default function DemoProductManagementPage() {
         </div>
 
         {/* Bảng dữ liệu */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="card overflow-hidden">
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/70">
               <tr>
@@ -322,7 +318,7 @@ export default function DemoProductManagementPage() {
                 visibleProducts.map((item) => (
                   <tr
                     key={item.id}
-                    className="group transition-colors hover:bg-blue-50/40"
+                    className="group transition-colors hover:bg-brand-50/40"
                   >
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-3">
@@ -346,7 +342,7 @@ export default function DemoProductManagementPage() {
                       <div className="flex items-center justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
                         <button
                           onClick={() => handleOpenEditModal(item)}
-                          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50"
                         >
                           Sửa
                         </button>
@@ -372,7 +368,7 @@ export default function DemoProductManagementPage() {
         onClose={() => setIsModalOpen(false)}
         title={isEditMode ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}
         icon={
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-bold">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 font-bold">
             {isEditMode ? "✎" : "+"}
           </div>
         }
@@ -406,7 +402,7 @@ export default function DemoProductManagementPage() {
               placeholder="Nhập 1 cho 1.000 đ"
             />
             {formData.price !== "" && (
-              <p className="mt-1.5 text-xs font-medium text-blue-600">
+              <p className="mt-1.5 text-xs font-medium text-brand-600">
                 ≈ {formatVND(previewPrice)}
               </p>
             )}

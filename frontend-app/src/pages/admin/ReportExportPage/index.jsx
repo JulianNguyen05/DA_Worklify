@@ -51,8 +51,8 @@ export default function ReportExportPage() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 max-w-2xl">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">
+    <div className="card p-6 max-w-2xl">
+      <h2 className="text-xl font-bold text-slate-800 mb-6">
         Kết xuất Báo cáo Thống kê
       </h2>
 
@@ -64,14 +64,14 @@ export default function ReportExportPage() {
 
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-slate-700">
             Loại báo cáo
           </label>
           <select
             name="reportType"
             value={formData.reportType}
             onChange={handleChange}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           >
             <option value="USERS">
               Tăng trưởng Người dùng (Ứng viên & Nhà tuyển dụng)

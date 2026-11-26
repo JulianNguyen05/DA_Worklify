@@ -3,14 +3,14 @@ import React from 'react';
 export default function ApplicationStatusBadge({ status }) {
   const config = {
     PENDING: { text: 'Chờ duyệt', classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    REVIEWING: { text: 'Đang xem xét', classes: 'bg-blue-50 text-blue-700 border-blue-200' },
+    REVIEWING: { text: 'Đang xem xét', classes: 'bg-brand-50 text-brand-700 border-brand-200' },
     ACCEPTED: { text: 'Mời phỏng vấn', classes: 'bg-green-50 text-green-700 border-green-200' },
     REJECTED: { text: 'Từ chối', classes: 'bg-red-50 text-red-700 border-red-200' },
   };
 
   const current = config[status?.toUpperCase()] || { 
     text: status || 'Không rõ', 
-    classes: 'bg-gray-50 text-gray-700 border-gray-200' 
+    classes: 'bg-slate-50 text-slate-700 border-slate-200' 
   };
 
   return (

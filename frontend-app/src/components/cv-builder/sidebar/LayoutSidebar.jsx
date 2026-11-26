@@ -107,7 +107,7 @@ const RowBlock = ({ row, rowIndex, isLastRow, onChangeRatio, primaryColor, onDel
             <button 
               onClick={() => onMoveRow(rowIndex, 'up')} 
               disabled={rowIndex === 0} 
-              className="p-1 hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-500 disabled:opacity-30 disabled:hover:bg-white transition-colors border-r border-slate-200"
+              className="p-1 hover:bg-brand-50 hover:text-brand-600 text-slate-500 disabled:opacity-30 disabled:hover:bg-white transition-colors border-r border-slate-200"
               title="Di chuyển lên"
             >
               <ArrowUp size={13}/>
@@ -115,7 +115,7 @@ const RowBlock = ({ row, rowIndex, isLastRow, onChangeRatio, primaryColor, onDel
             <button 
               onClick={() => onMoveRow(rowIndex, 'down')} 
               disabled={isLastRow} 
-              className="p-1 hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-500 disabled:opacity-30 disabled:hover:bg-white transition-colors border-r border-slate-200"
+              className="p-1 hover:bg-brand-50 hover:text-brand-600 text-slate-500 disabled:opacity-30 disabled:hover:bg-white transition-colors border-r border-slate-200"
               title="Di chuyển xuống"
             >
               <ArrowDown size={13}/>
@@ -133,7 +133,7 @@ const RowBlock = ({ row, rowIndex, isLastRow, onChangeRatio, primaryColor, onDel
         <select 
           value={row.ratio}
           onChange={(e) => onChangeRatio(row.id, e.target.value)}
-          className="text-xs border border-slate-300 p-1.5 rounded-md bg-white text-slate-700 outline-none focus:ring-2 focus:ring-[#2563EB]/40 focus:border-[#2563EB] cursor-pointer transition-all"
+          className="text-xs border border-slate-300 p-1.5 rounded-md bg-white text-slate-700 outline-none focus:ring-2 focus:ring-brand-600/40 focus:border-brand-600 cursor-pointer transition-all"
         >
           <option value="10-90">2 cột (10-90)</option>
           <option value="20-80">2 cột (20-80)</option>

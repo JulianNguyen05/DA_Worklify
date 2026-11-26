@@ -54,13 +54,13 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="w-full space-y-7 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Form Header */}
       <div className="space-y-2">
-        <h2 className="text-[26px] font-extrabold tracking-tight text-[#0F172A]">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-slate-900">
           Khôi phục mật khẩu
         </h2>
-        <p className="text-[15px] font-medium text-[#64748B] leading-relaxed">
+        <p className="text-sm leading-relaxed text-slate-500">
           Nhập địa chỉ email liên kết với tài khoản Worklify, chúng tôi sẽ hướng dẫn bạn đặt lại mật khẩu mới.
         </p>
       </div>
@@ -89,49 +89,20 @@ const ForgotPasswordPage = () => {
             onChange={(e) => setEmail(e.target.value)} 
             required 
             placeholder="name@company.com"
-            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-[15px] font-medium placeholder:font-normal text-[#0F172A]"
           />
         </div>
 
         {/* Nút Submit Đăng Ký - Đồng bộ style Nút MainLayout */}
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-          className="w-full text-white py-3 rounded-xl font-bold tracking-wide transition-all duration-200 flex items-center justify-center text-[15px] disabled:opacity-70"
-          style={{
-            background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)',
-            boxShadow: '0 4px 14px rgba(37,99,235,0.25)',
-          }}
-          onMouseEnter={(e) => { 
-            if (!isLoading) {
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(37,99,235,0.4)'; 
-              e.currentTarget.style.transform = 'translateY(-1px)'; 
-            }
-          }}
-          onMouseLeave={(e) => { 
-            if (!isLoading) {
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.25)'; 
-              e.currentTarget.style.transform = 'translateY(0)'; 
-            }
-          }}
-        >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              <span>Đang gửi mã...</span>
-            </div>
-          ) : 'Gửi yêu cầu xác thực'}
+        <Button type="submit" size="lg" isLoading={isLoading} className="w-full">
+          {isLoading ? 'Đang gửi mã...' : 'Gửi yêu cầu xác thực'}
         </Button>
       </form>
 
       {/* Nút quay lại trang Đăng nhập */}
-      <div className="pt-5 border-t border-[#F1F5F9] text-center">
+      <div className="pt-5 border-t border-slate-100 text-center">
         <Link 
           to="/auth/login" 
-          className="inline-flex items-center justify-center gap-1.5 text-[14px] font-bold text-[#2563EB] hover:text-[#1D4ED8] transition-colors group no-underline"
+          className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors group no-underline"
         >
           <svg 
             className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform duration-200" 

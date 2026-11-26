@@ -102,7 +102,7 @@ export default function ApplicationDetailPage() {
         );
       case "REVIEWED":
         return (
-          <span className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
+          <span className="bg-brand-100 text-brand-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1.5">
             <Eye className="w-4 h-4" /> Đã xem
           </span>
         );
@@ -118,8 +118,8 @@ export default function ApplicationDetailPage() {
   // Nếu đang gọi API
   if (isLoading) {
     return (
-      <div className="p-20 text-center text-gray-500 flex flex-col items-center">
-        <Clock className="w-10 h-10 animate-spin mb-4 text-indigo-500" />
+      <div className="p-20 text-center text-slate-500 flex flex-col items-center">
+        <Clock className="w-10 h-10 animate-spin mb-4 text-brand-500" />
         <p className="font-medium text-lg">Đang tải thông tin hồ sơ...</p>
       </div>
     );
@@ -166,27 +166,27 @@ export default function ApplicationDetailPage() {
       )}
 
       {/* HEADER: INFO CHUNG */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
+      <div className="card flex flex-col md:flex-row justify-between items-start md:items-center p-6 gap-4">
         <div>
           <button
             onClick={() => navigate(-1)}
-            className="text-gray-500 hover:text-indigo-600 flex items-center gap-1 text-sm font-medium mb-4 transition-colors"
+            className="text-slate-500 hover:text-brand-600 flex items-center gap-1 text-sm font-medium mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Quay lại danh sách
           </button>
 
-          <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-full text-indigo-600">
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <div className="p-2 bg-brand-50 rounded-full text-brand-600">
               <User className="w-6 h-6" />
             </div>
             {application.candidateName ||
               `Ứng viên ID: ${application.candidateId}`}
           </h1>
 
-          <p className="text-gray-600 mt-2 flex items-center gap-2 text-md">
-            <Briefcase className="w-4.5 h-4.5 text-gray-400" />
+          <p className="text-slate-600 mt-2 flex items-center gap-2 text-md">
+            <Briefcase className="w-4.5 h-4.5 text-slate-400" />
             Ứng tuyển vị trí:{" "}
-            <span className="font-bold text-gray-800">
+            <span className="font-bold text-slate-800">
               {application.jobTitle || "Chưa cập nhật"}
             </span>
           </p>
@@ -194,15 +194,15 @@ export default function ApplicationDetailPage() {
           {/* [MỚI] Nút xem hồ sơ đầy đủ của ứng viên */}
           <button
             onClick={handleViewProfile}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 border-2 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-300 rounded-xl text-sm font-bold transition-colors"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white text-brand-600 border-2 border-brand-100 hover:bg-brand-50 hover:border-brand-300 rounded-xl text-sm font-bold transition-colors"
           >
             <User className="w-4 h-4" /> Xem hồ sơ ứng viên
           </button>
         </div>
 
-        <div className="flex flex-col items-end gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100 min-w-[200px]">
+        <div className="flex flex-col items-end gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 min-w-[200px]">
           {getStatusBadge(application.status)}
-          <span className="text-sm text-gray-500 font-medium flex items-center gap-1.5">
+          <span className="text-sm text-slate-500 font-medium flex items-center gap-1.5">
             <Clock className="w-4 h-4" />
             Ngày nộp:{" "}
             {application.appliedAt
@@ -215,35 +215,35 @@ export default function ApplicationDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* CỘT TRÁI: LIÊN HỆ & DUYỆT */}
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-3">
+          <div className="card p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">
               Thông tin liên hệ
             </h3>
 
             <div className="space-y-5">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-gray-50 rounded-lg">
-                  <Mail className="w-5 h-5 text-gray-500" />
+                <div className="p-2 bg-slate-50 rounded-lg">
+                  <Mail className="w-5 h-5 text-slate-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">
                     Email
                   </p>
-                  <p className="text-sm font-bold text-gray-800 break-all">
+                  <p className="text-sm font-bold text-slate-800 break-all">
                     {application.candidateEmail || "Đang cập nhật..."}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-gray-50 rounded-lg">
-                  <Phone className="w-5 h-5 text-gray-500" />
+                <div className="p-2 bg-slate-50 rounded-lg">
+                  <Phone className="w-5 h-5 text-slate-500" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
+                  <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">
                     Số điện thoại
                   </p>
-                  <p className="text-sm font-bold text-gray-800">
+                  <p className="text-sm font-bold text-slate-800">
                     {application.candidatePhone || "Đang cập nhật..."}
                   </p>
                 </div>
@@ -251,8 +251,8 @@ export default function ApplicationDetailPage() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-3">
+          <div className="card p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-3">
               Quyết định
             </h3>
             <div className="flex flex-col gap-3">
@@ -283,34 +283,34 @@ export default function ApplicationDetailPage() {
 
         {/* CỘT PHẢI: COVER LETTER & CV */}
         <div className="md:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+          <div className="card p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
               Thư giới thiệu (Cover Letter)
             </h3>
             {application.coverLetter ? (
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner">
                 {application.coverLetter}
               </p>
             ) : (
-              <p className="text-gray-400 text-sm italic bg-gray-50 p-4 rounded-xl text-center">
+              <p className="text-slate-400 text-sm italic bg-slate-50 p-4 rounded-xl text-center">
                 Ứng viên không viết thư giới thiệu.
               </p>
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
-              <FileText className="w-5 h-5 text-indigo-500" /> Hồ sơ đính kèm
+          <div className="card p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <FileText className="w-5 h-5 text-brand-500" /> Hồ sơ đính kèm
               (CV)
             </h3>
             {application.cvFileName ? (
-              <div className="flex items-center justify-between p-5 bg-indigo-50/40 border border-indigo-100 rounded-xl hover:border-indigo-300 transition-colors group">
+              <div className="flex items-center justify-between p-5 bg-brand-50/40 border border-brand-100 rounded-xl hover:border-brand-300 transition-colors group">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-indigo-100 rounded-xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <div className="p-3 bg-brand-100 rounded-xl text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
                     <FileText className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-base flex items-center gap-2">
+                    <p className="font-bold text-slate-900 text-base flex items-center gap-2">
                       {/* Dùng split để cắt chuỗi theo dấu '/', sau đó lấy phần tử cuối cùng (pop) */}
                       {application.cvFileName
                         ? application.cvFileName
@@ -320,7 +320,7 @@ export default function ApplicationDetailPage() {
                             .pop()
                         : "Hồ sơ đính kèm"}
                     </p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
                       Tài liệu đính kèm
                     </p>
                   </div>
@@ -328,13 +328,13 @@ export default function ApplicationDetailPage() {
                 {/* Đường dẫn tải CV thực tế. Bạn cấu hình URL trỏ về API /api/v1/files/ của bạn nhé */}
                 <button
                   onClick={handleViewCV}
-                  className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                  className="card px-5 py-2.5 text-sm font-bold text-brand-600 hover:bg-brand-50 hover:border-brand-300 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   Tải / Xem CV
                 </button>
               </div>
             ) : (
-              <p className="text-gray-400 text-sm italic bg-gray-50 p-4 rounded-xl text-center">
+              <p className="text-slate-400 text-sm italic bg-slate-50 p-4 rounded-xl text-center">
                 Ứng viên không đính kèm file CV.
               </p>
             )}

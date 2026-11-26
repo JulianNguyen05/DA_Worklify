@@ -64,14 +64,14 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">Cài đặt tài khoản</h2>
+      <h2 className="text-xl font-bold text-slate-800">Cài đặt tài khoản</h2>
       
       {statusMsg.type && <Toast type={statusMsg.type} message={statusMsg.message} />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Box Đổi mật khẩu */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Đổi mật khẩu</h3>
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Đổi mật khẩu</h3>
           <form onSubmit={submitPasswordChange} className="flex flex-col gap-4">
             <Input 
               label="Mật khẩu hiện tại" 
@@ -105,9 +105,9 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           {/* Box Bảo mật 2 lớp (MFA) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Bảo mật nâng cao</h3>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Bảo mật nâng cao</h3>
+            <p className="text-sm text-slate-600 mb-4">
               Xác thực đa yếu tố (MFA) giúp tăng cường bảo mật cho tài khoản của bạn bằng cách yêu cầu mã xác nhận khi đăng nhập.
             </p>
             
@@ -121,7 +121,7 @@ export default function SettingsPage() {
                 variant="outline" 
                 onClick={handleEnableMfa} 
                 isLoading={isLoading.mfa}
-                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+                className="w-full border-brand-600 text-brand-600 hover:bg-brand-50"
               >
                 Kích hoạt MFA ngay
               </Button>
@@ -129,16 +129,16 @@ export default function SettingsPage() {
           </div>
 
           {/* Box Tùy chỉnh thông báo */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Tùy chỉnh thông báo</h3>
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Tùy chỉnh thông báo</h3>
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" defaultChecked />
-                <span className="text-sm text-gray-700">Nhận email khi có ứng viên mới nộp hồ sơ</span>
+                <input type="checkbox" className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500" defaultChecked />
+                <span className="text-sm text-slate-700">Nhận email khi có ứng viên mới nộp hồ sơ</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" defaultChecked />
-                <span className="text-sm text-gray-700">Nhận bản tin hệ thống từ SmartMatch</span>
+                <input type="checkbox" className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500" defaultChecked />
+                <span className="text-sm text-slate-700">Nhận bản tin hệ thống từ SmartMatch</span>
               </label>
             </div>
           </div>

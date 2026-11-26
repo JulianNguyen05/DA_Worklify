@@ -53,8 +53,8 @@ export default function CategoryManagementPage() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">
+    <div className="card p-6">
+      <h2 className="text-xl font-bold text-slate-800 mb-6">
         Quản lý Danh mục Hệ thống
       </h2>
 
@@ -65,15 +65,15 @@ export default function CategoryManagementPage() {
       )}
 
       {/* Tabs Menu */}
-      <div className="flex gap-4 border-b border-gray-200 mb-6 pb-2">
+      <div className="flex gap-4 border-b border-slate-200 mb-6 pb-2">
         <button
-          className={`font-medium text-sm ${activeTab === "skills" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`font-medium text-sm ${activeTab === "skills" ? "text-brand-600 border-b-2 border-brand-600" : "text-slate-500 hover:text-slate-700"}`}
           onClick={() => setActiveTab("skills")}
         >
           Danh sách Kỹ năng (Skills)
         </button>
         <button
-          className={`font-medium text-sm ${activeTab === "industries" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`font-medium text-sm ${activeTab === "industries" ? "text-brand-600 border-b-2 border-brand-600" : "text-slate-500 hover:text-slate-700"}`}
           onClick={() => setActiveTab("industries")}
         >
           Ngành nghề
@@ -82,8 +82,8 @@ export default function CategoryManagementPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form Thêm Mới */}
-        <div className="lg:col-span-1 bg-gray-50 p-4 rounded-md border border-gray-100 h-fit">
-          <h3 className="font-semibold text-gray-700 mb-4">Thêm mục mới</h3>
+        <div className="lg:col-span-1 bg-slate-50 p-4 rounded-md border border-slate-100 h-fit">
+          <h3 className="font-semibold text-slate-700 mb-4">Thêm mục mới</h3>
           <form onSubmit={handleAddItem} className="flex flex-col gap-3">
             <Input
               label={`Tên ${activeTab === "skills" ? "Kỹ năng" : "Ngành nghề"}`}
@@ -102,19 +102,19 @@ export default function CategoryManagementPage() {
         <div className="lg:col-span-2">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="p-3 font-medium text-gray-600 w-16">ID</th>
-                <th className="p-3 font-medium text-gray-600">Tên danh mục</th>
-                <th className="p-3 font-medium text-gray-600 text-right">
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="p-3 font-medium text-slate-600 w-16">ID</th>
+                <th className="p-3 font-medium text-slate-600">Tên danh mục</th>
+                <th className="p-3 font-medium text-slate-600 text-right">
                   Hành động
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {categories[activeTab].map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="p-3 text-gray-500">{item.id}</td>
-                  <td className="p-3 font-medium text-gray-800">{item.name}</td>
+                <tr key={item.id} className="hover:bg-slate-50">
+                  <td className="p-3 text-slate-500">{item.id}</td>
+                  <td className="p-3 font-medium text-slate-800">{item.name}</td>
                   <td className="p-3 text-right">
                     <button
                       onClick={() => handleDeleteItem(item.id)}

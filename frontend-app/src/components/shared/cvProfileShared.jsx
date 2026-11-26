@@ -32,8 +32,8 @@ export const SKILL_CATEGORIES = [
 ];
 
 export const LEVEL_STYLES = {
-  'Cơ bản':    'bg-gray-100   text-gray-600   border-gray-200',
-  'Trung bình':'bg-blue-50    text-blue-600   border-blue-100',
+  'Cơ bản':    'bg-slate-100   text-slate-600   border-slate-200',
+  'Trung bình':'bg-brand-50    text-brand-600   border-brand-100',
   'Thành thạo':'bg-emerald-50 text-emerald-700 border-emerald-100',
   'Chuyên gia':'bg-amber-50   text-amber-700  border-amber-100',
 };
@@ -206,7 +206,7 @@ export const LevelBar = ({ level }) => {
         <div
           key={i}
           className={`h-1.5 flex-1 rounded-full transition-all ${
-            i <= idx ? 'bg-blue-500' : 'bg-gray-200'
+            i <= idx ? 'bg-brand-500' : 'bg-slate-200'
           }`}
         />
       ))}
@@ -217,27 +217,27 @@ export const LevelBar = ({ level }) => {
 /** Hiển thị một trường thông tin dạng label + value */
 export const ProfileField = ({ label, value, highlight }) => (
   <div>
-    <span className="text-xs text-gray-400 font-medium block">{label}</span>
+    <span className="text-xs text-slate-400 font-medium block">{label}</span>
     <span
       className={`text-sm mt-0.5 block truncate ${
-        highlight ? 'font-semibold text-gray-900' : 'text-gray-700'
+        highlight ? 'font-semibold text-slate-900' : 'text-slate-700'
       }`}
     >
-      {value || <span className="text-gray-300 italic">—</span>}
+      {value || <span className="text-slate-300 italic">—</span>}
     </span>
   </div>
 );
 
 /** Nhãn phân đoạn trong panel chỉnh sửa */
 export const SectionLabel = ({ children }) => (
-  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-1 pb-2 border-b border-gray-100">
+  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pt-1 pb-2 border-b border-slate-100">
     {children}
   </p>
 );
 
 /** Spinner loading có text tuỳ chỉnh */
 export const LoadingSpinner = ({ text = 'Đang tải dữ liệu...' }) => (
-  <div className="flex items-center justify-center py-20 gap-3 text-gray-400">
+  <div className="flex items-center justify-center py-20 gap-3 text-slate-400">
     <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
@@ -269,23 +269,23 @@ export const ProfileBlockCard = ({ profileBlock, activeBlockId, onSelect }) => {
       onClick={() => onSelect(profileBlock.id)}
       className={`relative cursor-pointer rounded-xl border-2 transition-all duration-200 overflow-hidden
         ${isActive
-          ? 'border-indigo-500 shadow-md shadow-indigo-100'
-          : 'border-gray-200 hover:border-indigo-300 hover:shadow-sm'
+          ? 'border-brand-500 shadow-md shadow-brand-100'
+          : 'border-slate-200 hover:border-brand-300 hover:shadow-sm'
         }`}
       style={{ backgroundColor: profileBlock.color }}
     >
-      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-xl" />
+      <div className="absolute top-0 left-0 w-1 h-full bg-brand-500 rounded-l-xl" />
 
       <div className="pl-5 pr-5 py-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span className="w-7 h-7 rounded-lg bg-brand-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </span>
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
               {profileBlock.title}
             </h3>
           </div>
@@ -300,8 +300,8 @@ export const ProfileBlockCard = ({ profileBlock, activeBlockId, onSelect }) => {
           <ProfileField label="Địa chỉ"    value={profileBlock.data.address} />
           {profileBlock.data.summary && (
             <div className="col-span-2 md:col-span-3">
-              <span className="text-xs text-gray-400 font-medium">Giới thiệu bản thân</span>
-              <p className="text-gray-700 mt-0.5 leading-relaxed line-clamp-2">
+              <span className="text-xs text-slate-400 font-medium">Giới thiệu bản thân</span>
+              <p className="text-slate-700 mt-0.5 leading-relaxed line-clamp-2">
                 {profileBlock.data.summary}
               </p>
             </div>
@@ -342,40 +342,40 @@ export const SkillBlockCard = ({
       onClick={() => onSelect(block.id)}
       className={`relative group cursor-grab rounded-xl border-2 transition-all duration-200 overflow-hidden
         ${isActive
-          ? 'border-blue-500 shadow-md shadow-blue-50'
-          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+          ? 'border-brand-500 shadow-md shadow-brand-50'
+          : 'border-slate-200 hover:border-brand-300 hover:shadow-sm'
         }`}
       style={{ backgroundColor: block.color }}
     >
       {/* Drag handle icon */}
-      <div className="absolute top-3 right-3 text-gray-300 group-hover:text-gray-400 cursor-grab">
+      <div className="absolute top-3 right-3 text-slate-300 group-hover:text-slate-400 cursor-grab">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
         </svg>
       </div>
 
-      <div className="absolute top-0 left-0 w-1 h-full bg-blue-400 rounded-l-xl" />
+      <div className="absolute top-0 left-0 w-1 h-full bg-brand-400 rounded-l-xl" />
 
       <div className="pl-5 pr-10 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-gray-800 truncate">
+              <h3 className="text-sm font-bold text-slate-800 truncate">
                 {block.data.skillName || (
-                  <span className="text-gray-400 italic font-normal">Chưa đặt tên...</span>
+                  <span className="text-slate-400 italic font-normal">Chưa đặt tên...</span>
                 )}
               </h3>
               <span className={`text-xs border px-2 py-0.5 rounded-full font-medium
                 ${LEVEL_STYLES[block.data.level] || LEVEL_STYLES['Trung bình']}`}>
                 {block.data.level}
               </span>
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
                 {block.data.category}
               </span>
             </div>
             <LevelBar level={block.data.level} />
             {block.data.description && (
-              <p className="text-xs text-gray-500 mt-2 line-clamp-1 leading-relaxed">
+              <p className="text-xs text-slate-500 mt-2 line-clamp-1 leading-relaxed">
                 {block.data.description}
               </p>
             )}
@@ -421,12 +421,12 @@ export const ProfileEditorPanel = ({ data, handleDataChange }) => (
 
     <div className="flex gap-3">
       <div className="flex-1">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Giới tính</label>
         <select
           value={data.gender}
           onChange={(e) => handleDataChange('gender', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-            outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+            outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-100 bg-white"
         >
           <option>Nam</option>
           <option>Nữ</option>
@@ -451,7 +451,7 @@ export const ProfileEditorPanel = ({ data, handleDataChange }) => (
     />
 
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-slate-700 mb-1">
         Giới thiệu bản thân
       </label>
       <textarea
@@ -459,8 +459,8 @@ export const ProfileEditorPanel = ({ data, handleDataChange }) => (
         value={data.summary}
         onChange={(e) => handleDataChange('summary', e.target.value)}
         placeholder="Tóm tắt ngắn về bản thân, kinh nghiệm và mục tiêu nghề nghiệp..."
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-          outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 resize-none"
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+          outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-100 resize-none"
       />
     </div>
   </>
@@ -494,19 +494,19 @@ export const SkillEditorPanel = ({
     />
 
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1">Danh mục</label>
       <select
         value={data.category}
         onChange={(e) => handleDataChange('category', e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-          outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+          outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-100 bg-white"
       >
         {SKILL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
       </select>
     </div>
 
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-slate-700 mb-2">
         Trình độ
         <span className={`ml-2 text-xs border px-2 py-0.5 rounded-full font-medium
           ${LEVEL_STYLES[data.level]}`}>
@@ -520,8 +520,8 @@ export const SkillEditorPanel = ({
             onClick={() => handleDataChange('level', lv)}
             className={`py-2 px-3 rounded-lg text-sm font-medium border transition-all
               ${data.level === lv
-                ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50'
               }`}
           >
             {lv}
@@ -532,7 +532,7 @@ export const SkillEditorPanel = ({
     </div>
 
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-slate-700 mb-1">
         Mô tả (tùy chọn)
       </label>
       <textarea
@@ -540,14 +540,14 @@ export const SkillEditorPanel = ({
         value={data.description}
         onChange={(e) => handleDataChange('description', e.target.value)}
         placeholder="Mô tả kinh nghiệm, dự án liên quan đến kỹ năng này..."
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-          outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 resize-none"
+        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm
+          outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-100 resize-none"
       />
     </div>
 
     {showColorPicker && (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Màu nền</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Màu nền</label>
         <div className="flex items-center gap-3">
           <input
             type="color"
@@ -555,7 +555,7 @@ export const SkillEditorPanel = ({
             onChange={(e) => handleBlockChange('color', e.target.value)}
             className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer"
           />
-          <span className="text-sm text-gray-500 font-mono uppercase">{blockColor}</span>
+          <span className="text-sm text-slate-500 font-mono uppercase">{blockColor}</span>
         </div>
       </div>
     )}

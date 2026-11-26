@@ -107,7 +107,7 @@ const TabPanel = ({
           </h3>
           <button
             onClick={() => setIsPanelOpen(false)}
-            className="p-1.5 hover:bg-[#EFF6FF] hover:text-[#2563EB] rounded-full text-slate-400 transition-colors"
+            className="p-1.5 hover:bg-brand-50 hover:text-brand-600 rounded-full text-slate-400 transition-colors"
           >
             <X size={16} />
           </button>
@@ -120,10 +120,10 @@ const TabPanel = ({
 
               {selectedSection &&
                 supportsDynamicLayout.includes(selectedSection) && (
-                  <div className="mb-6 pt-5 border-t border-gray-100 animate-fadeIn">
-                    <label className="block font-semibold text-sm text-gray-700 mb-3">
+                  <div className="mb-6 pt-5 border-t border-slate-100 animate-fadeIn">
+                    <label className="block font-semibold text-sm text-slate-700 mb-3">
                       Bố cục:{" "}
-                      <span className="text-[#2563EB] uppercase">
+                      <span className="text-brand-600 uppercase">
                         {SECTION_NAMES[selectedSection] || selectedSection}
                       </span>
                     </label>
@@ -131,7 +131,7 @@ const TabPanel = ({
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => handleSectionLayoutChange("timeline")}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "timeline" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "timeline" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                       >
                         <Clock size={16} />{" "}
                         <span className="text-[10px] font-medium">Dòng TG</span>
@@ -139,7 +139,7 @@ const TabPanel = ({
 
                       <button
                         onClick={() => handleSectionLayoutChange("row")}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "row" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "row" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                       >
                         <List size={16} />{" "}
                         <span className="text-[10px] font-medium">
@@ -149,7 +149,7 @@ const TabPanel = ({
 
                       <button
                         onClick={() => handleSectionLayoutChange("tags")}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "tags" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "tags" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                       >
                         <LayoutGrid size={16} />{" "}
                         <span className="text-[10px] font-medium">
@@ -159,7 +159,7 @@ const TabPanel = ({
 
                       <button
                         onClick={() => handleSectionLayoutChange("paragraph")}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "paragraph" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 border rounded-lg transition-all ${getCurrentLayoutType(selectedSection) === "paragraph" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                       >
                         <AlignLeft size={16} />{" "}
                         <span className="text-[10px] font-medium">
@@ -171,8 +171,8 @@ const TabPanel = ({
                 )}
 
               {selectedSection === "avatar" && (
-                <div className="mb-6 pt-5 border-t border-gray-100 animate-fadeIn">
-                  <label className="block font-semibold text-sm text-gray-700 mb-3">
+                <div className="mb-6 pt-5 border-t border-slate-100 animate-fadeIn">
+                  <label className="block font-semibold text-sm text-slate-700 mb-3">
                     Tùy chỉnh Ảnh đại diện
                   </label>
                   <div className="flex gap-2 mb-3">
@@ -180,7 +180,7 @@ const TabPanel = ({
                       onClick={() =>
                         handleSettingChange("avatarShape", "square")
                       }
-                      className={`flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg transition-all ${cvData.settings.avatarShape === "square" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                      className={`flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg transition-all ${cvData.settings.avatarShape === "square" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                     >
                       {" "}
                       <Square size={16} /> Vuông{" "}
@@ -189,7 +189,7 @@ const TabPanel = ({
                       onClick={() =>
                         handleSettingChange("avatarShape", "circle")
                       }
-                      className={`flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg transition-all ${cvData.settings.avatarShape === "circle" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"}`}
+                      className={`flex-1 flex items-center justify-center gap-2 p-2 border rounded-lg transition-all ${cvData.settings.avatarShape === "circle" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"}`}
                     >
                       {" "}
                       <Circle size={16} /> Tròn{" "}
@@ -199,14 +199,14 @@ const TabPanel = ({
               )}
 
               {/* Phần Font chữ và Kích cỡ toàn CV */}
-              <div className="mb-6 pt-5 border-t border-gray-100">
-                <label className="block font-semibold text-sm text-gray-700 mb-3">
+              <div className="mb-6 pt-5 border-t border-slate-100">
+                <label className="block font-semibold text-sm text-slate-700 mb-3">
                   Font chữ toàn CV
                 </label>
                 <select
                   value={cvData.settings.font}
                   onChange={(e) => handleFontChange(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg bg-white text-sm focus:ring-1 focus:ring-[#2563EB] outline-none mb-4"
+                  className="w-full p-2.5 border rounded-lg bg-white text-sm focus:ring-1 focus:ring-brand-600 outline-none mb-4"
                 >
                   {FONT_OPTIONS.map((font) => (
                     <option key={font} value={font}>
@@ -215,7 +215,7 @@ const TabPanel = ({
                   ))}
                 </select>
 
-                <label className="block font-semibold text-sm text-gray-700 mb-3">
+                <label className="block font-semibold text-sm text-slate-700 mb-3">
                   Kích cỡ toàn CV
                 </label>
                 <div className="flex gap-2">
@@ -232,8 +232,8 @@ const TabPanel = ({
                         }
                         className={`flex-1 py-1.5 text-[11px] font-medium border rounded transition-all ${
                           isActive
-                            ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]"
-                            : "border-gray-200 text-gray-600 bg-white hover:bg-gray-50"
+                            ? "border-brand-600 bg-brand-50 text-brand-600"
+                            : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
                         }`}
                       >
                         {size.label}
@@ -244,7 +244,7 @@ const TabPanel = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-sm text-gray-700 mb-3">
+                <label className="block font-semibold text-sm text-slate-700 mb-3">
                   Chủ đề màu sắc
                 </label>
                 <div className="space-y-2">
@@ -254,7 +254,7 @@ const TabPanel = ({
                       onClick={() =>
                         handleColorChange(theme.primary, theme.accent)
                       }
-                      className={`w-full flex items-center gap-3 p-2.5 border rounded-xl transition-all hover:shadow-sm ${cvData.settings.primaryColor === theme.primary ? "border-[#2563EB] bg-[#EFF6FF] ring-1 ring-[#2563EB]" : "border-gray-200 hover:border-gray-300 bg-white"}`}
+                      className={`w-full flex items-center gap-3 p-2.5 border rounded-xl transition-all hover:shadow-sm ${cvData.settings.primaryColor === theme.primary ? "border-brand-600 bg-brand-50 ring-1 ring-brand-600" : "border-slate-200 hover:border-slate-300 bg-white"}`}
                     >
                       <div
                         className="w-5 h-5 rounded-full shadow-sm overflow-hidden flex"
@@ -263,7 +263,7 @@ const TabPanel = ({
                         <div className="w-1/2 h-full" style={{ backgroundColor: theme.primary }} />
                         <div className="w-1/2 h-full" style={{ backgroundColor: theme.accent }} />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-slate-700">
                         {theme.name}
                       </span>
                     </button>
@@ -291,10 +291,10 @@ const TabPanel = ({
               {/* Mẫu Tiêu Chuẩn */}
               <button
                 onClick={() => handleTemplateChange("simple")}
-                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "simple" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-700 hover:border-[#2563EB]"}`}
+                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "simple" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-700 hover:border-brand-600"}`}
               >
                 <div className="font-bold mb-1 text-sm">Mẫu Tiêu Chuẩn</div>
-                <div className="text-[11px] text-gray-500 font-normal">
+                <div className="text-[11px] text-slate-500 font-normal">
                   Thiết kế tối giản, chuyên nghiệp.
                 </div>
               </button>
@@ -302,10 +302,10 @@ const TabPanel = ({
               {/* Mẫu Harvard */}
               <button
                 onClick={() => handleTemplateChange("harvard")}
-                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "harvard" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-700 hover:border-[#2563EB]"}`}
+                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "harvard" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-700 hover:border-brand-600"}`}
               >
                 <div className="font-bold mb-1 text-sm">Mẫu Harvard</div>
-                <div className="text-[11px] text-gray-500 font-normal">
+                <div className="text-[11px] text-slate-500 font-normal">
                   Phong cách học thuật, thanh lịch và truyền thống.
                 </div>
               </button>
@@ -313,10 +313,10 @@ const TabPanel = ({
               {/* Mẫu Professional */}
               <button
                 onClick={() => handleTemplateChange("professional")}
-                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "professional" ? "border-[#2563EB] bg-[#EFF6FF] text-[#2563EB]" : "border-gray-200 text-gray-700 hover:border-[#2563EB]"}`}
+                className={`block w-full p-4 rounded-xl font-medium border-2 transition-all text-left hover:shadow-sm ${cvData.settings.template === "professional" ? "border-brand-600 bg-brand-50 text-brand-600" : "border-slate-200 text-slate-700 hover:border-brand-600"}`}
               >
                 <div className="font-bold mb-1 text-sm">Mẫu Chuyên Nghiệp</div>
-                <div className="text-[11px] text-gray-500 font-normal">
+                <div className="text-[11px] text-slate-500 font-normal">
                   Thiết kế hiện đại, tinh tế cho môi trường doanh nghiệp.
                 </div>
               </button>

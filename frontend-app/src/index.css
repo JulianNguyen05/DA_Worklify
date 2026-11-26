@@ -1,20 +1,12 @@
 /* 1. Tải Font chữ TRƯỚC */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
 
 /* 2. Import Tailwind CSS v4 SAU */
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-/* 3. Cấu hình cơ bản (Tùy chọn) */
-html,
-body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-}
 
 /* =========================================================
-   FIX LỖI HTML2PDF: Ép Tailwind v4 dùng hệ màu RGBA thay vì OKLCH 
+   FIX LỖI HTML2PDF: Ép Tailwind v4 dùng hệ màu RGBA thay vì OKLCH
    ========================================================= */
 :root {
   --tw-ring-color: rgba(59, 130, 246, 0.5) !important;
@@ -22,13 +14,6 @@ body {
   --tw-shadow-color: rgba(0, 0, 0, 0.1) !important;
   --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
   --tw-ring-offset-color: #ffffff !important;
-}
-
-/* Ghi đè OKLCH - html2canvas không hỗ support oklch */
-@layer base {
-  :root {
-    color-scheme: light;
-  }
 }
 
 /* Force tất cả màu Tailwind sang rgb thay vì oklch */
@@ -40,15 +25,157 @@ body {
   --tw-border-opacity: 1;
 }
 
+/* =========================================================
+   DESIGN TOKENS — Worklify UI (SaaS tinh gọn)
+   - brand-*: màu thương hiệu (xanh dương), viết bằng hex để html2canvas đọc được
+   - Nền/chữ dùng thang slate của Tailwind
+   - ink/paper/graphite + font-display/body/tag: GIỮ NGUYÊN vì template CV
+     (components/cv-builder/templates) đang dùng — đổi sẽ ảnh hưởng file PDF.
+   ========================================================= */
 @theme {
-  /* Blueprint Dossier — 1 màu mực chính, không còn bảng màu cầu vồng theo block */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  /* Màu phụ của logo (gradient W) */
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
+
+  /* Blueprint Dossier — dùng trong template CV, không đổi */
   --color-ink: #2563EB;
   --color-ink-dark: #1E40AF;
   --color-ink-light: #EFF4FF;
   --color-paper: #FAFAF8;
   --color-graphite: #1C2333;
 
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Be Vietnam Pro', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-tag: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Đổ bóng: rất nhẹ, dùng viền là chính */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-raised: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.04);
+  --shadow-pop: 0 16px 40px -12px rgb(15 23 42 / 0.25), 0 4px 12px -4px rgb(15 23 42 / 0.08);
+
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* Chỉ đặt font cho body. Màu nền/màu chữ do layout đặt (bg-slate-50…), không đặt
+     ở body/h1 toàn cục vì /cv-print (xuất PDF) dùng chung CSS này. */
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* =========================================================
+   Lớp tiện ích dùng chung — dùng thẳng trong className của trang
+   ========================================================= */
+@utility card {
+  background-color: white;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+@utility card-hover {
+  transition: border-color 150ms, box-shadow 150ms, transform 150ms;
+  &:hover {
+    border-color: var(--color-slate-300);
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+@utility page-container {
+  width: 100%;
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (width >= 40rem) { padding-inline: 1.5rem; }
+  @media (width >= 64rem) { padding-inline: 2rem; }
+}
+
+@utility field-input {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-slate-300);
+  background-color: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-slate-900);
+  box-shadow: var(--shadow-xs);
+  transition: border-color 150ms, box-shadow 150ms;
+  &::placeholder { color: var(--color-slate-400); }
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.15);
+  }
+  &:disabled {
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-500);
+    cursor: not-allowed;
+  }
+}
+
+@utility field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-slate-700);
+}
+
+@utility eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-brand-600);
 }

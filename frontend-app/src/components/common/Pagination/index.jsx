@@ -1,77 +1,59 @@
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
-export default function Pagination({ currentPage, totalPages, onPageChange }) {
-  // Không hiển thị thanh phân trang nếu chỉ có 1 hoặc 0 trang
+/** Phân trang, currentPage bắt đầu từ 1. API giữ nguyên. */
+export default function Pagination({ currentPage, totalPages, onPageChange, className }) {
   if (totalPages <= 1) return null;
 
-  // Thuật toán tạo danh sách trang thông minh (Có dấu ...)
   const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 7) {
-      // Nếu tổng số trang ít, hiển thị tất cả
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Nếu nhiều trang, xử lý rút gọn bằng '...'
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, '...', totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-      }
-    }
-    return pages;
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (currentPage >= totalPages - 3)
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
 
+  const navBtn =
+    'inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-sm font-medium text-slate-600 shadow-xs transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white';
+
   return (
-    // Bỏ text thừa, căn giữa thanh phân trang cho đẹp mắt
-    <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-100">
-      <div className="flex items-center gap-1.5">
-        
-        {/* Nút Lùi (Prev) */}
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1} // Đã fix logic: Trang đầu tiên là 1
-          className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer disabled:cursor-not-allowed"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        
-        {/* Danh sách số trang */}
-        {getPageNumbers().map((page, index) => (
+    <nav className={cn('mt-6 flex items-center justify-between gap-2 sm:justify-center', className)} aria-label="Phân trang">
+      <button type="button" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className={navBtn}>
+        <ChevronLeft className="h-4 w-4" />
+        <span className="hidden sm:inline">Trước</span>
+      </button>
+
+      <div className="hidden items-center gap-1 sm:flex">
+        {getPageNumbers().map((page, index) =>
           page === '...' ? (
-            <span key={`dots-${index}`} className="px-2 text-gray-400 font-medium">...</span>
+            <span key={`dots-${index}`} className="px-1.5 text-slate-400">…</span>
           ) : (
             <button
+              type="button"
               key={page}
               onClick={() => onPageChange(page)}
-              className={`min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-all ${
+              aria-current={currentPage === page ? 'page' : undefined}
+              className={cn(
+                'h-9 min-w-9 rounded-lg px-2 text-sm font-medium tabular-nums transition-colors',
                 currentPage === page
-                  ? 'bg-blue-600 text-white shadow-md cursor-default'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 cursor-pointer'
-              }`}
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100',
+              )}
             >
               {page}
             </button>
-          )
-        ))}
-
-        {/* Nút Tiến (Next) */}
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer disabled:cursor-not-allowed"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        
+          ),
+        )}
       </div>
-    </div>
+      <span className="text-sm text-slate-500 sm:hidden">
+        Trang <b className="text-slate-900">{currentPage}</b> / {totalPages}
+      </span>
+
+      <button type="button" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className={navBtn}>
+        <span className="hidden sm:inline">Sau</span>
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </nav>
   );
 }

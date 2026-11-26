@@ -132,8 +132,8 @@ export default function CompanyProfilePage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hồ Sơ Doanh Nghiệp</h1>
-          <p className="text-gray-500 text-sm mt-1">Quản lý thông tin và hình ảnh thương hiệu tuyển dụng của bạn.</p>
+          <h1 className="font-display text-2xl font-bold text-slate-900">Hồ Sơ Doanh Nghiệp</h1>
+          <p className="text-slate-500 text-sm mt-1">Quản lý thông tin và hình ảnh thương hiệu tuyển dụng của bạn.</p>
         </div>
         
         {isUpdateMode && !isEditing && (
@@ -153,43 +153,43 @@ export default function CompanyProfilePage() {
       {isUpdateMode && !isEditing && <StatusBanner />}
 
       {/* Main Content Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="card overflow-hidden">
         
         {/* --- CHẾ ĐỘ XEM (VIEW MODE) --- */}
         {!isEditing ? (
           <div className="p-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               {/* Logo Display */}
-              <div className="w-32 h-32 flex-shrink-0 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center p-2 shadow-sm">
+              <div className="w-32 h-32 flex-shrink-0 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center p-2 shadow-sm">
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-contain rounded-lg" />
                 ) : (
-                  <Building2 className="w-12 h-12 text-gray-300" />
+                  <Building2 className="w-12 h-12 text-slate-300" />
                 )}
               </div>
 
               {/* Info Display */}
               <div className="flex-1 space-y-6 w-full">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h2 className="font-display text-2xl font-bold text-slate-900 mb-2">
                     {originalData.companyName || 'Chưa cập nhật tên công ty'}
                   </h2>
                   
                   {originalData.website && (
-                    <a href={originalData.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium">
+                    <a href={originalData.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-800 transition-colors text-sm font-medium">
                       <Globe className="w-4 h-4" />
                       {originalData.website}
                     </a>
                   )}
                 </div>
 
-                <div className="border-t border-gray-100 pt-6">
-                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800 mb-3">
-                    <FileText className="w-5 h-5 text-gray-500" />
+                <div className="border-t border-slate-100 pt-6">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800 mb-3">
+                    <FileText className="w-5 h-5 text-slate-500" />
                     Giới thiệu công ty
                   </h3>
-                  <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap leading-relaxed">
-                    {originalData.description ? originalData.description : <span className="italic text-gray-400">Chưa có thông tin mô tả. Hãy cập nhật để ứng viên hiểu thêm về bạn.</span>}
+                  <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap leading-relaxed">
+                    {originalData.description ? originalData.description : <span className="italic text-slate-400">Chưa có thông tin mô tả. Hãy cập nhật để ứng viên hiểu thêm về bạn.</span>}
                   </div>
                 </div>
               </div>
@@ -198,20 +198,20 @@ export default function CompanyProfilePage() {
         ) : (
 
         /* --- CHẾ ĐỘ SỬA (EDIT MODE) --- */
-        <div className="p-8 bg-gray-50/50">
+        <div className="p-8 bg-slate-50/50">
           <form onSubmit={handleSubmit} className="space-y-8">
             
             {/* Cập nhật Logo */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Logo Doanh Nghiệp</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Logo Doanh Nghiệp</label>
               <div className="flex items-center gap-6">
-                <div className="relative w-28 h-28 rounded-xl border-2 border-dashed border-gray-300 bg-white flex items-center justify-center overflow-hidden group hover:border-blue-500 transition-colors">
+                <div className="relative w-28 h-28 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden group hover:border-brand-500 transition-colors">
                   {logoPreview ? (
                     <img src={logoPreview} alt="Preview" className="w-full h-full object-contain p-2" />
                   ) : (
                     <div className="text-center">
-                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                      <span className="text-[10px] text-gray-500 font-medium">Tải ảnh lên</span>
+                      <Camera className="w-8 h-8 text-slate-400 mx-auto mb-1" />
+                      <span className="text-[10px] text-slate-500 font-medium">Tải ảnh lên</span>
                     </div>
                   )}
                   {/* Lớp overlay khi hover vào ảnh để chọn file */}
@@ -220,7 +220,7 @@ export default function CompanyProfilePage() {
                     <input type="file" accept="image/png, image/jpeg, image/jpg" onChange={handleFileChange} className="hidden" />
                   </label>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-slate-500">
                   <p>Định dạng: JPG, PNG, JPEG.</p>
                   <p>Kích thước khuyên dùng: Hình vuông 400x400px.</p>
                 </div>
@@ -235,7 +235,7 @@ export default function CompanyProfilePage() {
                   onChange={handleChange} 
                   required 
                   placeholder="VD: Công ty TNHH Worklify"
-                  icon={<Building2 className="w-4 h-4 text-gray-400" />}
+                  icon={<Building2 className="w-4 h-4 text-slate-400" />}
               />
               <Input 
                   label="Trang web chính thức" 
@@ -244,24 +244,24 @@ export default function CompanyProfilePage() {
                   value={formData.website} 
                   onChange={handleChange} 
                   placeholder="https://..." 
-                  icon={<Globe className="w-4 h-4 text-gray-400" />}
+                  icon={<Globe className="w-4 h-4 text-slate-400" />}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Giới thiệu tổng quan</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Giới thiệu tổng quan</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 rows="6"
                 placeholder="Mô tả quy mô, lĩnh vực hoạt động, chế độ phúc lợi và văn hóa công ty..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all resize-y"
+                className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-100 focus:border-brand-500 transition-all resize-y"
               ></textarea>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-200">
               {isUpdateMode && (
                 <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isLoading} className="flex items-center gap-2">
                   <X className="w-4 h-4" />
