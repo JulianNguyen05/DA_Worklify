@@ -11,6 +11,7 @@ Worklify: nền tảng tuyển dụng việc làm với 3 vai trò `CANDIDATE`, 
 - `docker-compose.yml` (gốc): stack đầy đủ, còn tham chiếu `backend-pdf/` (Node/Puppeteer) **không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
 - `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089) và `include` `backend-ml/docker-compose.yml` (backend-ml 8000, Ollama 11434 — lần đầu phải `docker compose exec ollama ollama pull qwen2.5:3b`). Đây là file dùng khi chạy backend trên IDE. backend-ml chỉ được định nghĩa ở `backend-ml/docker-compose.yml`, sửa ở đó.
 - `worklify_db.sql`, `backend-core/init.sql`: schema + dữ liệu mẫu.
+- `backend-core/scripts/`: `seed-demo-data.mjs` tạo dữ liệu demo qua API (3 công ty, 6 tin, 8 ứng viên, 17 đơn; tài khoản `@demo.worklify.test`), `clean-demo-data.sql` xoá dữ liệu đó. Xem `backend-core/scripts/README.md`.
 - `gom_code.py`: script gom code để debug, không thuộc ứng dụng.
 
 ## Lệnh thường dùng
