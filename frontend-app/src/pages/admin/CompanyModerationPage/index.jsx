@@ -107,7 +107,7 @@ export default function CompanyModerationPage() {
       accessor: "companyName",
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-10 h-10 rounded bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
             {row.logoUrl ? (
               <img
                 src={`http://localhost:8080${row.logoUrl}`}
@@ -115,10 +115,10 @@ export default function CompanyModerationPage() {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Building2 className="w-5 h-5 text-gray-400" />
+              <Building2 className="w-5 h-5 text-slate-400" />
             )}
           </div>
-          <span className="font-semibold text-gray-900">{row.companyName}</span>
+          <span className="font-semibold text-slate-900">{row.companyName}</span>
         </div>
       ),
     },
@@ -131,13 +131,13 @@ export default function CompanyModerationPage() {
             href={row.website}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors font-medium"
+            className="flex items-center gap-1 text-brand-600 hover:text-brand-800 transition-colors font-medium"
           >
             <Globe className="w-4 h-4" />
             {row.website.replace(/^https?:\/\//, "")}
           </a>
         ) : (
-          <span className="text-gray-400 italic">Chưa cập nhật</span>
+          <span className="text-slate-400 italic">Chưa cập nhật</span>
         ),
     },
     {
@@ -148,7 +148,7 @@ export default function CompanyModerationPage() {
           <Button
             variant="outline"
             onClick={() => handleViewDetails(row)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-brand-600 hover:border-brand-300 transition-all"
           >
             <Eye className="w-4 h-4" />
             Chi tiết
@@ -162,11 +162,11 @@ export default function CompanyModerationPage() {
     <div className="max-w-6xl mx-auto pb-10">
       {/* Header Section */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-2">
-          <ShieldCheck className="w-7 h-7 text-blue-600" />
+        <h1 className="font-display text-2xl font-bold text-slate-900 flex items-center gap-2 mb-2">
+          <ShieldCheck className="w-7 h-7 text-brand-600" />
           Kiểm Duyệt Doanh Nghiệp
         </h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate-500 text-sm">
           Quản lý và phê duyệt hồ sơ đăng ký từ các nhà tuyển dụng mới trên hệ
           thống.
         </p>
@@ -179,15 +179,15 @@ export default function CompanyModerationPage() {
       )}
 
       {/* Main Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="card overflow-hidden">
         <Table
           columns={columns}
           data={companies}
           isLoading={isLoading}
           emptyMessage={
-            <div className="py-12 flex flex-col items-center justify-center text-gray-500">
-              <ShieldCheck className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-lg font-medium text-gray-600">
+            <div className="py-12 flex flex-col items-center justify-center text-slate-500">
+              <ShieldCheck className="w-12 h-12 text-slate-300 mb-3" />
+              <p className="text-lg font-medium text-slate-600">
                 Không có hồ sơ chờ duyệt
               </p>
               <p className="text-sm">
@@ -208,7 +208,7 @@ export default function CompanyModerationPage() {
           <div className="flex flex-col gap-6">
             {/* Header Modal - Thông tin cơ bản */}
             <div className="flex items-start gap-5">
-              <div className="w-20 h-20 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+              <div className="w-20 h-20 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                 {selectedCompany.logoUrl ? (
                   <img
                     src={`http://localhost:8080${selectedCompany.logoUrl}`}
@@ -216,26 +216,26 @@ export default function CompanyModerationPage() {
                     className="w-full h-full object-contain p-1"
                   />
                 ) : (
-                  <Building2 className="w-8 h-8 text-gray-300" />
+                  <Building2 className="w-8 h-8 text-slate-300" />
                 )}
               </div>
               <div className="flex-1 pt-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
                   {selectedCompany.companyName}
                 </h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
                   <Globe className="w-4 h-4" />
                   {selectedCompany.website ? (
                     <a
                       href={selectedCompany.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-600 hover:underline font-medium"
+                      className="text-brand-600 hover:underline font-medium"
                     >
                       {selectedCompany.website}
                     </a>
                   ) : (
-                    <span className="italic text-gray-400">
+                    <span className="italic text-slate-400">
                       Không có website
                     </span>
                   )}
@@ -245,13 +245,13 @@ export default function CompanyModerationPage() {
 
             {/* Phân thân Modal - Giới thiệu */}
             <div>
-              <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wider">
-                <FileText className="w-4 h-4 text-gray-500" />
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-3 uppercase tracking-wider">
+                <FileText className="w-4 h-4 text-slate-500" />
                 Giới thiệu công ty
               </h4>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
                 {selectedCompany.description || (
-                  <span className="italic text-gray-400">
+                  <span className="italic text-slate-400">
                     Doanh nghiệp chưa cập nhật phần giới thiệu chi tiết.
                   </span>
                 )}
@@ -259,7 +259,7 @@ export default function CompanyModerationPage() {
             </div>
 
             {/* Footer Modal - Hành động */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-2">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-2">
               <Button
                 variant="outline"
                 onClick={handleOpenRejectModal}
@@ -270,7 +270,7 @@ export default function CompanyModerationPage() {
               </Button>
               <Button
                 onClick={() => handleApprove(selectedCompany.id)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white"
               >
                 <CheckCircle className="w-4 h-4" />
                 Duyệt & Kích hoạt
@@ -297,11 +297,11 @@ export default function CompanyModerationPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Lý do từ chối (Bắt buộc)
             </label>
             <textarea
-              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-colors"
+              className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 transition-colors"
               rows="4"
               placeholder="Ví dụ: Tên công ty không hợp lệ, hình ảnh logo vi phạm bản quyền..."
               value={rejectReason}
@@ -310,7 +310,7 @@ export default function CompanyModerationPage() {
             ></textarea>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
             <Button
               variant="outline"
               onClick={() => setIsRejectModalOpen(false)}

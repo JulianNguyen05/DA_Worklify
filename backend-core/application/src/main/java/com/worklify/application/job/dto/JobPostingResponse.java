@@ -1,4 +1,3 @@
-// File: \backend-core\application\src\main\java\com\smartmatch\application\job\dto\JobPostingResponse.java
 package com.worklify.application.job.dto;
 
 import com.worklify.domain.job.model.JobStatus;
@@ -15,6 +14,8 @@ public class JobPostingResponse {
     private String description;
     private String requirements;
     private String salaryRange;
+    private Integer salaryMin;
+    private Integer salaryMax;
     private String location;
     private String workType;
     private JobStatus status;
@@ -22,4 +23,6 @@ public class JobPostingResponse {
     private LocalDateTime expiresAt;
     private String companyName;
     private String logoUrl;
+    // Tin đang mở và còn hạn nộp (ứng viên nộp được)
+    private boolean openForApplications;
 }

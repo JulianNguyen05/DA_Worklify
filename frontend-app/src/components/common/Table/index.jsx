@@ -1,36 +1,53 @@
 import React from 'react';
+import EmptyState from '../EmptyState';
+import { Skeleton } from '../Spinner';
 
-export default function Table({ columns, data, isLoading, emptyMessage }) {
+/**
+ * Bảng dữ liệu. columns: [{ header, accessor | render(row), className }]
+ * API cũ giữ nguyên; bảng tự cuộn ngang trên màn hình hẹp.
+ */
+export default function Table({ columns, data, isLoading, emptyMessage, emptyIcon, onRowClick }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse text-sm">
+      <table className="w-full border-collapse text-left text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="border-b border-slate-200 bg-slate-50/80">
             {columns.map((col, index) => (
-              <th key={index} className={`p-3 font-medium text-gray-600 ${col.className || ''}`}>
+              <th
+                key={index}
+                className={`whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 ${col.className || ''}`}
+              >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-slate-100">
           {isLoading ? (
+            [0, 1, 2, 3].map((i) => (
+              <tr key={i}>
+                {columns.map((_, c) => (
+                  <td key={c} className="px-4 py-4">
+                    <Skeleton className="h-4 w-full max-w-[160px]" />
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : !data || data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="p-4 text-center text-gray-500">
-                Đang tải dữ liệu...
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="p-4 text-center text-gray-500">
-                {emptyMessage || 'Không có dữ liệu.'}
+              <td colSpan={columns.length}>
+                <EmptyState title={emptyMessage || 'Không có dữ liệu.'} icon={emptyIcon} />
               </td>
             </tr>
           ) : (
             data.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-gray-50">
+              <tr
+                key={row.id ?? rowIndex}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={`transition-colors hover:bg-slate-50/80 ${onRowClick ? 'cursor-pointer' : ''}`}
+              >
                 {columns.map((col, colIndex) => (
-                  <td key={colIndex} className="p-3 text-gray-800">
+                  <td key={colIndex} className={`px-4 py-3.5 align-middle text-slate-700 ${col.cellClassName || ''}`}>
                     {col.render ? col.render(row) : row[col.accessor]}
                   </td>
                 ))}

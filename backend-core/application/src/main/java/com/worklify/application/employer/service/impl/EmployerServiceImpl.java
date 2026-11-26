@@ -36,6 +36,7 @@ public class EmployerServiceImpl implements EmployerService {
     private final CompanyProfileRepository companyProfileRepository;
     private final FileStoragePort fileStoragePort;
     private final CompanyLikeRepository companyLikeRepository;
+    private final com.worklify.domain.job.repository.JobPostingRepository jobPostingRepository;
 
     @Override
     public CompanyProfileResponse createProfile(Long userId, CompanyProfileRequest request) {
@@ -127,7 +128,7 @@ public class EmployerServiceImpl implements EmployerService {
                 .verificationStatus(profile.getVerificationStatus())
                 .likeCount(likeCount)
                 .isLiked(isLiked)
-                .activeJobsCount(0) // TODO: Tích hợp JobRepository để đếm số Job đang ACTIVE
+                .activeJobsCount((int) jobPostingRepository.countOpenJobsByCompany(profile.getId(), java.time.LocalDateTime.now()))
                 .build();
     }
 

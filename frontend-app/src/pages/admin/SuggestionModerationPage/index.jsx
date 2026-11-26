@@ -152,9 +152,9 @@ const SuggestionModerationPage = () => {
       header: "Nội dung đề xuất",
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-800">{row.name}</p>
+          <p className="font-medium text-slate-800">{row.name}</p>
           {row.requestType !== "CREATE" && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-slate-400">
               Áp dụng cho ReferenceValue #{row.targetReferenceValueId}
             </p>
           )}
@@ -175,7 +175,7 @@ const SuggestionModerationPage = () => {
           </Badge>
           {row.status !== "PENDING" && row.reviewNote && (
             <p
-              className="text-xs text-gray-400 mt-1 max-w-[180px] truncate"
+              className="text-xs text-slate-400 mt-1 max-w-[180px] truncate"
               title={row.reviewNote}
             >
               {row.reviewNote}
@@ -215,10 +215,10 @@ const SuggestionModerationPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+        <h1 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
           Duyệt đề xuất Skill / Language
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Candidate gửi đề xuất thêm mới, sửa hoặc xóa giá trị trong danh mục
           dùng chung (Skill/Language) — admin xét duyệt tại đây.
         </p>
@@ -232,23 +232,19 @@ const SuggestionModerationPage = () => {
         />
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 inline-flex gap-1">
+      <div className="card p-2 inline-flex gap-1">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setStatusFilter(tab.value)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              statusFilter === tab.value
-                ? "bg-blue-600 text-white"
-                : "text-gray-500 hover:bg-gray-50"
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${ statusFilter === tab.value ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50" }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+      <div className="card p-4">
         <Table
           columns={columns}
           data={pagedData}
@@ -269,7 +265,7 @@ const SuggestionModerationPage = () => {
         title="Từ chối đề xuất"
       >
         <div className="p-5 min-w-[380px] max-w-[480px]">
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-slate-600 mb-3">
             Từ chối đề xuất{" "}
             <span className="font-semibold">"{rejectTarget?.name}"</span>. Lý do
             sẽ hiển thị cho candidate.
@@ -279,7 +275,7 @@ const SuggestionModerationPage = () => {
             value={reviewNote}
             onChange={(e) => setReviewNote(e.target.value)}
             placeholder="VD: Trùng với kỹ năng đã có, viết sai chính tả..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 resize-none"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-100 resize-none"
           />
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setRejectTarget(null)}>

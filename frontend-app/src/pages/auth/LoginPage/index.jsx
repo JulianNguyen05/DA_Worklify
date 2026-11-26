@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Input from '../../../components/common/Input';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 import authService from '../../../features/auth/authService';
 
 const LoginPage = () => {
@@ -24,11 +25,10 @@ const LoginPage = () => {
     closeToast();
 
     try {
+      // authService.login đã lưu user/accessToken/userRole vào localStorage.
+      // (Trước đây trang này ghi đè accessToken bằng response.data.token = undefined.)
       const response = await authService.login(formData);
-      const { token, role } = response.data; 
-
-      localStorage.setItem('accessToken', token);
-      localStorage.setItem('userRole', role);
+      const { role } = response.data;
 
       setToast({
         show: true,
@@ -74,19 +74,19 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="w-full space-y-7 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Form Header */}
       <div className="space-y-2">
-        <h2 className="text-[26px] font-extrabold tracking-tight text-[#0F172A]">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-slate-900">
           Chào mừng trở lại
         </h2>
-        <p className="text-[15px] font-medium text-[#64748B]">
+        <p className="text-sm text-slate-500">
           Đăng nhập vào Worklify để quản lý hành trình của bạn.
         </p>
       </div>
 
       {/* Form Handle */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Hệ thống thông báo Toast */}
         {toast.show && (
           <div className={toast.type === 'error' ? 'animate-shake' : ''}>
@@ -101,83 +101,54 @@ const LoginPage = () => {
         {/* Các ô Input */}
         <div className="space-y-4">
           <Input 
-            label="Địa chỉ Email" 
+            label="Địa chỉ Email" icon={Mail} 
             type="email" 
             name="email" 
             value={formData.email} 
             onChange={handleChange} 
             required 
             placeholder="name@company.com"
-            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-[15px] font-medium placeholder:font-normal text-[#0F172A]"
           />
           <Input 
-            label="Mật khẩu" 
+            label="Mật khẩu" icon={Lock} 
             type="password" 
             name="password" 
             value={formData.password} 
             onChange={handleChange} 
             required 
             placeholder="••••••••"
-            className="w-full rounded-xl border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/20 transition-all text-[15px] font-medium placeholder:font-normal text-[#0F172A]"
           />
         </div>
         
         {/* Tiện ích ghi nhớ & khôi phục mật khẩu */}
-        <div className="flex items-center justify-between text-[14px]">
+        <div className="flex items-center justify-between text-sm">
           <div className="flex items-center group cursor-pointer">
             <input 
               id="remember-me" 
               name="remember-me" 
               type="checkbox" 
-              className="h-4 w-4 text-[#2563EB] focus:ring-[#2563EB]/20 border-[#E2E8F0] rounded cursor-pointer transition-all" 
+              className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-brand-600" 
             />
-            <label htmlFor="remember-me" className="ml-2 block text-[#475569] font-medium cursor-pointer select-none group-hover:text-[#0F172A] transition-colors">
+            <label htmlFor="remember-me" className="ml-2 block text-slate-600 font-medium cursor-pointer select-none group-hover:text-slate-900 transition-colors">
               Ghi nhớ đăng nhập
             </label>
           </div>
-          <Link to="/auth/forgot-password" className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors no-underline">
+          <Link to="/auth/forgot-password" className="font-semibold text-brand-600 hover:text-brand-700 transition-colors no-underline">
             Quên mật khẩu?
           </Link>
         </div>
 
         {/* Nút Đăng nhập - Đồng bộ style với nút "Đăng ký miễn phí" trên Navbar */}
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-          className="w-full text-white py-3 rounded-xl font-bold tracking-wide transition-all duration-200 flex items-center justify-center text-[15px] disabled:opacity-70"
-          style={{
-            background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)',
-            boxShadow: '0 4px 14px rgba(37,99,235,0.25)',
-          }}
-          onMouseEnter={(e) => { 
-            if (!isLoading) {
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(37,99,235,0.4)'; 
-              e.currentTarget.style.transform = 'translateY(-1px)'; 
-            }
-          }}
-          onMouseLeave={(e) => { 
-            if (!isLoading) {
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(37,99,235,0.25)'; 
-              e.currentTarget.style.transform = 'translateY(0)'; 
-            }
-          }}
-        >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              <span>Đang xác thực...</span>
-            </div>
-          ) : 'Đăng nhập vào hệ thống'}
+        <Button type="submit" size="lg" isLoading={isLoading} className="w-full">
+          {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
+          {!isLoading && <ArrowRight className="h-4 w-4" />}
         </Button>
       </form>
 
       {/* Chuyển hướng nhanh sang trang Đăng ký */}
-      <div className="pt-5 border-t border-[#F1F5F9] text-center text-[14px] font-medium text-[#64748B]">
+      <div className="border-t border-slate-100 pt-5 text-center text-sm text-slate-500">
         Chưa có tài khoản?{' '}
-        <Link to="/auth/register" className="font-bold text-[#2563EB] hover:text-[#1D4ED8] transition-colors ml-1 no-underline">
+        <Link to="/auth/register" className="font-semibold text-brand-600 hover:text-brand-700 transition-colors ml-1 no-underline">
           Đăng ký ngay
         </Link>
       </div>

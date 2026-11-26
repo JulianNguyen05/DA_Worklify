@@ -32,12 +32,17 @@ public class SavedJobRepositoryAdapter implements SavedJobRepository {
 
     @Override
     public DomainPage<SavedJob> findByCandidateId(Long candidateId, DomainPageable pageable) {
-        Page<SavedJobJpaEntity> page = jpaRepository.findByCandidateId(candidateId, PaginationMapper.toSpringPageable(pageable));
+        Page<SavedJobJpaEntity> page = jpaRepository.findByCandidateIdOrderBySavedAtDesc(candidateId, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
     @Override
     public void delete(SavedJob savedJob) {
         jpaRepository.delete(mapper.toEntity(savedJob));
+    }
+
+    @Override
+    public java.util.List<Long> findJobIdsByCandidateId(Long candidateId) {
+        return jpaRepository.findJobIdsByCandidateId(candidateId);
     }
 }

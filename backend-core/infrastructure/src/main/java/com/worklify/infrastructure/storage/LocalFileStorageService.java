@@ -120,7 +120,9 @@ public class LocalFileStorageService implements FileStoragePort {
             if (resource.exists() && resource.isReadable()) {
                 return Files.readAllBytes(file);
             } else {
-                throw new RuntimeException("Không thể đọc file hoặc file không tồn tại: " + filePath);
+                // File ghi trong DB nhưng không còn trên ổ đĩa → 404 thay vì 500
+                throw new com.worklify.application.common.exception.ResourceNotFoundException(
+                        "Không tìm thấy file trên máy chủ: " + filePath);
             }
         } catch (IOException ex) {
             throw new RuntimeException("Lỗi khi đọc file: " + filePath, ex);

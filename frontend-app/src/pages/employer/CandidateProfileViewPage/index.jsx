@@ -53,19 +53,19 @@ export default function CandidateProfileViewPage() {
 
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm font-semibold text-[#64748B] hover:text-[#2563EB] transition-colors"
+        className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Quay lại tìm kiếm
       </button>
 
       {/* HEADER — đồng bộ gradient Worklify (Navbar/AuthLayout) */}
-      <div className="bg-gradient-to-r from-[#2563EB] to-[#14B8A6] rounded-3xl p-8 sm:p-10 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-brand-600 to-accent-500 rounded-3xl p-8 sm:p-10 text-white shadow-raised relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10">
           <p className="text-white/70 text-sm font-semibold uppercase tracking-wide mb-1">
             Hồ sơ ứng viên
           </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold">
+          <h1 className="font-display text-2xl font-bold">
             {isLoading ? 'Đang tải...' : profileData?.profile?.fullName || 'Ứng viên ẩn danh'}
           </h1>
           {!isLoading && profileData?.profile?.headline && (
@@ -75,7 +75,7 @@ export default function CandidateProfileViewPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-24 text-[#64748B]">
+        <div className="flex items-center justify-center py-24 text-slate-500">
           <Loader2 className="w-6 h-6 animate-spin mr-2" /> Đang tải hồ sơ...
         </div>
       ) : layout.length > 0 ? (
@@ -90,7 +90,7 @@ export default function CandidateProfileViewPage() {
           onToast={setStatusMsg}
         />
       ) : (
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] border-dashed p-16 text-center text-[#64748B]">
+        <div className="card border-dashed p-16 text-center text-slate-500">
           Ứng viên chưa cập nhật hồ sơ.
         </div>
       )}

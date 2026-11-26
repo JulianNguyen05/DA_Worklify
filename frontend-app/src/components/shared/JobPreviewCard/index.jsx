@@ -33,26 +33,26 @@ export default function JobPreviewCard({ formData, companyName, logoUrl }) {
 
   return (
     <div className="sticky top-8">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
         Xem trước
       </p>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="card overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-slate-100">
           <div className="flex gap-4 items-center">
-            <div className="w-14 h-14 shrink-0 bg-white border border-gray-100 rounded-xl shadow-sm flex items-center justify-center overflow-hidden">
+            <div className="card w-14 h-14 shrink-0 flex items-center justify-center overflow-hidden">
               {logoUrl ? (
                 <img src={logoUrl} alt={companyName} className="w-full h-full object-contain" />
               ) : (
-                <Building2 className="w-7 h-7 text-gray-300" />
+                <Building2 className="w-7 h-7 text-slate-300" />
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg font-bold text-gray-900 leading-snug truncate">
+              <h3 className="text-lg font-bold text-slate-900 leading-snug truncate">
                 {title || 'Tiêu đề công việc'}
               </h3>
-              <p className="text-sm text-blue-700 font-semibold truncate">
+              <p className="text-sm text-brand-700 font-semibold truncate">
                 {companyName || 'Tên công ty'}
               </p>
             </div>
@@ -62,28 +62,28 @@ export default function JobPreviewCard({ formData, companyName, logoUrl }) {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium border border-green-200">
               <DollarSign className="w-3.5 h-3.5" /> {salaryRange || 'Thỏa thuận'}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium border border-gray-200">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
               <MapPin className="w-3.5 h-3.5" /> {location || 'Chưa cập nhật'}
             </span>
           </div>
         </div>
 
         {/* Meta */}
-        <div className="px-6 py-4 border-b border-gray-100 grid grid-cols-2 gap-4">
+        <div className="px-6 py-4 border-b border-slate-100 grid grid-cols-2 gap-4">
           <div className="flex items-start gap-2.5">
-            <Briefcase className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+            <Briefcase className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-xs text-gray-400">Hình thức</p>
-              <p className="text-sm font-semibold text-gray-800">
+              <p className="text-xs text-slate-400">Hình thức</p>
+              <p className="text-sm font-semibold text-slate-800">
                 {WORK_TYPE_LABELS[workType] || workType || '—'}
               </p>
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <Calendar className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+            <Calendar className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-xs text-gray-400">Hạn nộp</p>
-              <p className="text-sm font-semibold text-gray-800">
+              <p className="text-xs text-slate-400">Hạn nộp</p>
+              <p className="text-sm font-semibold text-slate-800">
                 {expiresAt ? new Date(expiresAt).toLocaleDateString('vi-VN') : 'Chưa đặt'}
               </p>
             </div>
@@ -93,26 +93,26 @@ export default function JobPreviewCard({ formData, companyName, logoUrl }) {
         {/* Body */}
         <div className="p-6 space-y-6">
           <div>
-            <h4 className="text-sm font-bold text-gray-800 mb-2">Mô tả công việc</h4>
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Mô tả công việc</h4>
             {stripHtml(description) ? (
               <div
-                className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                className="text-sm text-slate-600 leading-relaxed prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={renderHtml(description)}
               />
             ) : (
-              <p className="text-sm text-gray-300 italic">Chưa có nội dung...</p>
+              <p className="text-sm text-slate-300 italic">Chưa có nội dung...</p>
             )}
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-gray-800 mb-2">Yêu cầu ứng viên</h4>
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Yêu cầu ứng viên</h4>
             {stripHtml(requirements) ? (
               <div
-                className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                className="text-sm text-slate-600 leading-relaxed prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={renderHtml(requirements)}
               />
             ) : (
-              <p className="text-sm text-gray-300 italic">Chưa có nội dung...</p>
+              <p className="text-sm text-slate-300 italic">Chưa có nội dung...</p>
             )}
           </div>
         </div>

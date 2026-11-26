@@ -1,137 +1,67 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import Logo from '../../common/Logo';
+import { findActivePath } from '../navConfig';
+import { cn } from '@/utils/cn';
 
-const adminMenuItems = [
-  {
-    name: 'Bảng điều khiển',
-    path: '/admin/dashboard',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Duyệt Doanh nghiệp',
-    path: '/admin/company-moderation',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Duyệt Tin tuyển dụng',
-    path: '/admin/jobs-moderation',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Duyệt Skill/Language',
-    path: '/admin/suggestions',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Quản lý Tài khoản',
-    path: '/admin/users',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Quản lý Danh mục',
-    path: '/admin/categories',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Xuất Báo cáo',
-    path: '/admin/reports',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-      </svg>
-    )
-  },
-  {
-    name: 'Demo API (CRUD)',
-    path: '/admin/demo-products',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-      </svg>
-    )
-  }
-];
+/**
+ * Sidebar điều hướng cho khu vực quản lý (nhà tuyển dụng, admin).
+ * groups: [{ label, items: [{ name, path, icon }] }]
+ */
+export default function Sidebar({ groups, workspaceLabel, homePath = '/', onNavigate, footer }) {
+  const location = useLocation();
+  const allPaths = groups.flatMap((g) => g.items.map((i) => i.path));
+  const activePath = findActivePath(location.pathname, allPaths);
 
-export default function Sidebar() {
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-full flex flex-col flex-shrink-0 z-20 hidden md:flex shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-      
-      {/* Tiêu đề góc trên cùng Sidebar */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-100">
-        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-          Admin Workspace
-        </span>
+    <div className="flex h-full flex-col">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 px-5">
+        <Logo to={homePath} onClick={onNavigate} />
+        {workspaceLabel && (
+          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            {workspaceLabel}
+          </span>
+        )}
       </div>
 
-      {/* Danh sách Menu */}
-      <div className="flex-1 overflow-y-auto py-6">
-        <nav className="space-y-1.5 px-4">
-          {adminMenuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 relative overflow-hidden ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600' 
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* Đường line viền bên trái khi active */}
-                  {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
-                  )}
-                  
-                  {/* Icon */}
-                  <div className={`${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
-                    {item.icon}
-                  </div>
-                  
-                  {/* Tên menu */}
-                  <span className="truncate">{item.name}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {groups.map((group) => (
+          <div key={group.label}>
+            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{group.label}</p>
+            <div className="space-y-0.5">
+              {group.items.map(({ name, path, icon: Icon }) => {
+                const active = activePath === path;
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    onClick={onNavigate}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      active ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                    )}
+                  >
+                    <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
+                    <span className="truncate">{name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
 
-      {/* Footer của Sidebar */}
-      <div className="p-4 border-t border-gray-100">
-        <div className="bg-gray-50 px-4 py-3 rounded-lg border border-gray-100">
-          <p className="text-xs text-gray-500 text-center font-medium">
-            SmartMatch System v1.0<br />
-            <span className="text-gray-400 font-normal mt-1 block">© 2026 Admin Portal</span>
-          </p>
-        </div>
-      </div>
-    </aside>
+      {footer && <div className="shrink-0 border-t border-slate-200/80 p-4">{footer}</div>}
+    </div>
+  );
+}
+
+/** Link nhỏ ở chân sidebar, quay về trang việc làm công khai. */
+export function SidebarFooterLink({ to = '/jobs', children }) {
+  return (
+    <Link to={to} className="block rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800">
+      {children}
+    </Link>
   );
 }

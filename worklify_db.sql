@@ -874,6 +874,8 @@ CREATE TABLE `job_postings` (
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `requirements` text COLLATE utf8mb4_unicode_ci,
   `salary_range` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `salary_min` int DEFAULT NULL,
+  `salary_max` int DEFAULT NULL,
   `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `work_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'PENDING' COMMENT 'PENDING, ACTIVE, CLOSED, REJECTED',

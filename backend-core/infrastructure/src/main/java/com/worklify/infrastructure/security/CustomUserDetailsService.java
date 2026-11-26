@@ -1,6 +1,7 @@
 package com.worklify.infrastructure.security;
 
 import com.worklify.domain.auth.model.User;
+import com.worklify.domain.auth.model.UserStatus;
 import com.worklify.domain.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,10 +23,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail().value(),
-                user.getPasswordHash(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+        // Tài khoản bị khoá → accountNonLocked = false; JwtAuthenticationFilter sẽ không xác thực token của họ
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail().value())
+                .password(user.getPasswordHash())
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+                .accountLocked(user.getStatus() == UserStatus.BANNED)
+                .build();
     }
 }

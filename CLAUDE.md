@@ -61,11 +61,13 @@ Quy ước controller:
 - Có `@Tag(name = "N. Tên nhóm")` và `@Operation(summary = ...)` cho Swagger (tag được đánh số để sắp xếp).
 - Dùng Lombok (`@RequiredArgsConstructor`, inject qua constructor) và `@Valid` cho request body.
 
-Phân quyền theo chủ sở hữu: phần lớn controller cũ nhận `userId`/`companyId` trên URL mà không đối chiếu với người đăng nhập. Code mới nên lấy người dùng từ `Principal` (`principal.getName()` = email) như `MatchingController`, và ném `ForbiddenOperationException` (→ 403) khi không sở hữu tài nguyên. `AccessDeniedException` của `@PreAuthorize` đã được map về 403 trong `GlobalExceptionHandler`.
+Phân quyền theo chủ sở hữu: controller cũ vẫn nhận `userId`/`companyId`/`jobId` trên URL, nhưng đã được đối chiếu với người đăng nhập bằng bean `@accessControl` (`application/common/security/AccessControlService`) trong `@PreAuthorize`, ví dụ `@PreAuthorize("hasRole('EMPLOYER') and @accessControl.ownsCompany(#companyId, authentication.name)")` (có `isSelf`, `ownsCompany`, `ownsJob`, `canViewApplication`, `canViewCv`). Tên tham số đọc được nhờ `<parameters>true</parameters>` trong `pom.xml` gốc. Endpoint mới nên lấy người dùng từ `Principal` (`principal.getName()` = email, `accessControl.requireUserId(email)`) như `MatchingController`/`SavedJobController`. Service ném `ForbiddenOperationException` (→ 403); `AccessDeniedException` → 403; chưa đăng nhập/token hỏng/tài khoản bị khoá → 401 (entry point trong `SecurityConfig`).
 
 AI matching (`/api/v1/matching`): `GET /jobs/{jobId}/me` (ứng viên tự xem điểm), `GET /jobs/{jobId}/applications` (nhà tuyển dụng xếp hạng hồ sơ), `POST /jobs/{jobId}/me/advice` (agent gợi ý sửa hồ sơ, gọi backend-ml `/agent/cv-advice` → Ollama, mất 25–60 giây) và `POST /me/suggestions/apply` (ghi một gợi ý vào hồ sơ). `MatchingServiceImpl` cố ý không có `@Transactional` (xem comment trong class).
 
-Validation: dự án **chưa có `hibernate-validator`** nên `@Valid`/`@NotBlank` hiện không có tác dụng — kiểm tra đầu vào quan trọng phải viết trong service.
+Validation: module `api` đã có `spring-boot-starter-validation`, `@Valid` + `@NotBlank`/`@Size`... trên DTO có tác dụng (lỗi → 400, message lỗi đầu tiên). Ràng buộc nghiệp vụ (trạng thái, quyền, hạn nộp) vẫn kiểm tra trong domain/service. `GlobalExceptionHandler` map: JSON hỏng/sai kiểu/thiếu tham số → 400, `IllegalStateException` (sai quy trình) → 409, `DataIntegrityViolationException` → 409, route không tồn tại → 404.
+
+Nghiệp vụ tuyển dụng: tin chỉ nhận hồ sơ khi `ACTIVE` và chưa quá `expiresAt` (`JobPosting.isOpenForApplications`); tìm kiếm công khai lọc theo `keyword`, `location`, `workType`, `salaryMin`/`salaryMax` (triệu VNĐ, cột `salary_min`/`salary_max`, tin cũ được điền từ chuỗi `salary_range` lúc khởi động bởi `JobSalaryBackfillRunner`). Trạng thái đơn đi theo `ApplicationStatus.nextStatuses()` (PENDING → REVIEWED → INTERVIEW_SCHEDULED → ACCEPTED/REJECTED); ứng viên rút đơn (`DELETE /applications/{id}`) khi còn PENDING; lưu tin ở `/api/v1/saved-jobs`; NTD đóng tin ở `PATCH /jobs/employers/{companyId}/{jobId}/close`; admin mở khoá ở `PATCH /admin/users/{id}/unban`; không tự đăng ký được role ADMIN.
 
 Endpoint public (không cần JWT) được khai báo trong `SecurityConfig`: auth, swagger, `/uploads/**`, `GET /api/v1/jobs/**`, `GET /api/v1/employers/**`, `/api/internal/**` (tự bảo vệ bằng API key).
 
@@ -74,7 +76,7 @@ Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`dd
 ## Frontend: quy ước
 
 - Alias `@/` → `src/` (xem `jsconfig.json`).
-- `src/services/axiosClient.js`: axios instance, tự gắn `Bearer` token lấy từ `localStorage.user.accessToken`. baseURL đã gồm `/api/v1`, nên service chỉ gọi đường dẫn như `/jobs/search`.
+- `src/services/axiosClient.js`: axios instance, tự gắn `Bearer` token lấy từ `localStorage.user.accessToken`. baseURL lấy từ `VITE_API_BASE_URL` (đã gồm `/api/v1`, đặt trong `.env.development`), nên service chỉ gọi đường dẫn như `/jobs/search`. Nhận 401 khi có gửi token → xoá phiên và về `/auth/login`.
 - `src/features/<domain>/<domain>Service.js`: object gom các hàm gọi API, trả về `response.data`.
 - `src/pages/<role>/<PageName>/index.jsx`: trang theo vai trò (`public`, `auth`, `candidate`, `employer`, `admin`); `src/router/index.jsx`: định tuyến.
 - AI matching: `features/matching/matchingService.js`, `components/shared/MatchScore` (`MatchScoreBadge`, `MatchScoreCard`) và `components/shared/CvAdvicePanel` (trợ lý sửa hồ sơ, mở trong modal), dùng ở `pages/public/JobDetailPage` và `pages/employer/ApplicationListPage`.
@@ -84,8 +86,7 @@ Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`dd
 
 ## Lưu ý / bẫy đã biết
 
-- Biến môi trường frontend không khớp nhau: `.env.development` đặt `VITE_API_URL`, nhưng `axiosClient` đọc `VITE_API_BASE_URL` (nên đang dùng giá trị fallback `http://localhost:8080/api/v1`). `docker-compose.yml` ở gốc lại đặt `VITE_API_BASE_URL` thiếu `/api/v1`.
-- DTO request có `private boolean isCurrent` + Lombok `@Data` (Experience/Education/Project/Activity): Jackson đặt tên property là `current`, nhưng frontend gửi `isCurrent` → giá trị này hiện **không được lưu**. Sửa bằng `@JsonProperty("isCurrent")` khi đụng tới.
+- Field `boolean isXxx` + Lombok: Jackson và MapStruct đều gọi property là `xxx` (getter `isXxx()`), trong khi frontend gửi `isXxx` và builder là `isXxx(...)`. `isCurrent` (Experience/Education/Project/Activity) đã được sửa bằng `@JsonProperty("isCurrent")` ở DTO và `@Mapping(target = "isCurrent", source = "current")` ở `CandidateEntityMapper`; field boolean mới nên tránh tiền tố `is`.
 - Giới hạn upload là 10MB, phải đặt ở cả `spring.servlet.multipart` lẫn `server.tomcat.max-http-form-post-size`, nếu không Tomcat sẽ reset kết nối.
 - Mật khẩu DB và JWT secret đang ghi thẳng trong file cấu hình (chấp nhận được cho môi trường đồ án, đừng đưa thêm secret thật vào repo).
 - Comment và message trong code chủ yếu viết bằng tiếng Việt; giữ nguyên phong cách đó.

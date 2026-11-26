@@ -1,154 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import candidateService from '../../../features/candidate/candidateService';
+import applicationService from '../../../features/application/applicationService';
+import toast from 'react-hot-toast';
 import authService from '../../../features/auth/authService';
 import Pagination from '../../../components/common/Pagination';
+import PageHeader from '../../../components/common/PageHeader';
+import Card from '../../../components/common/Card';
+import Avatar from '../../../components/common/Avatar';
+import EmptyState from '../../../components/common/EmptyState';
+import Tabs from '../../../components/common/Tabs';
+import Button, { buttonClasses } from '../../../components/common/Button';
+import { Skeleton } from '../../../components/common/Spinner';
+import { AppStatusBadge } from '../../../components/shared/StatusBadges';
 import {
-  Briefcase, Building2, Calendar, FileText,
-  ChevronRight, Search, Clock, CheckCircle2,
-  XCircle, Eye, Users, Filter, SlidersHorizontal,
-  ArrowUpRight, Inbox
+  Briefcase, Building2, Calendar, FileText, Search, Clock, CheckCircle2,
+  XCircle, Eye, Users, ArrowUpRight, Inbox, AlertCircle, Undo2,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  PENDING: {
-    label: 'Chờ phản hồi',
-    color: 'amber',
-    icon: Clock,
-    bg: '#FEF3C7',
-    text: '#92400E',
-    dot: '#F59E0B',
-  },
-  REVIEWED: {
-    label: 'Đã xem',
-    color: 'blue',
-    icon: Eye,
-    bg: '#DBEAFE',
-    text: '#1E40AF',
-    dot: '#3B82F6',
-  },
-  INTERVIEW_SCHEDULED: {
-    label: 'Phỏng vấn',
-    color: 'purple',
-    icon: Users,
-    bg: '#EDE9FE',
-    text: '#5B21B6',
-    dot: '#7C3AED',
-  },
-  ACCEPTED: {
-    label: 'Trúng tuyển',
-    color: 'green',
-    icon: CheckCircle2,
-    bg: '#D1FAE5',
-    text: '#065F46',
-    dot: '#10B981',
-  },
-  REJECTED: {
-    label: 'Từ chối',
-    color: 'red',
-    icon: XCircle,
-    bg: '#FEE2E2',
-    text: '#991B1B',
-    dot: '#EF4444',
-  },
+  PENDING: { label: 'Chờ phản hồi', icon: Clock, tone: 'text-amber-600 bg-amber-50' },
+  REVIEWED: { label: 'Đã xem', icon: Eye, tone: 'text-sky-600 bg-sky-50' },
+  INTERVIEW_SCHEDULED: { label: 'Phỏng vấn', icon: Users, tone: 'text-violet-600 bg-violet-50' },
+  ACCEPTED: { label: 'Trúng tuyển', icon: CheckCircle2, tone: 'text-emerald-600 bg-emerald-50' },
+  REJECTED: { label: 'Từ chối', icon: XCircle, tone: 'text-rose-600 bg-rose-50' },
 };
-
-const STATUS_TABS = [
-  { key: 'ALL', label: 'Tất cả' },
-  ...Object.entries(STATUS_CONFIG).map(([key, val]) => ({ key, label: val.label })),
-];
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-
-const StatusBadge = ({ status }) => {
-  const cfg = STATUS_CONFIG[status];
-  if (!cfg) return null;
-  const Icon = cfg.icon;
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-      background: cfg.bg, color: cfg.text, whiteSpace: 'nowrap',
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
-      {cfg.label}
-    </span>
-  );
-};
-
-const CompanyAvatar = ({ logo, name, size = 52 }) => {
-  const [imgError, setImgError] = useState(false);
-  const initials = name ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
-
-  if (logo && !imgError) {
-    return (
-      <div style={{
-        width: size, height: size, borderRadius: 12, overflow: 'hidden',
-        border: '1px solid #E5E7EB', flexShrink: 0, background: '#F9FAFB',
-      }}>
-        <img
-          src={logo} alt={name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={() => setImgError(true)}
-        />
-      </div>
-    );
-  }
-
-  const colors = ['#EDE9FE', '#DBEAFE', '#D1FAE5', '#FEF3C7', '#FCE7F3'];
-  const textColors = ['#5B21B6', '#1E40AF', '#065F46', '#92400E', '#9D174D'];
-  const idx = name ? name.charCodeAt(0) % colors.length : 0;
-
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: 12, flexShrink: 0,
-      background: colors[idx], color: textColors[idx],
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 15, fontWeight: 700, letterSpacing: 1,
-      border: `1px solid ${colors[idx]}`,
-    }}>
-      {initials}
-    </div>
-  );
-};
-
-const SkeletonCard = () => (
-  <div style={{
-    background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
-    padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center',
-  }}>
-    <div style={{ width: 52, height: 52, borderRadius: 12, background: '#F3F4F6', flexShrink: 0 }} />
-    <div style={{ flex: 1 }}>
-      <div style={{ height: 16, borderRadius: 8, background: '#F3F4F6', width: '40%', marginBottom: 10 }} />
-      <div style={{ height: 13, borderRadius: 8, background: '#F3F4F6', width: '25%' }} />
-    </div>
-    <div style={{ height: 26, borderRadius: 20, background: '#F3F4F6', width: 90 }} />
-  </div>
-);
-
-const EmptyState = ({ isFiltered }) => (
-  <div style={{
-    background: '#fff', borderRadius: 16, border: '1px dashed #E5E7EB',
-    padding: '64px 24px', display: 'flex', flexDirection: 'column',
-    alignItems: 'center', gap: 12, textAlign: 'center',
-  }}>
-    <div style={{
-      width: 64, height: 64, borderRadius: 16, background: '#F9FAFB',
-      border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Inbox size={28} color="#9CA3AF" />
-    </div>
-    <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#111827' }}>
-      {isFiltered ? 'Không tìm thấy kết quả' : 'Chưa có đơn ứng tuyển'}
-    </p>
-    <p style={{ margin: 0, fontSize: 13, color: '#6B7280', maxWidth: 320, lineHeight: 1.6 }}>
-      {isFiltered
-        ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem thêm kết quả.'
-        : 'Hãy khám phá các cơ hội việc làm và nộp đơn ứng tuyển ngay hôm nay!'}
-    </p>
-  </div>
-);
 
 const StatsBar = ({ applications }) => {
   const counts = Object.keys(STATUS_CONFIG).reduce((acc, key) => {
@@ -157,98 +37,77 @@ const StatsBar = ({ applications }) => {
   }, {});
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-        <div key={key} style={{
-          background: '#fff', borderRadius: 12, border: '1px solid #F3F4F6',
-          padding: '12px 14px',
-        }}>
-          <p style={{ margin: '0 0 4px', fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-            {cfg.label}
-          </p>
-          <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: cfg.text }}>
-            {counts[key] || 0}
-          </p>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+        const Icon = cfg.icon;
+        return (
+          <div key={key} className="card flex items-center gap-3 p-4">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${cfg.tone}`}>
+              <Icon className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-xl font-bold leading-none text-slate-900 tabular-nums">{counts[key] || 0}</p>
+              <p className="mt-1 truncate text-xs text-slate-500">{cfg.label}</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-// ─── ApplicationCard ───────────────────────────────────────────────────────────
-
-const ApplicationCard = ({ app }) => {
-  const [hovered, setHovered] = useState(false);
-
+const ApplicationCard = ({ app, onWithdraw, isWithdrawing }) => {
   const formattedDate = app.appliedAt
     ? new Date(app.appliedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : '—';
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#fff',
-        borderRadius: 16,
-        border: `1px solid ${hovered ? '#D1D5DB' : '#F3F4F6'}`,
-        padding: '18px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        transition: 'border-color 0.15s, box-shadow 0.15s',
-        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.06)' : 'none',
-        cursor: 'default',
-      }}
-    >
-      <CompanyAvatar logo={app.companyLogo} name={app.companyName} />
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h3 style={{
-          margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#111827',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {app.jobTitle || 'Vị trí không xác định'}
-        </h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#374151', fontWeight: 500 }}>
-            <Building2 size={13} color="#9CA3AF" />
-            {app.companyName || 'Công ty'}
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#6B7280' }}>
-            <Calendar size={13} color="#9CA3AF" />
-            {formattedDate}
-          </span>
-          {app.cvFileName && (
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 12,
-              color: '#3B82F6', background: '#EFF6FF', padding: '2px 8px',
-              borderRadius: 6, fontWeight: 500,
-            }}>
-              <FileText size={11} />
-              {app.cvFileName}
+    <Link to={`/jobs/${app.jobId}`} className="card card-hover group flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+      <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
+        <Avatar src={app.companyLogo} name={app.companyName} size="lg" square className="rounded-xl" />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-[15px] font-semibold text-slate-900 group-hover:text-brand-700">
+            {app.jobTitle || 'Vị trí không xác định'}
+          </h3>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-slate-500">
+            <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+              <Building2 className="h-3.5 w-3.5 text-slate-400" />
+              {app.companyName || 'Công ty'}
             </span>
-          )}
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+              {formattedDate}
+            </span>
+            {app.cvFileName && (
+              <span className="inline-flex max-w-[220px] items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                <FileText className="h-3 w-3 shrink-0" />
+                <span className="truncate">{app.cvFileName}</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <StatusBadge status={app.status} />
-        <button
-          onClick={() => window.location.href = `/jobs/${app.jobId}`}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: 13, fontWeight: 500,
-            color: hovered ? '#2563EB' : '#9CA3AF',
-            transition: 'color 0.15s', padding: '4px 0',
-          }}
-          title="Xem chi tiết công việc"
-        >
-          <ArrowUpRight size={15} />
-        </button>
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
+        <AppStatusBadge status={app.status} label={STATUS_CONFIG[app.status]?.label} />
+        {/* Chỉ rút được khi nhà tuyển dụng chưa xem xét */}
+        {app.status === 'PENDING' && onWithdraw && (
+          <Button
+            size="xs"
+            variant="danger-outline"
+            isLoading={isWithdrawing}
+            onClick={(e) => {
+              e.preventDefault(); // nút nằm trong <Link>, không điều hướng
+              e.stopPropagation();
+              onWithdraw(app);
+            }}
+          >
+            <Undo2 className="h-3.5 w-3.5" /> Rút đơn
+          </Button>
+        )}
+        <ArrowUpRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-brand-600" />
       </div>
-    </div>
+    </Link>
   );
 };
 
@@ -261,7 +120,7 @@ const MyApplicationsPage = () => {
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0); // 0-based, khớp với backend
   const [totalPages, setTotalPages] = useState(0);
   const PAGE_SIZE = 8;
 
@@ -269,7 +128,6 @@ const MyApplicationsPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [filteredData, setFilteredData] = useState([]);
 
-  // ── Fetch ──
   const fetchApplications = useCallback(async () => {
     if (!userId) { setIsLoading(false); return; }
     setIsLoading(true);
@@ -289,7 +147,21 @@ const MyApplicationsPage = () => {
 
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
-  // ── Filter ──
+  const [withdrawingId, setWithdrawingId] = useState(null);
+  const handleWithdraw = async (app) => {
+    if (!window.confirm(`Rút hồ sơ ứng tuyển vị trí "${app.jobTitle || "này"}"? Bạn có thể nộp lại sau nếu tin còn mở.`)) return;
+    setWithdrawingId(app.id);
+    try {
+      await applicationService.withdrawApplication(app.id);
+      toast.success("Đã rút hồ sơ ứng tuyển");
+      fetchApplications();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Không thể rút hồ sơ, vui lòng thử lại.");
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
+
   useEffect(() => {
     let result = applications;
     if (statusFilter !== 'ALL') result = result.filter(a => a.status === statusFilter);
@@ -303,137 +175,103 @@ const MyApplicationsPage = () => {
     setFilteredData(result);
   }, [searchText, statusFilter, applications]);
 
-  // ── Guard ──
   if (!userId && !isLoading) {
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', background: '#fff', borderRadius: 20,
-        border: '1px solid #F3F4F6', minHeight: 360, gap: 12, padding: 32,
-      }}>
-        <Briefcase size={40} color="#D1D5DB" />
-        <p style={{ margin: 0, fontWeight: 600, fontSize: 16, color: '#111827' }}>Bạn chưa đăng nhập</p>
-        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>Vui lòng đăng nhập để theo dõi hành trình ứng tuyển.</p>
+      <div className="page-container py-10">
+        <Card>
+          <EmptyState
+            icon={Briefcase}
+            title="Bạn chưa đăng nhập"
+            description="Vui lòng đăng nhập để theo dõi hành trình ứng tuyển."
+            action={<Link to="/auth/login" className={buttonClasses()}>Đăng nhập</Link>}
+          />
+        </Card>
       </div>
     );
   }
 
   const isFiltered = statusFilter !== 'ALL' || searchText.trim() !== '';
+  const tabItems = [
+    { value: 'ALL', label: 'Tất cả' },
+    ...Object.entries(STATUS_CONFIG).map(([key, val]) => ({ value: key, label: val.label })),
+  ];
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="page-container py-8">
+    <div className="mx-auto max-w-5xl space-y-5">
+      <PageHeader
+        eyebrow="Ứng tuyển"
+        title="Lịch sử ứng tuyển"
+        description="Theo dõi tiến trình và trạng thái các đơn ứng tuyển của bạn."
+        actions={!isLoading && <span className="text-sm text-slate-500">{filteredData.length} kết quả</span>}
+      />
 
-      {/* ── Header ── */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#111827' }}>
-            Lịch sử ứng tuyển
-          </h1>
-          {!isLoading && (
-            <span style={{ fontSize: 13, color: '#6B7280' }}>
-              {filteredData.length} kết quả
-            </span>
-          )}
-        </div>
-        <p style={{ margin: 0, fontSize: 14, color: '#6B7280' }}>
-          Theo dõi tiến trình và trạng thái các đơn ứng tuyển của bạn
-        </p>
-      </div>
-
-      {/* ── Stats Bar ── */}
       {!isLoading && applications.length > 0 && <StatsBar applications={applications} />}
 
-      {/* ── Filters ── */}
-      <div style={{
-        background: '#fff', borderRadius: 16, border: '1px solid #F3F4F6',
-        padding: '16px 20px', display: 'flex', flexWrap: 'wrap',
-        gap: 12, alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        {/* Status Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {STATUS_TABS.map(tab => {
-            const active = statusFilter === tab.key;
-            const cfg = STATUS_CONFIG[tab.key];
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                style={{
-                  padding: '6px 14px', borderRadius: 8, fontSize: 13,
-                  fontWeight: active ? 600 : 500, cursor: 'pointer', transition: 'all 0.15s',
-                  border: active ? `1.5px solid ${cfg?.dot || '#2563EB'}` : '1.5px solid transparent',
-                  background: active ? (cfg?.bg || '#EFF6FF') : '#F9FAFB',
-                  color: active ? (cfg?.text || '#1D4ED8') : '#4B5563',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+      <Card className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="overflow-x-auto">
+          <Tabs variant="pills" items={tabItems} value={statusFilter} onChange={setStatusFilter} className="flex-nowrap" />
         </div>
-
-        {/* Search */}
-        <div style={{ position: 'relative', width: 260 }}>
-          <Search size={14} color="#9CA3AF" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+        <div className="relative lg:w-64">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Tìm công ty, vị trí..."
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              paddingLeft: 34, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
-              border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 13,
-              outline: 'none', color: '#111827', background: '#F9FAFB',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={e => e.target.style.borderColor = '#3B82F6'}
-            onBlur={e => e.target.style.borderColor = '#E5E7EB'}
+            className="field-input h-9 pl-9"
           />
         </div>
-      </div>
+      </Card>
 
-      {/* ── Error ── */}
       {error && (
-        <div style={{
-          background: '#FEF2F2', border: '1px solid #FECACA',
-          borderRadius: 12, padding: '12px 16px', color: '#B91C1C', fontSize: 14,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span>{error}</span>
-          <button
-            onClick={fetchApplications}
-            style={{
-              background: '#FEE2E2', border: 'none', cursor: 'pointer',
-              color: '#B91C1C', fontSize: 12, fontWeight: 600,
-              padding: '4px 10px', borderRadius: 6,
-            }}
-          >
-            Thử lại
-          </button>
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <span className="flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</span>
+          <Button size="xs" variant="danger-outline" onClick={fetchApplications}>Thử lại</Button>
         </div>
       )}
 
-      {/* ── List ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="flex flex-col gap-3">
         {isLoading
-          ? [1, 2, 3, 4].map(i => <SkeletonCard key={i} />)
+          ? [1, 2, 3, 4].map(i => (
+              <div key={i} className="card flex items-center gap-4 p-5">
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <div className="flex-1 space-y-2"><Skeleton className="h-4 w-2/5" /><Skeleton className="h-3 w-1/4" /></div>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+            ))
           : filteredData.length > 0
-            ? filteredData.map(app => <ApplicationCard key={app.id} app={app} />)
-            : <EmptyState isFiltered={isFiltered} />
-        }
+            ? filteredData.map(app => (
+                <ApplicationCard
+                  key={app.id}
+                  app={app}
+                  onWithdraw={handleWithdraw}
+                  isWithdrawing={withdrawingId === app.id}
+                />
+              ))
+            : (
+              <div className="card border-dashed">
+                <EmptyState
+                  icon={Inbox}
+                  title={isFiltered ? 'Không tìm thấy kết quả' : 'Chưa có đơn ứng tuyển'}
+                  description={isFiltered
+                    ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để xem thêm kết quả.'
+                    : 'Hãy khám phá các cơ hội việc làm và nộp đơn ứng tuyển ngay hôm nay!'}
+                  action={!isFiltered && <Link to="/jobs" className={buttonClasses()}>Tìm việc làm</Link>}
+                />
+              </div>
+            )}
       </div>
 
-      {/* ── Pagination ── */}
       {!isLoading && totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        // Pagination dùng trang bắt đầu từ 1, state ở đây bắt đầu từ 0
+        <Pagination
+          currentPage={currentPage + 1}
+          totalPages={totalPages}
+          onPageChange={(p) => setCurrentPage(p - 1)}
+        />
       )}
+    </div>
     </div>
   );
 };

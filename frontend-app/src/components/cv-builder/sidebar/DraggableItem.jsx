@@ -82,7 +82,7 @@ const DraggableItem = ({
         flex items-center gap-2 p-2.5 rounded-xl cursor-grab active:cursor-grabbing
         border transition-all duration-200 select-none
         ${isOverlay ? "shadow-xl scale-105 rotate-2 text-white" : "hover:shadow-md hover:-translate-y-0.5 text-slate-700"}
-        ${variant === "unused" && !isOverlay ? "bg-slate-50 border-slate-200 hover:border-[#2563EB]" : ""}
+        ${variant === "unused" && !isOverlay ? "bg-slate-50 border-slate-200 hover:border-brand-600" : ""}
       `}
       style={{
         ...style,

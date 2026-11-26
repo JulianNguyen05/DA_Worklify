@@ -77,6 +77,8 @@
                 <version>3.13.0</version>
                 <configuration>
                     <release>${java.version}</release>
+                    <!-- Giữ tên tham số để @PreAuthorize đọc được #userId, #companyId... -->
+                    <parameters>true</parameters>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/employers/**").permitAll()
@@ -44,6 +45,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // Chưa đăng nhập / token hết hạn → 401 (JSON) để frontend đưa về trang đăng nhập; trước đây trả 403.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"code\":401,\"message\":\"Phiên đăng nhập không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại.\",\"data\":null}");
+                }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

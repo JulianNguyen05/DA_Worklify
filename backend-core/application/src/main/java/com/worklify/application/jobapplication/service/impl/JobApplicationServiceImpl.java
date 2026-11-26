@@ -24,6 +24,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.worklify.application.common.exception.ForbiddenOperationException;
+import com.worklify.application.common.exception.ResourceNotFoundException;
+
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,23 +44,43 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
     @Override
     public ApplicationResponse applyJob(Long candidateId, ApplicationRequest request) {
+        if (request.getJobId() == null || request.getCvId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn tin tuyển dụng và CV để ứng tuyển.");
+        }
         JobPosting jobPosting = jobPostingRepository.findById(request.getJobId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tin tuyển dụng tương ứng"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tuyển dụng tương ứng"));
 
         if (jobPosting.getStatus() != JobStatus.ACTIVE) {
             throw new IllegalArgumentException("Tin tuyển dụng hiện tại không còn hoạt động hoặc đã đóng");
+        }
+        if (!jobPosting.isOpenForApplications(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Tin tuyển dụng đã hết hạn nộp hồ sơ");
+        }
+        if (applicationRepository.existsByCandidateIdAndJobId(candidateId, request.getJobId())) {
+            throw new IllegalStateException("Bạn đã ứng tuyển tin này rồi, hãy theo dõi trạng thái trong mục Việc đã ứng tuyển.");
+        }
+
+        // CV phải thuộc hồ sơ của chính ứng viên (cv_documents.candidate_id = candidate_profiles.id)
+        CandidateProfile profile = candidateProfileRepository.findByUserId(candidateId)
+                .orElseThrow(() -> new IllegalArgumentException("Vui lòng tạo hồ sơ ứng viên trước khi ứng tuyển."));
+        CvDocument cv = cvDocumentRepository.findById(request.getCvId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy CV đã chọn"));
+        if (!profile.getId().equals(cv.getCandidateId())) {
+            throw new ForbiddenOperationException("CV đã chọn không thuộc về bạn.");
+        }
+
+        String coverLetter = request.getCoverLetter();
+        if (coverLetter != null && coverLetter.length() > 5000) {
+            throw new IllegalArgumentException("Thư giới thiệu tối đa 5000 ký tự.");
         }
 
         Application application = Application.createNew(
                 request.getJobId(),
                 request.getCvId(),
                 candidateId,
-                request.getCoverLetter()
+                coverLetter
         );
-
-        Application savedApplication = applicationRepository.save(application);
-
-        return mapToResponse(savedApplication);
+        return mapToResponse(applicationRepository.save(application));
     }
 
     @Override
@@ -74,27 +98,38 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
-    public void updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status) {
+    public ApplicationResponse updateApplicationStatus(Long companyId, Long applicationId, ApplicationStatus status) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn ứng tuyển"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển"));
 
         JobPosting jobPosting = jobPostingRepository.findById(application.getJobId())
-                .orElseThrow(() -> new IllegalArgumentException("Tin tuyển dụng liên kết không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tin tuyển dụng liên kết không tồn tại"));
 
         if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw new IllegalArgumentException("Bạn không có quyền thay đổi trạng thái đơn ứng tuyển của công việc này");
+            throw new ForbiddenOperationException("Bạn không có quyền thay đổi trạng thái đơn ứng tuyển của công việc này");
         }
 
-        application.updateStatus(status);
-        applicationRepository.save(application);
+        application.updateStatus(status); // kiểm tra đúng quy trình, sai thì IllegalStateException → 409
+        return mapToResponse(applicationRepository.save(application));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ApplicationResponse getApplicationById(Long id) {
         Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn ứng tuyển"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển"));
         return mapToResponse(application);
+    }
+
+    @Override
+    public void withdrawApplication(Long candidateId, Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển"));
+        if (!application.getCandidateId().equals(candidateId)) {
+            throw new ForbiddenOperationException("Bạn không thể rút đơn của người khác.");
+        }
+        application.ensureWithdrawable();
+        applicationRepository.delete(application);
     }
 
     private ApplicationResponse mapToResponse(Application app) {
@@ -149,6 +184,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .candidateName(candidateName)
                 .candidateEmail(candidateEmail)
                 .candidatePhone(candidatePhone)
+                .nextStatuses(app.getStatus().nextStatuses())
                 .build();
     }
 

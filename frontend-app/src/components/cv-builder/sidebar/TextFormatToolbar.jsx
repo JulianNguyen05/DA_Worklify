@@ -179,8 +179,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("bold")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.bold
-                ? "bg-[#EFF6FF] text-[#2563EB] font-bold border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 font-bold border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="In đậm"
           >
@@ -192,8 +192,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("italic")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.italic
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="In nghiêng"
           >
@@ -205,8 +205,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("underline")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.underline
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="Gạch chân"
           >
@@ -220,8 +220,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("justifyLeft")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.align === "left"
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="Căn trái"
           >
@@ -231,8 +231,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("justifyCenter")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.align === "center"
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="Căn giữa"
           >
@@ -242,8 +242,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("justifyRight")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.align === "right"
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="Căn phải"
           >
@@ -253,8 +253,8 @@ const TextFormatToolbar = () => {
             onClick={() => formatText("justifyFull")}
             className={`p-1.5 rounded transition-colors ${
               activeFormats.align === "justify"
-                ? "bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]"
-                : "hover:bg-[#EFF6FF] hover:text-[#2563EB] text-slate-600"
+                ? "bg-brand-50 text-brand-600 border border-brand-200"
+                : "hover:bg-brand-50 hover:text-brand-600 text-slate-600"
             }`}
             title="Căn đều"
           >
@@ -295,7 +295,7 @@ const TextFormatToolbar = () => {
                       }}
                       className={`w-full text-left px-3 py-1.5 text-[12px] transition-colors block ${
                         activeFormats.fontSize === size.toString()
-                          ? "bg-[#EFF6FF] text-[#2563EB] font-bold"
+                          ? "bg-brand-50 text-brand-600 font-bold"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
@@ -319,7 +319,7 @@ const TextFormatToolbar = () => {
                     onClick={() => formatText("foreColor", color)}
                     className={`w-5 h-5 rounded-full border shadow-sm transform transition-all ${
                       isColorActive
-                        ? "scale-125 ring-2 ring-offset-2 ring-[#2563EB] border-[#2563EB]"
+                        ? "scale-125 ring-2 ring-offset-2 ring-brand-600 border-brand-600"
                         : "border-slate-300 hover:scale-110"
                     }`}
                     style={{ backgroundColor: color }}

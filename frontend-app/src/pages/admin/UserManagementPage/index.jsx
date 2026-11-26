@@ -82,7 +82,18 @@ export default function UserManagementPage() {
       });
       fetchUsers();
     } catch (err) {
-      setStatusMsg({ type: "error", message: "Không thể khóa tài khoản này." });
+      setStatusMsg({ type: "error", message: err.response?.data?.message || "Không thể khóa tài khoản này." });
+    }
+  };
+
+  const handleUnbanUser = async (userId) => {
+    if (!window.confirm("Mở khóa tài khoản này? Người dùng sẽ đăng nhập lại được.")) return;
+    try {
+      await adminService.unbanUser(userId);
+      setStatusMsg({ type: "success", message: "Đã mở khóa tài khoản." });
+      fetchUsers();
+    } catch (err) {
+      setStatusMsg({ type: "error", message: err.response?.data?.message || "Không thể mở khóa tài khoản này." });
     }
   };
 
@@ -96,7 +107,7 @@ export default function UserManagementPage() {
         );
       case "EMPLOYER":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-brand-100 text-brand-700 border border-brand-200">
             <BriefcaseIcon className="w-3.5 h-3.5" /> Doanh nghiệp
           </span>
         );
@@ -134,14 +145,13 @@ export default function UserManagementPage() {
   return (
     <div className="max-w-7xl mx-auto pb-12 space-y-6">
       {/* Header Section */}
-      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="relative z-10">
-          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
-            <Users className="w-7 h-7 text-blue-600" />
+          <h1 className="font-display text-2xl font-bold text-slate-900 flex items-center gap-3">
+            <Users className="w-7 h-7 text-brand-600" />
             Quản lý Người dùng
           </h1>
-          <p className="text-gray-500 mt-1 font-medium">
+          <p className="text-slate-500 mt-1 font-medium">
             Giám sát tài khoản, phân quyền và xử lý vi phạm trên hệ thống.
           </p>
         </div>
@@ -149,13 +159,13 @@ export default function UserManagementPage() {
         {/* Search Bar */}
         <div className="relative z-10 w-full md:w-auto">
           <div className="relative flex items-center">
-            <Search className="w-5 h-5 text-gray-400 absolute left-3" />
+            <Search className="w-5 h-5 text-slate-400 absolute left-3" />
             <input
               type="text"
               placeholder="Tìm theo Email hoặc Tên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-80 pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-sm"
+              className="field-input h-10 w-full pl-10 md:w-80"
             />
           </div>
         </div>
@@ -170,23 +180,19 @@ export default function UserManagementPage() {
       )}
 
       {/* Tabs Filter Section */}
-      <div className="flex overflow-x-auto border-b border-gray-200 custom-scrollbar">
+      <div className="flex overflow-x-auto border-b border-slate-200 custom-scrollbar">
         <div className="flex gap-2 pb-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2.5 font-semibold text-sm whitespace-nowrap rounded-xl transition-all duration-200 ${
-                activeTab === tab.id
-                  ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50 border border-transparent"
-              }`}
+              className={`px-5 py-2.5 font-semibold text-sm whitespace-nowrap rounded-xl transition-all duration-200 ${ activeTab === tab.id ? "bg-brand-50 text-brand-700 border border-brand-200 shadow-sm" : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-transparent" }`}
             >
               {tab.label}
               {/* Hiển thị số lượng nhỏ bên cạnh Tab "Tất cả" */}
               {tab.id === "ALL" && (
                 <span
-                  className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === "ALL" ? "bg-blue-200 text-blue-800" : "bg-gray-200 text-gray-600"}`}
+                  className={`ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === "ALL" ? "bg-brand-200 text-brand-800" : "bg-slate-200 text-slate-600"}`}
                 >
                   {users.length}
                 </span>
@@ -197,14 +203,14 @@ export default function UserManagementPage() {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <h3 className="font-bold text-gray-800">
+      <div className="card overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 className="font-bold text-slate-800">
             {activeTab === "ALL"
               ? "Danh sách Tất cả"
               : `Danh sách ${tabs.find((t) => t.id === activeTab)?.label}`}
           </h3>
-          <span className="text-xs font-semibold bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-full shadow-sm">
+          <span className="text-xs font-semibold bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full shadow-sm">
             Hiển thị: {filteredUsers.length} kết quả
           </span>
         </div>
@@ -212,35 +218,35 @@ export default function UserManagementPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400 font-bold">
+              <tr className="bg-white border-b border-slate-100 text-xs uppercase tracking-wider text-slate-400 font-bold">
                 <th className="px-6 py-4 w-1/3">Thông tin định danh</th>
                 <th className="px-6 py-4">Phân quyền</th>
                 <th className="px-6 py-4 text-center">Trạng thái</th>
                 <th className="px-6 py-4 text-right">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 // Skeleton Loading
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-full"></div>
+                        <div className="w-10 h-10 bg-slate-100 rounded-full"></div>
                         <div className="space-y-2">
-                          <div className="h-4 bg-gray-100 rounded w-32"></div>
-                          <div className="h-3 bg-gray-100 rounded w-24"></div>
+                          <div className="h-4 bg-slate-100 rounded w-32"></div>
+                          <div className="h-3 bg-slate-100 rounded w-24"></div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-6 bg-gray-100 rounded-md w-24"></div>
+                      <div className="h-6 bg-slate-100 rounded-md w-24"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-5 bg-gray-100 rounded-full w-20 mx-auto"></div>
+                      <div className="h-5 bg-slate-100 rounded-full w-20 mx-auto"></div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="h-8 bg-gray-100 rounded-md w-24 ml-auto"></div>
+                      <div className="h-8 bg-slate-100 rounded-md w-24 ml-auto"></div>
                     </td>
                   </tr>
                 ))
@@ -249,11 +255,11 @@ export default function UserManagementPage() {
                 <tr>
                   <td colSpan="4" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center">
-                      <UserX className="w-12 h-12 text-gray-300 mb-3" />
-                      <p className="text-lg font-bold text-gray-600">
+                      <UserX className="w-12 h-12 text-slate-300 mb-3" />
+                      <p className="text-lg font-bold text-slate-600">
                         Không tìm thấy người dùng phù hợp
                       </p>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-slate-400">
                         Vui lòng thay đổi từ khóa hoặc bộ lọc danh mục.
                       </p>
                     </div>
@@ -264,20 +270,20 @@ export default function UserManagementPage() {
                 filteredUsers.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-blue-50/30 transition-colors group"
+                    className="hover:bg-brand-50/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-500 to-cyan-400 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
                           {(user.fullName || user.email)
                             .charAt(0)
                             .toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                          <p className="font-bold text-slate-900 truncate group-hover:text-brand-600 transition-colors">
                             {user.fullName || "Chưa cập nhật tên"}
                           </p>
-                          <p className="text-xs font-medium text-gray-500 flex items-center gap-1 mt-0.5 truncate">
+                          <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-0.5 truncate">
                             <Mail className="w-3 h-3 flex-shrink-0" />
                             {user.email}
                           </p>
@@ -289,19 +295,26 @@ export default function UserManagementPage() {
                       {renderStatusBadge(user.status)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleBanUser(user.id)}
-                        disabled={
-                          user.status === "BANNED" || user.role === "ADMIN"
-                        }
-                        className="px-4 py-2 text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300 disabled:opacity-40 disabled:hover:bg-white text-xs rounded-xl flex items-center gap-1.5 ml-auto shadow-sm transition-all"
-                      >
-                        <ShieldAlert className="w-4 h-4" />
-                        {user.status === "BANNED"
-                          ? "Đã bị khóa"
-                          : "Khóa tài khoản"}
-                      </Button>
+                      {user.status === "BANNED" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnbanUser(user.id)}
+                          className="ml-auto text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                        >
+                          <ShieldCheck className="w-4 h-4" /> Mở khóa
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="danger-outline"
+                          size="sm"
+                          onClick={() => handleBanUser(user.id)}
+                          disabled={user.role === "ADMIN"}
+                          className="ml-auto"
+                        >
+                          <ShieldAlert className="w-4 h-4" /> Khóa tài khoản
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))

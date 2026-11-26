@@ -32,13 +32,13 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
 
     @Override
     public DomainPage<Application> findByJobId(Long jobId, DomainPageable pageable) {
-        Page<ApplicationJpaEntity> page = jpaRepository.findByJobId(jobId, PaginationMapper.toSpringPageable(pageable));
+        Page<ApplicationJpaEntity> page = jpaRepository.findByJobIdOrderByAppliedAtDesc(jobId, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
     @Override
     public DomainPage<Application> findByCandidateId(Long candidateId, DomainPageable pageable) {
-        Page<ApplicationJpaEntity> page = jpaRepository.findByCandidateId(candidateId, PaginationMapper.toSpringPageable(pageable));
+        Page<ApplicationJpaEntity> page = jpaRepository.findByCandidateIdOrderByAppliedAtDesc(candidateId, PaginationMapper.toSpringPageable(pageable));
         return PaginationMapper.toDomainPage(page, mapper::toDomain);
     }
 
@@ -58,5 +58,15 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
     @Override
     public long countByStatus(ApplicationStatus status) {
         return jpaRepository.countByStatus(status);
+    }
+
+    @Override
+    public void delete(Application application) {
+        jpaRepository.deleteById(application.getId());
+    }
+
+    @Override
+    public java.util.List<Application> findByCvId(Long cvId) {
+        return jpaRepository.findByCvId(cvId).stream().map(mapper::toDomain).toList();
     }
 }

@@ -288,6 +288,8 @@ CREATE TABLE job_postings (
     description    TEXT NOT NULL,
     requirements   TEXT,
     salary_range   VARCHAR(100),
+    salary_min     INT NULL COMMENT 'Lương tối thiểu (triệu VNĐ/tháng), dùng để lọc',
+    salary_max     INT NULL COMMENT 'Lương tối đa (triệu VNĐ/tháng), dùng để lọc',
     location       VARCHAR(255),
     work_type      VARCHAR(50),
     status         VARCHAR(50) DEFAULT 'PENDING' COMMENT 'PENDING, ACTIVE, CLOSED, REJECTED',

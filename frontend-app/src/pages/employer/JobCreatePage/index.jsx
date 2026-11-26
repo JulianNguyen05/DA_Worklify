@@ -7,6 +7,7 @@ import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
 import RichTextEditor from '../../../components/common/RichTextEditor';
 import JobPreviewCard from '../../../components/shared/JobPreviewCard';
+import SalaryRangeFields, { toSalaryNumber, validateSalaryRange } from '../../../components/shared/SalaryRangeFields';
 
 // Loại bỏ thẻ HTML để kiểm tra rỗng — dùng cho validate vì
 // RichTextEditor lưu HTML nên input required native không còn tác dụng
@@ -22,6 +23,8 @@ export default function JobCreatePage() {
     title: '',
     location: '',
     salaryRange: '',
+    salaryMin: '',
+    salaryMax: '',
     workType: 'FULL_TIME',
     expiresAt: '',
     description: '',
@@ -95,7 +98,17 @@ export default function JobCreatePage() {
     setStatusMsg({ type: null, message: '' });
     
     try {
-      const submitData = { ...formData };
+      const salaryError = validateSalaryRange(formData);
+      if (salaryError) {
+        setStatusMsg({ type: 'error', message: salaryError });
+        setIsLoading(false);
+        return;
+      }
+      const submitData = {
+        ...formData,
+        salaryMin: toSalaryNumber(formData.salaryMin),
+        salaryMax: toSalaryNumber(formData.salaryMax),
+      };
       if (submitData.expiresAt) {
         submitData.expiresAt = submitData.expiresAt.length === 16 
           ? `${submitData.expiresAt}:00` 
@@ -113,17 +126,17 @@ export default function JobCreatePage() {
   };
 
   // Class dùng chung cho các input field để đồng nhất UI
-  const inputClassName = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 bg-gray-50/50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-gray-700 placeholder-gray-400";
+  const inputClassName = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 bg-slate-50/50 focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 text-slate-700 placeholder-slate-400";
 
   return (
-    <div className="min-h-screen bg-gray-50/30 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 max-w-6xl mx-auto transition-all">
+    <div className="">
+      <div className="card p-6 sm:p-10 max-w-6xl mx-auto transition-all">
         
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Đăng tin tuyển dụng mới</h2>
-            <p className="text-sm text-gray-500 mt-1.5 flex items-center gap-1.5">
+            <h2 className="font-display text-2xl font-bold text-slate-900 tracking-tight">Đăng tin tuyển dụng mới</h2>
+            <p className="text-sm text-slate-500 mt-1.5 flex items-center gap-1.5">
               <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -132,7 +145,7 @@ export default function JobCreatePage() {
           </div>
           <button 
             onClick={() => navigate('/employer/jobs')} 
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors bg-gray-50 hover:bg-indigo-50 px-4 py-2 rounded-lg"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-brand-600 transition-colors bg-slate-50 hover:bg-brand-50 px-4 py-2 rounded-lg"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -146,13 +159,13 @@ export default function JobCreatePage() {
         {isPageLoading ? (
           /* Hiệu ứng Skeleton Loading */
           <div className="animate-pulse space-y-8">
-            <div className="h-12 bg-gray-100 rounded-xl w-full"></div>
+            <div className="h-12 bg-slate-100 rounded-xl w-full"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="h-12 bg-gray-100 rounded-xl"></div>
-              <div className="h-12 bg-gray-100 rounded-xl"></div>
+              <div className="h-12 bg-slate-100 rounded-xl"></div>
+              <div className="h-12 bg-slate-100 rounded-xl"></div>
             </div>
-            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
-            <div className="h-32 bg-gray-100 rounded-xl w-full"></div>
+            <div className="h-32 bg-slate-100 rounded-xl w-full"></div>
+            <div className="h-32 bg-slate-100 rounded-xl w-full"></div>
           </div>
         ) : companyId ? (
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
@@ -160,7 +173,7 @@ export default function JobCreatePage() {
               
               {/* Nhóm 1: Thông tin cơ bản */}
               <div className="space-y-6">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-2">1. Thông tin chung</h3>
                 
                 <Input 
                   label="Tiêu đề công việc" 
@@ -191,10 +204,11 @@ export default function JobCreatePage() {
                     placeholder="VD: 15,000,000 - 25,000,000 VND" 
                   />
                 </div>
+                <SalaryRangeFields values={formData} onChange={handleChange} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-gray-700">Hình thức làm việc</label>
+                    <label className="text-sm font-semibold text-slate-700">Hình thức làm việc</label>
                     <select 
                       name="workType" 
                       value={formData.workType} 
@@ -210,7 +224,7 @@ export default function JobCreatePage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-gray-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
+                    <label className="text-sm font-semibold text-slate-700">Hạn nộp hồ sơ <span className="text-red-500">*</span></label>
                     <input 
                       type="datetime-local" 
                       name="expiresAt" 
@@ -225,7 +239,7 @@ export default function JobCreatePage() {
 
               {/* Nhóm 2: Chi tiết & Yêu cầu */}
               <div className="space-y-6 pt-4">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b pb-2">2. Chi tiết công việc</h3>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-2">2. Chi tiết công việc</h3>
                 
                 <RichTextEditor
                   label="Mô tả công việc (Job Description)"
@@ -247,11 +261,11 @@ export default function JobCreatePage() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end pt-8 border-t border-gray-100">
+              <div className="flex justify-end pt-8 border-t border-slate-100">
                 <Button 
                   type="submit" 
                   isLoading={isLoading}
-                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 transition-all font-semibold"
+                  className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-raised transition-all font-semibold"
                 >
                   Gửi Yêu Cầu Kiểm Duyệt
                 </Button>
@@ -268,7 +282,7 @@ export default function JobCreatePage() {
             </div>
           </div>
         ) : (
-          <div className="py-20 text-center text-gray-500 font-medium">
+          <div className="py-20 text-center text-slate-500 font-medium">
             Không tìm thấy thông tin doanh nghiệp.
           </div>
         )}

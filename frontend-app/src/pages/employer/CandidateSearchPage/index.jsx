@@ -101,11 +101,11 @@ export default function CandidateSearchPage() {
       )}
 
       {/* HEADER & THANH TÌM KIẾM — đồng bộ gradient Worklify #2563EB → #14B8A6 */}
-      <div className="bg-gradient-to-r from-[#2563EB] to-[#14B8A6] rounded-3xl p-8 sm:p-12 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-brand-600 to-accent-500 rounded-3xl p-8 sm:p-12 text-white shadow-raised relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl">
-          <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-4 flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-white" />
             Tìm kiếm nhân tài
           </h1>
@@ -120,20 +120,20 @@ export default function CandidateSearchPage() {
           >
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="w-5 h-5 text-gray-400" />
+                <Search className="w-5 h-5 text-slate-400" />
               </div>
               <input
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Nhập kỹ năng, chức danh, ngôn ngữ lập trình..."
-                className="block w-full pl-11 pr-4 py-4 rounded-xl border-0 bg-white text-[#0F172A] placeholder-gray-400 focus:ring-4 focus:ring-[#14B8A6]/40 transition-shadow text-lg shadow-sm"
+                className="block w-full pl-11 pr-4 py-4 rounded-xl border-0 bg-white text-slate-900 placeholder-slate-400 focus:ring-4 focus:ring-accent-500/40 transition-shadow text-lg shadow-sm"
               />
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-white hover:bg-[#F8FAFC] text-[#2563EB] font-bold px-8 py-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
+              className="bg-white hover:bg-slate-50 text-brand-600 font-bold px-8 py-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 whitespace-nowrap"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -147,7 +147,7 @@ export default function CandidateSearchPage() {
 
       {/* BỘ LỌC NHANH */}
       <div className="flex items-center gap-3 overflow-x-auto pb-2">
-        <div className="flex items-center gap-2 text-[#64748B] font-medium px-2">
+        <div className="flex items-center gap-2 text-slate-500 font-medium px-2">
           <Filter className="w-4 h-4" /> Lọc nhanh:
         </div>
         {[
@@ -164,7 +164,7 @@ export default function CandidateSearchPage() {
               setKeyword(skill);
               handleSearch(null, { keywordOverride: skill });
             }}
-            className="px-4 py-1.5 bg-white border border-[#E2E8F0] text-[#64748B] rounded-full text-sm font-medium hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:border-[#BFDBFE] transition-colors whitespace-nowrap"
+            className="px-4 py-1.5 bg-white border border-slate-200 text-slate-500 rounded-full text-sm font-medium hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition-colors whitespace-nowrap"
           >
             {skill}
           </button>
@@ -174,11 +174,11 @@ export default function CandidateSearchPage() {
       {/* KẾT QUẢ TÌM KIẾM */}
       <div>
         <div className="flex justify-between items-end mb-6 px-2">
-          <h2 className="text-xl font-bold text-[#0F172A]">
+          <h2 className="text-xl font-bold text-slate-900">
             {hasSearched
               ? `Kết quả tìm kiếm cho "${keyword}"`
               : "Ứng viên nổi bật"}
-            <span className="ml-2 text-sm font-medium text-[#64748B] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
+            <span className="ml-2 text-sm font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
               {candidates.length}
             </span>
           </h2>
@@ -189,26 +189,26 @@ export default function CandidateSearchPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-white p-6 rounded-2xl border border-[#E2E8F0] animate-pulse flex gap-4"
+                className="card p-6 animate-pulse flex gap-4"
               >
-                <div className="w-16 h-16 bg-[#F1F5F9] rounded-full shrink-0" />
+                <div className="w-16 h-16 bg-slate-100 rounded-full shrink-0" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-5 bg-[#F1F5F9] rounded w-1/3" />
-                  <div className="h-4 bg-[#F1F5F9] rounded w-1/2" />
-                  <div className="h-4 bg-[#F1F5F9] rounded w-3/4 mt-4" />
+                  <div className="h-5 bg-slate-100 rounded w-1/3" />
+                  <div className="h-4 bg-slate-100 rounded w-1/2" />
+                  <div className="h-4 bg-slate-100 rounded w-3/4 mt-4" />
                 </div>
               </div>
             ))}
           </div>
         ) : candidates.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-[#E2E8F0] border-dashed p-16 text-center">
-            <div className="w-20 h-20 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-10 h-10 text-[#CBD5E1]" />
+          <div className="card border-dashed p-16 text-center">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-[#0F172A] mb-2">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
               Không tìm thấy ứng viên
             </h3>
-            <p className="text-[#64748B] max-w-md mx-auto">
+            <p className="text-slate-500 max-w-md mx-auto">
               Không có ứng viên nào khớp với từ khóa "{keyword}". Hãy thử tìm
               kiếm với các từ khóa ngắn gọn hoặc phổ biến hơn.
             </p>
@@ -218,36 +218,36 @@ export default function CandidateSearchPage() {
             {candidates.map((candidate) => (
               <div
                 key={candidate.id}
-                className="bg-white border border-[#E2E8F0] rounded-2xl p-6 hover:shadow-xl hover:border-[#BFDBFE] transition-all group flex flex-col justify-between"
+                className="card p-6 hover:shadow-xl hover:border-brand-200 transition-all group flex flex-col justify-between"
               >
                 <div className="flex gap-5 items-start mb-4">
                   {/* Avatar */}
-                  <div className="w-16 h-16 bg-[#EFF6FF] border border-[#BFDBFE] rounded-2xl flex items-center justify-center text-[#2563EB] font-extrabold text-xl shrink-0 group-hover:bg-[#2563EB] group-hover:text-white transition-colors">
+                  <div className="w-16 h-16 bg-brand-50 border border-brand-200 rounded-2xl flex items-center justify-center text-brand-600 font-bold text-xl shrink-0 group-hover:bg-brand-600 group-hover:text-white transition-colors">
                     {getInitials(candidate.fullName || candidate.name)}
                   </div>
 
                   {/* Thông tin chính */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start gap-2">
-                      <h3 className="text-lg font-bold text-[#0F172A] truncate group-hover:text-[#2563EB] transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 truncate group-hover:text-brand-600 transition-colors">
                         {candidate.fullName ||
                           candidate.name ||
                           "Ứng viên ẩn danh"}
                       </h3>
                       {candidate.experience && (
-                        <span className="bg-[#F0FDFA] text-[#0D9488] px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
+                        <span className="bg-[#F0FDFA] text-accent-600 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap">
                           {candidate.experience} KN
                         </span>
                       )}
                     </div>
-                    <p className="text-sm font-medium text-[#64748B] mt-1 truncate">
+                    <p className="text-sm font-medium text-slate-500 mt-1 truncate">
                       {candidate.headline ||
                         candidate.title ||
                         candidate.summary ||
                         "Chưa cập nhật chức danh"}
                     </p>
 
-                    <div className="flex items-center gap-4 mt-3 text-xs text-[#64748B]">
+                    <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
                       {(candidate.address || candidate.location) && (
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" />{" "}
@@ -278,13 +278,13 @@ export default function CandidateSearchPage() {
                       .map((skill, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 bg-[#F8FAFC] text-[#334155] border border-[#E2E8F0] rounded-md text-xs font-medium"
+                          className="px-2.5 py-1 bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-xs font-medium"
                         >
                           {skill}
                         </span>
                       ))}
                     {candidate.skills?.length > 4 && (
-                      <span className="px-2 py-1 text-[#94A3B8] text-xs font-medium">
+                      <span className="px-2 py-1 text-slate-400 text-xs font-medium">
                         +{candidate.skills.length - 4}
                       </span>
                     )}
@@ -292,10 +292,10 @@ export default function CandidateSearchPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3 pt-4 border-t border-[#F1F5F9] mt-auto">
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-auto">
                   <button
                     onClick={() => handleViewProfile(candidate)}
-                    className="flex-1 bg-white text-[#2563EB] border-2 border-[#BFDBFE] hover:bg-[#EFF6FF] font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white text-brand-600 border-2 border-brand-200 hover:bg-brand-50 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                   >
                     <User className="w-4 h-4" /> Xem hồ sơ
                   </button>
@@ -307,7 +307,7 @@ export default function CandidateSearchPage() {
                           "_blank",
                         )
                       }
-                      className="flex-1 bg-[#2563EB] text-white border-2 border-[#2563EB] hover:bg-[#1D4ED8] font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 bg-brand-600 text-white border-2 border-brand-600 hover:bg-brand-700 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                     >
                       <FileText className="w-4 h-4" /> Tải CV
                     </button>

@@ -24,4 +24,7 @@ public class ApplicationResponse {
     private String candidateName;
     private String candidateEmail;
     private String candidatePhone;
+
+    // Các trạng thái nhà tuyển dụng được chuyển tới tiếp theo (để giao diện chỉ hiện nút hợp lệ)
+    private java.util.Set<ApplicationStatus> nextStatuses;
 }

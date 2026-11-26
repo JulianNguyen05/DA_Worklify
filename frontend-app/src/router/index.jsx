@@ -33,6 +33,7 @@ import CVManagerPage from "../pages/candidate/CVManagerPage";
 import CVTemplatesPage from "../pages/candidate/CVTemplatesPage";
 import CVBuilderPage from "../pages/candidate/CVBuilderPage";
 import MyApplicationsPage from "../pages/candidate/MyApplicationsPage";
+import SavedJobsPage from "../pages/candidate/SavedJobsPage";
 import CandidateProfile from "../pages/candidate/ProfilePage";
 import CandidateSettings from "../pages/candidate/SettingsPage";
 import CvPrintPage from "../pages/candidate/CvPrintPage";
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
       { path: "candidate/cv-builder", element: <CVBuilderPage /> },
       { path: "candidate/cv-builder/:id", element: <CVBuilderPage /> },
       { path: "candidate/applications", element: <MyApplicationsPage /> },
+      { path: "candidate/saved-jobs", element: <SavedJobsPage /> },
       { path: "candidate/profile", element: <CandidateProfile /> },
       { path: "candidate/settings", element: <CandidateSettings /> },
     ],

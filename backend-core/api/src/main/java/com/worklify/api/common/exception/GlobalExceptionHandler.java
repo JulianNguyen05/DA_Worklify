@@ -6,17 +6,30 @@ import com.worklify.application.common.exception.CvPdfImportException;
 import com.worklify.application.common.exception.ForbiddenOperationException;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -47,11 +60,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST) // Trả về HTTP Status 400 ra Network tab
     public ApiResponse<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+        // LinkedHashMap để lỗi đầu tiên (làm message chính) ổn định giữa các lần gọi
+        Map<String, String> errors = new java.util.LinkedHashMap<>();
 
         // Thu thập toàn bộ danh sách các trường bị nhập lỗi
         ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
+            String fieldName = error instanceof FieldError fe ? fe.getField() : error.getObjectName();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
@@ -71,10 +85,86 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) // Trả về HTTP Status 500 ra Network tab
     public ApiResponse<Void> handleGeneralException(Exception ex) {
-        // Log log lỗi chi tiết ra console của IDE để Developer dễ dàng sửa lỗi (Debug)
-        ex.printStackTrace();
+        // Log chi tiết ở server; không trả nội dung exception (câu SQL, tên class...) ra client
+        log.error("Lỗi không mong đợi", ex);
+        return ApiResponse.error(500, "Hệ thống Worklify gặp sự cố bất ngờ, vui lòng thử lại sau.");
+    }
 
-        return ApiResponse.error(500, "Hệ thống SmartMatch gặp sự cố bất ngờ: " + ex.getMessage());
+    /**
+     * 4b. Lỗi do request sai định dạng: JSON hỏng, thiếu/sai kiểu tham số. Trước đây rơi vào handler chung → 500.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleNotReadable(HttpMessageNotReadableException ex) {
+        return ApiResponse.error(400, "Dữ liệu gửi lên không đúng định dạng JSON hoặc sai kiểu dữ liệu.");
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMissingParam(MissingServletRequestParameterException ex) {
+        return ApiResponse.error(400, "Thiếu tham số bắt buộc: " + ex.getParameterName());
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMissingPart(MissingServletRequestPartException ex) {
+        return ApiResponse.error(400, "Thiếu file đính kèm: " + ex.getRequestPartName());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ApiResponse.error(400, "Giá trị không hợp lệ cho tham số: " + ex.getName());
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMethodValidation(HandlerMethodValidationException ex) {
+        String message = ex.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .filter(m -> m != null && !m.isBlank())
+                .findFirst()
+                .orElse("Dữ liệu đầu vào không hợp lệ, vui lòng kiểm tra lại.");
+        return ApiResponse.error(400, message);
+    }
+
+    /** Sai trạng thái nghiệp vụ (vd chuyển trạng thái đơn sai quy trình, nộp trùng, đóng tin đã đóng). */
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleIllegalState(IllegalStateException ex) {
+        return ApiResponse.error(409, ex.getMessage());
+    }
+
+    /** Vi phạm ràng buộc DB (unique...) còn lọt qua tầng service. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Vi phạm ràng buộc dữ liệu: {}", ex.getMostSpecificCause().getMessage());
+        return ApiResponse.error(409, "Dữ liệu bị trùng hoặc vi phạm ràng buộc, vui lòng kiểm tra lại.");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ApiResponse<Void> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        return ApiResponse.error(413, "File tải lên vượt quá dung lượng cho phép (10MB).");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNoResource(NoResourceFoundException ex) {
+        return ApiResponse.error(404, "Không tìm thấy đường dẫn: /" + ex.getResourcePath());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ApiResponse<Void> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return ApiResponse.error(405, "Phương thức " + ex.getMethod() + " không được hỗ trợ cho đường dẫn này.");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ApiResponse<Void> handleMediaType(HttpMediaTypeNotSupportedException ex) {
+        return ApiResponse.error(415, "Định dạng nội dung (Content-Type) không được hỗ trợ.");
     }
 
     /**

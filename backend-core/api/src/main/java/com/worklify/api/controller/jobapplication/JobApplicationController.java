@@ -2,6 +2,7 @@ package com.worklify.api.controller.jobapplication;
 
 import com.worklify.api.common.response.ApiResponse;
 import com.worklify.application.common.dto.PageResponse;
+import com.worklify.application.common.security.AccessControlService;
 import com.worklify.application.jobapplication.dto.ApplicationRequest;
 import com.worklify.application.jobapplication.dto.ApplicationResponse;
 import com.worklify.application.jobapplication.service.JobApplicationService;
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/v1/applications")
 @RequiredArgsConstructor
@@ -22,10 +25,11 @@ import org.springframework.web.bind.annotation.*;
 public class JobApplicationController {
 
     private final JobApplicationService applicationService;
+    private final AccessControlService accessControlService;
 
     @PostMapping("/candidates/{candidateId}")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    @Operation(summary = "Nộp hồ sơ ứng tuyển")
+    @PreAuthorize("hasRole('CANDIDATE') and @accessControl.isSelf(#candidateId, authentication.name)")
+    @Operation(summary = "Nộp hồ sơ ứng tuyển (chặn nộp trùng, tin đã đóng/hết hạn, CV không phải của mình)")
     public ApiResponse<ApplicationResponse> apply(
             @PathVariable("candidateId") Long candidateId,
             @Valid @RequestBody ApplicationRequest request) {
@@ -33,7 +37,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/candidates/{candidateId}")
-    @PreAuthorize("hasRole('CANDIDATE') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('CANDIDATE') and @accessControl.isSelf(#candidateId, authentication.name))")
     @Operation(summary = "Ứng viên xem lịch sử danh sách đơn ứng tuyển của chính mình")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsByCandidate(
             @PathVariable("candidateId") Long candidateId,
@@ -43,8 +47,8 @@ public class JobApplicationController {
     }
 
     @GetMapping("/jobs/{jobId}/review-board")
-    @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
-    @Operation(summary = "Hội đồng đánh giá xem danh sách hồ sơ (Đã ẩn danh)")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('EMPLOYER') and @accessControl.ownsJob(#jobId, authentication.name))")
+    @Operation(summary = "Nhà tuyển dụng xem danh sách hồ sơ ứng tuyển của tin mình đăng")
     public ApiResponse<PageResponse<ApplicationResponse>> getApplicationsForJob(
             @PathVariable("jobId") Long jobId,
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -53,24 +57,32 @@ public class JobApplicationController {
     }
 
     @PatchMapping("/employers/{companyId}/{applicationId}/status")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Cập nhật trạng thái hồ sơ (Duyệt/Loại)")
-    public ApiResponse<Void> updateStatus(
+    @PreAuthorize("hasRole('EMPLOYER') and @accessControl.ownsCompany(#companyId, authentication.name)")
+    @Operation(summary = "Cập nhật trạng thái hồ sơ theo quy trình PENDING → REVIEWED → INTERVIEW_SCHEDULED → ACCEPTED/REJECTED")
+    public ApiResponse<ApplicationResponse> updateStatus(
             @PathVariable("companyId") Long companyId,
             @PathVariable("applicationId") Long applicationId,
             @RequestParam(name = "status") ApplicationStatus status) {
-        applicationService.updateApplicationStatus(companyId, applicationId, status);
-        return ApiResponse.success(null, "Cập nhật trạng thái thành công");
+        return ApiResponse.success(applicationService.updateApplicationStatus(companyId, applicationId, status),
+                "Cập nhật trạng thái thành công");
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('EMPLOYER') or hasRole('ADMIN')")
-    @Operation(summary = "Xem chi tiết 1 đơn ứng tuyển")
+    @PreAuthorize("hasRole('ADMIN') or @accessControl.canViewApplication(#id, authentication.name)")
+    @Operation(summary = "Xem chi tiết 1 đơn ứng tuyển (ứng viên nộp đơn, nhà tuyển dụng của tin, hoặc admin)")
     public ApiResponse<ApplicationResponse> getApplicationById(@PathVariable("id") Long id) {
         return ApiResponse.success(applicationService.getApplicationById(id));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Ứng viên rút hồ sơ (chỉ khi nhà tuyển dụng chưa xem xét)")
+    public ApiResponse<Void> withdraw(@PathVariable("id") Long id, Principal principal) {
+        applicationService.withdrawApplication(accessControlService.requireUserId(principal.getName()), id);
+        return ApiResponse.success(null, "Đã rút hồ sơ ứng tuyển");
+    }
+
     private DomainPageable createPageable(int page, int size) {
-        return new SearchPageable(page, size);
+        return new SearchPageable(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
     }
 }

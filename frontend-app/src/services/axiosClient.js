@@ -50,7 +50,9 @@ axiosClient.interceptors.response.use(
   },
   (error) => {
     // Xử lý lỗi phổ biến (Token hết hạn, chưa xác thực)
-    if (error.response && error.response.status === 401) {
+    // Chỉ coi là "hết phiên" khi request có gửi token (khách chưa đăng nhập gọi API riêng thì không đá về login)
+    const sentToken = Boolean(error.config?.headers?.Authorization);
+    if (error.response && error.response.status === 401 && sentToken) {
       console.warn("Token hết hạn hoặc chưa xác thực (401). Đang chuyển hướng...");
       // Xóa thông tin phiên làm việc
       localStorage.removeItem('user');

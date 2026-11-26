@@ -84,7 +84,7 @@ export default function JobModerationPage() {
       header: "Tiêu đề công việc",
       accessor: "title",
       render: (row) => (
-        <span className="font-medium text-gray-800">{row.title}</span>
+        <span className="font-medium text-slate-800">{row.title}</span>
       ),
     },
     { header: "Công ty", accessor: "companyName" },
@@ -112,7 +112,7 @@ export default function JobModerationPage() {
           <Button
             variant="outline"
             onClick={() => handleViewDetails(row)}
-            className="px-3 py-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+            className="px-3 py-1 border-brand-600 text-brand-600 hover:bg-brand-50"
           >
             Xem chi tiết
           </Button>
@@ -122,8 +122,8 @@ export default function JobModerationPage() {
   ];
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">
+    <div className="card p-6">
+      <h2 className="text-xl font-bold text-slate-800 mb-6">
         Kiểm duyệt Tin tuyển dụng
       </h2>
 
@@ -147,31 +147,31 @@ export default function JobModerationPage() {
         title="Chi tiết bản mô tả công việc (JD)"
       >
         {selectedJob && (
-          <div className="flex flex-col gap-4 text-sm text-gray-700 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="flex flex-col gap-4 text-sm text-slate-700 max-h-[70vh] overflow-y-auto pr-2">
             <div className="border-b pb-3">
-              <h3 className="text-xl font-bold text-blue-700">
+              <h3 className="text-xl font-bold text-brand-700">
                 {selectedJob.title}
               </h3>
-              <p className="text-gray-500 mt-1">{selectedJob.companyName}</p>
+              <p className="text-slate-500 mt-1">{selectedJob.companyName}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded border">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded border">
               <div>
-                <span className="font-semibold text-gray-900">Mức lương:</span>{" "}
+                <span className="font-semibold text-slate-900">Mức lương:</span>{" "}
                 {selectedJob.salaryRange || "Thỏa thuận"}
               </div>
               <div>
-                <span className="font-semibold text-gray-900">Hình thức:</span>{" "}
+                <span className="font-semibold text-slate-900">Hình thức:</span>{" "}
                 {selectedJob.workType || "Toàn thời gian"}
               </div>
               <div className="col-span-2">
-                <span className="font-semibold text-gray-900">Địa điểm:</span>{" "}
+                <span className="font-semibold text-slate-900">Địa điểm:</span>{" "}
                 {selectedJob.location}
               </div>
             </div>
 
             <div>
-              <span className="font-semibold text-gray-900 block mb-1">
+              <span className="font-semibold text-slate-900 block mb-1">
                 Mô tả công việc:
               </span>
               <p className="whitespace-pre-wrap bg-white border p-3 rounded">
@@ -180,7 +180,7 @@ export default function JobModerationPage() {
             </div>
 
             <div>
-              <span className="font-semibold text-gray-900 block mb-1">
+              <span className="font-semibold text-slate-900 block mb-1">
                 Yêu cầu chuyên môn:
               </span>
               <p className="whitespace-pre-wrap bg-white border p-3 rounded">
@@ -215,7 +215,7 @@ export default function JobModerationPage() {
       >
         <div className="flex flex-col gap-4">
           <textarea
-            className="w-full border rounded p-2 text-sm focus:outline-none focus:ring focus:border-blue-300"
+            className="w-full border rounded p-2 text-sm focus:outline-none focus:ring focus:border-brand-300"
             rows="4"
             placeholder="Nhập lý do vi phạm (Ví dụ: Tin có dấu hiệu lừa đảo, nội dung không phù hợp...)"
             value={rejectReason}

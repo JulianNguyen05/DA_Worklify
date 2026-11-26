@@ -205,10 +205,10 @@ const CVTemplatesPage = () => {
     <div className="max-w-7xl mx-auto px-4 py-8 bg-white min-h-screen">
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="font-display text-2xl font-bold text-slate-900 mb-2">
           Mẫu CV xin việc tiếng Việt chuẩn 2026
         </h1>
-        <p className="text-gray-600">
+        <p className="text-slate-600">
           Tuyển chọn {TEMPLATES.length} mẫu CV đa dạng phong cách, giúp bạn tạo
           dấu ấn cá nhân và kết nối mạnh mẽ hơn với nhà tuyển dụng.
         </p>
@@ -221,7 +221,7 @@ const CVTemplatesPage = () => {
       )}
 
       {/* FILTER BAR (Các nút hình viên thuốc) */}
-      <div className="flex flex-wrap items-center gap-3 mb-10 pb-4 border-b border-gray-100">
+      <div className="flex flex-wrap items-center gap-3 mb-10 pb-4 border-b border-slate-100">
         {CATEGORIES.map((category) => {
           const Icon = category.icon;
           const isActive = activeCategory === category.id;
@@ -229,11 +229,7 @@ const CVTemplatesPage = () => {
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm border transition-all duration-200 ${
-                isActive
-                  ? "bg-[#2563EB] text-white border-[#2563EB] shadow-sm"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm border transition-all duration-200 ${ isActive ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:border-slate-400" }`}
             >
               <Icon className="w-4 h-4" />
               {category.id}
@@ -247,9 +243,9 @@ const CVTemplatesPage = () => {
         {filteredTemplates.map((template) => (
           <div key={template.id} className="flex flex-col gap-3">
             {/* VÙNG CHỨA ẢNH (Nền xám nhạt, border bo góc) */}
-            <div className="group relative bg-[#f3f4f6] p-4 rounded-xl border border-gray-200 transition-all hover:border-[#2563EB] hover:shadow-md">
+            <div className="group relative bg-slate-100 p-4 rounded-xl border border-slate-200 transition-all hover:border-brand-600 hover:shadow-md">
               {/* Thumbnail CV khổ A4 (Tỷ lệ 21/29.7) */}
-              <div className="relative w-full aspect-[21/29.7] bg-white shadow-sm overflow-hidden border border-gray-200">
+              <div className="relative w-full aspect-[21/29.7] bg-white shadow-sm overflow-hidden border border-slate-200">
                 <img
                   src={template.thumbnail}
                   alt={template.name}
@@ -260,7 +256,7 @@ const CVTemplatesPage = () => {
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
                   <button
                     onClick={() => handleUseTemplate(template)}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-semibold py-2 px-6 rounded-full transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg"
+                    className="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 px-6 rounded-full transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-raised"
                   >
                     Sử dụng mẫu này
                   </button>
@@ -271,7 +267,7 @@ const CVTemplatesPage = () => {
             {/* VÙNG THÔNG TIN MẪU */}
             <div className="px-1 mt-2">
               {/* Tên mẫu */}
-              <h3 className="text-[17px] font-bold text-gray-800 mb-2">
+              <h3 className="text-[17px] font-bold text-slate-800 mb-2">
                 {template.name}
               </h3>
 
@@ -280,7 +276,7 @@ const CVTemplatesPage = () => {
                 {template.categories.map((cat, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium"
+                    className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium"
                   >
                     {cat}
                   </span>
@@ -298,7 +294,7 @@ const CVTemplatesPage = () => {
         title={`Tạo CV với mẫu "${selectedTemplate?.name || ""}"`}
       >
         <div className="p-2 flex flex-col gap-3 min-w-[320px] sm:min-w-[420px]">
-          <p className="text-sm text-gray-500 mb-1">
+          <p className="text-sm text-slate-500 mb-1">
             Chọn cách bạn muốn điền nội dung cho CV:
           </p>
 
@@ -313,16 +309,16 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseUpload}
             disabled={isImporting || isLoading}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 hover:border-brand-600 hover:bg-brand-600/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <span className="shrink-0 w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
               <Upload className="w-5 h-5" />
             </span>
             <span>
-              <span className="block font-semibold text-gray-800">
+              <span className="block font-semibold text-slate-800">
                 {isImporting ? "Đang xử lý..." : "Nhập từ file PDF Worklify"}
               </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
+              <span className="block text-xs text-slate-500 mt-0.5">
                 Chỉ áp dụng cho PDF tải xuống trực tiếp từ Worklify
               </span>
             </span>
@@ -331,16 +327,16 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseFromProfile}
             disabled={isLoading || isImporting}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 hover:border-brand-600 hover:bg-brand-600/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
-            <span className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <span className="shrink-0 w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
               <UserRound className="w-5 h-5" />
             </span>
             <span>
-              <span className="block font-semibold text-gray-800">
+              <span className="block font-semibold text-slate-800">
                 {isLoading ? "Đang lấy hồ sơ..." : "Lấy nội dung từ hồ sơ"}
               </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
+              <span className="block text-xs text-slate-500 mt-0.5">
                 Điền sẵn từ thông tin ProfilePage đã có
               </span>
             </span>
@@ -349,16 +345,16 @@ const CVTemplatesPage = () => {
           <button
             onClick={handleChooseBlank}
             disabled={isImporting || isLoading}
-            className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 hover:border-brand-600 hover:bg-brand-600/5 transition-colors text-left disabled:opacity-55 disabled:cursor-not-allowed"
           >
-            <span className="shrink-0 w-10 h-10 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
+            <span className="shrink-0 w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
               <FilePlus2 className="w-5 h-5" />
             </span>
             <span>
-              <span className="block font-semibold text-gray-800">
+              <span className="block font-semibold text-slate-800">
                 Bắt đầu từ mẫu trống
               </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
+              <span className="block text-xs text-slate-500 mt-0.5">
                 Tự nhập toàn bộ nội dung
               </span>
             </span>

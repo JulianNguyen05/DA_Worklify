@@ -25,7 +25,9 @@ import java.util.List;
 @RequestMapping("/api/v1/candidates")
 @RequiredArgsConstructor
 @Tag(name = "2. Candidate", description = "Quản lý hồ sơ và CV của Ứng viên")
-@PreAuthorize("hasRole('CANDIDATE')")
+// Mặc định: chỉ chính ứng viên đó ({userId} trên URL phải trùng người đăng nhập) mới được gọi.
+// Các method có @PreAuthorize riêng (tìm kiếm, xem hồ sơ đầy đủ, tra cứu danh mục) ghi đè quy tắc này.
+@PreAuthorize("hasRole('CANDIDATE') and @accessControl.isSelf(#userId, authentication.name)")
 public class CandidateController {
 
     private final CandidateService candidateService;
@@ -521,6 +523,7 @@ public class CandidateController {
     }
 
     @GetMapping("/reference-values/search")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(summary = "Tìm kiếm giá trị danh mục dùng chung (SKILL/LANGUAGE/...) cho dropdown")
     public ApiResponse<List<ReferenceValueResponse>> searchReferenceValues(
             @RequestParam("type") String type,
@@ -545,7 +548,7 @@ public class CandidateController {
     }
 
     @GetMapping("/{userId}/profile/full")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN') or (hasRole('CANDIDATE') and @accessControl.isSelf(#userId, authentication.name))")
     @Operation(summary = "Lấy toàn bộ dữ liệu ProfilePage (layout + 9 block danh sách) trong 1 lần gọi — phục vụ sandbox kéo-thả")
     public ApiResponse<CandidateProfileFullResponse> getFullProfile(
             @PathVariable("userId") Long userId) {

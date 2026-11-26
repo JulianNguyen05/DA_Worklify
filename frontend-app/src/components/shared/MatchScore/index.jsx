@@ -17,7 +17,7 @@ export function MatchScoreBadge({ score, onClick, title }) {
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       title={title}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border tabular-nums ${level.bg} ${level.text} ${level.border} ${onClick ? 'hover:brightness-95 cursor-pointer' : ''}`}
+      className={`inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums transition ${level.bg} ${level.text} ${level.border} ${onClick ? 'cursor-pointer hover:shadow-xs hover:brightness-95' : ''}`}
     >
       {Math.round(score)}<span className="font-medium opacity-70">/100</span>
     </Tag>
@@ -33,15 +33,15 @@ function ScoreRing({ score, size = 88 }) {
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#e5e7eb" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#e2e8f0" strokeWidth={stroke} fill="none" />
         <circle
           cx={size / 2} cy={size / 2} r={radius} stroke={level.ring} strokeWidth={stroke} fill="none"
           strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-extrabold text-gray-900 tabular-nums leading-none">{Math.round(score)}</span>
-        <span className="text-[11px] text-gray-500">/100</span>
+        <span className="text-2xl font-bold text-slate-900 tabular-nums leading-none">{Math.round(score)}</span>
+        <span className="text-[11px] text-slate-500">/100</span>
       </div>
     </div>
   );
@@ -65,8 +65,8 @@ export function MatchScoreCard({ match, compact = false }) {
       <div className="flex items-center gap-4">
         <ScoreRing score={match.score} size={compact ? 72 : 88} />
         <div className="min-w-0">
-          <p className={`font-bold ${level.text}`}>{level.label}</p>
-          <p className="text-sm text-gray-600 leading-snug mt-1">{match.explanation}</p>
+          <p className={`text-sm font-semibold ${level.text}`}>{level.label}</p>
+          <p className="text-sm text-slate-600 leading-snug mt-1">{match.explanation}</p>
         </div>
       </div>
 
@@ -76,12 +76,12 @@ export function MatchScoreCard({ match, compact = false }) {
           return (
             <div key={key}>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-600">{label}</span>
-                <span className="font-semibold text-gray-800 tabular-nums">
+                <span className="text-slate-600">{label}</span>
+                <span className="font-semibold text-slate-800 tabular-nums">
                   {value == null ? 'Không áp dụng' : `${Math.round(value)}%`}
                 </span>
               </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div className={`h-full rounded-full ${value == null ? '' : getMatchLevel(value).bar}`} style={{ width: `${value ?? 0}%` }} />
               </div>
             </div>
@@ -112,7 +112,7 @@ export function MatchScoreCard({ match, compact = false }) {
         </div>
       )}
 
-      <p className="text-[11px] text-gray-400">
+      <p className="text-[11px] text-slate-400">
         Điểm do AI ước lượng từ hồ sơ online, chỉ mang tính tham khảo.
       </p>
     </div>
