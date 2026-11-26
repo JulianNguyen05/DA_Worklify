@@ -36,18 +36,29 @@ kỹ năng khớp/còn thiếu và câu giải thích. Cách tính nằm trong `
 Code: `app/services/cv_advisor.py`. Quy trình:
 
 1. **Đánh giá**: chấm hồ sơ hiện tại bằng scorer (điểm, kỹ năng khớp/thiếu).
-2. **Đề xuất**: LLM (Ollama, mặc định `qwen2.5:3b`) viết lại phần giới thiệu, mô tả kinh nghiệm/dự án.
-   Prompt liệt kê rõ kỹ năng được phép nhắc tới và kỹ năng bị cấm (ứng viên chưa có).
+2. **Đề xuất**: LLM viết lại phần giới thiệu, mô tả kinh nghiệm/dự án theo từng ý (giữ đủ số ý và thứ tự).
+   Prompt liệt kê rõ kỹ năng được phép nhắc tới, kỹ năng bị cấm (ứng viên chưa có), kèm một ví dụ mẫu.
 3. **Tự sửa**: gợi ý tự thêm kỹ năng ứng viên không có thì cắt câu chứa kỹ năng đó (tối đa 1/3 số câu);
    gợi ý làm mất ý chính (giữ < 40% từ ngữ nội dung của bản gốc) hoặc cắt không được thì gửi lại LLM kèm
    phản hồi cụ thể, tối đa 1 lần.
 4. **Kiểm chứng**: chấm lại hồ sơ với từng gợi ý, loại gợi ý làm điểm giảm; tính điểm dự kiến.
 
-Hạn chế: bộ lọc chỉ bắt được *kỹ năng* bịa, không bắt được *chi tiết* bịa (vd tự gán bối cảnh "thương mại điện tử"),
-nên giao diện yêu cầu ứng viên đọc kỹ trước khi áp dụng. Model 3B hay chèn kỹ năng của JD nên nhiều lượt không còn
-gợi ý nào qua được kiểm chứng; `qwen2.5:7b` tuân thủ tốt hơn nhưng chậm gấp đôi trên CPU.
+**LLM**: có `GEMINI_API_KEY` thì dùng Gemini API (mặc định `gemini-3.5-flash-lite`, trả lời vài giây, viết tốt
+hơn hẳn model nhỏ); Gemini lỗi / hết lượt miễn phí / mất mạng thì tự chuyển sang Ollama (`qwen2.5:3b`) cho lượt đó.
+Không có key thì chỉ dùng Ollama. Code: `app/services/llm.py`. Lưu ý khi dùng Gemini, nội dung hồ sơ ứng viên
+được gửi sang dịch vụ của Google.
 
-**Chuẩn bị Ollama** (một lần, model khoảng 1,9GB):
+```
+# backend-ml/.env (không commit)
+GEMINI_API_KEY=...            # tạo tại https://aistudio.google.com/apikey
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+Hạn chế: bộ lọc chỉ bắt được *kỹ năng* bịa, không bắt được *chi tiết* bịa (vd tự gán bối cảnh "hệ thống thanh toán"
+lấy từ JD), nên giao diện yêu cầu ứng viên đọc kỹ trước khi áp dụng. Model 3B mắc lỗi này thường xuyên; dùng Gemini
+để có chất lượng tốt.
+
+**Chuẩn bị Ollama** (dự phòng, một lần, model khoảng 1,9GB):
 
 ```powershell
 docker compose up -d ollama
@@ -100,6 +111,9 @@ Chạy test: `pytest`
 | `REQUIRE_API_KEY` | `true` | Tắt khi muốn thử nhanh qua `/docs` |
 | `WEIGHT_SEMANTIC` / `WEIGHT_SKILLS` / `WEIGHT_EXPERIENCE` | `0.45` / `0.40` / `0.15` | Trọng số điểm |
 | `SEMANTIC_SIM_LOW` / `SEMANTIC_SIM_HIGH` | `0.15` / `0.75` | Ngưỡng kéo giãn cosine similarity |
+| `LLM_PROVIDER` | `gemini` nếu có key, không thì `ollama` | Chọn LLM cho agent |
+| `GEMINI_API_KEY` | (trống) | Key Gemini API |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Model Gemini |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` (compose: `http://ollama:11434`) | Địa chỉ Ollama |
 | `OLLAMA_MODEL` | `qwen2.5:3b` | Model LLM cho agent gợi ý sửa CV |
 | `OLLAMA_TIMEOUT_SECONDS` | `240` | Thời gian chờ tối đa một lượt sinh |
@@ -120,7 +134,7 @@ app/
 ├── routers/           # scoring.py, agent.py, parser.py
 └── services/
     ├── cv_advisor.py  # agent gợi ý sửa CV
-    ├── llm.py         # client Ollama
+    ├── llm.py         # client Gemini / Ollama và cơ chế dự phòng
     ├── embedder.py    # model embedding (sentence-transformers / bag-of-words)
     ├── skills.py      # danh mục và trích xuất kỹ năng
     ├── scorer.py      # ghép điểm và sinh giải thích

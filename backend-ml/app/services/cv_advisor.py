@@ -59,7 +59,17 @@ QUY TẮC BẮT BUỘC:
 - Ưu tiên dùng đúng thuật ngữ của tin tuyển dụng cho những việc ứng viên đã làm (vd "xây dựng REST API", "tối ưu hiệu năng").
 - Kỹ năng ứng viên còn thiếu chỉ được đưa vào "skill_advice" dưới dạng lời khuyên.
 - Viết tiếng Việt, ngắn gọn, chuyên nghiệp. Mô tả kinh nghiệm/dự án viết thành các gạch đầu dòng bắt đầu bằng "- ".
-- Chỉ trả về MỘT object JSON đúng cấu trúc được yêu cầu, không kèm giải thích nào khác."""
+- Viết lại THEO TỪNG Ý: nội dung gốc có bao nhiêu ý (gạch đầu dòng hoặc câu) thì bản viết lại có đúng bấy nhiêu gạch đầu dòng, cùng thứ tự, mỗi gạch đầu dòng tương ứng một ý gốc. Không gộp, không bỏ, không thêm ý mới.
+- Chỉ trả về MỘT object JSON đúng cấu trúc được yêu cầu, không kèm giải thích nào khác.
+
+VÍ DỤ VIẾT LẠI ĐÚNG (JD yêu cầu "xây dựng REST API, tối ưu hiệu năng"; ứng viên có Java, MySQL):
+Gốc:
+- Làm chức năng quản lý đơn hàng bằng Java
+- Sửa mấy câu SQL bị chậm
+Viết lại:
+- Phát triển chức năng quản lý đơn hàng và các REST API liên quan bằng Java
+- Tối ưu hiệu năng truy vấn MySQL, khắc phục các câu truy vấn chậm
+(Giữ đủ 2 ý, cùng thứ tự, chỉ dùng kỹ năng ứng viên có, dùng thuật ngữ của JD.)"""
 
 RESPONSE_SCHEMA = {
     "suggestions": [{"key": "một key trong danh sách mục", "suggested": "nội dung viết lại", "reason": "vì sao sửa"}],

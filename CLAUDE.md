@@ -7,7 +7,7 @@ Worklify: nền tảng tuyển dụng việc làm với 3 vai trò `CANDIDATE`, 
 
 - `backend-core/`: Java 21 + Spring Boot, Maven multi-module (DDD + Hexagonal).
 - `frontend-app/`: React 18 + Vite 5 + Tailwind 4 (JavaScript/JSX, không dùng TypeScript).
-- `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD, agent gợi ý sửa CV dùng LLM qua Ollama; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
+- `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD, agent gợi ý sửa CV dùng Gemini API nếu có `GEMINI_API_KEY` trong `backend-ml/.env`, tự chuyển sang Ollama khi Gemini lỗi; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
 - `docker-compose.yml` (gốc): stack đầy đủ, còn tham chiếu `backend-pdf/` (Node/Puppeteer) **không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
 - `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089) và `include` `backend-ml/docker-compose.yml` (backend-ml 8000, Ollama 11434 — lần đầu phải `docker compose exec ollama ollama pull qwen2.5:3b`). Đây là file dùng khi chạy backend trên IDE. backend-ml chỉ được định nghĩa ở `backend-ml/docker-compose.yml`, sửa ở đó.
 - `worklify_db.sql`, `backend-core/init.sql`: schema + dữ liệu mẫu.
