@@ -3,6 +3,9 @@ data/raw/
 data/*.csv
 data/*.csv.gz
 
+# Biến môi trường cục bộ cho docker compose (có thể chứa API key)
+.env
+
 # Model fine-tune (xem models/README.md)
 models/*/
 .cache/

@@ -34,9 +34,13 @@ kỹ năng khớp/còn thiếu và câu giải thích. Cách tính nằm trong `
 **Bằng Docker** (khuyến nghị, máy không cần cài Python):
 
 ```powershell
-cd backend-core
-docker compose up -d --build backend-ml
+cd backend-ml
+docker compose up -d --build
 ```
+
+`backend-core/docker-compose.yml` cũng include file `backend-ml/docker-compose.yml`, nên
+chạy `docker compose up -d` trong `backend-core/` là có luôn MySQL, phpMyAdmin và backend-ml.
+Biến môi trường (ngưỡng `SEMANTIC_SIM_*`, API key...) đặt trong file `backend-ml/.env`.
 
 Lần đầu khởi động sẽ tải model khoảng 470MB nên mất vài phút. Muốn chạy bản nhẹ
 (không torch, chấm ngữ nghĩa bằng bag-of-words) thì build với `INSTALL_ML=false`

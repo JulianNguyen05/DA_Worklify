@@ -1,0 +1,42 @@
+# Chạy riêng dịch vụ AI (chạy trong thư mục backend-ml):
+#   docker compose up -d --build
+# backend-core/docker-compose.yml cũng "include" file này, nên chạy hạ tầng dev ở đó là có luôn backend-ml.
+#
+# Có thể ghi đè các biến bên dưới bằng file .env cạnh file này, ví dụ sau khi fine-tune:
+#   SEMANTIC_SIM_LOW=0.11
+#   SEMANTIC_SIM_HIGH=0.93
+
+services:
+  backend-ml:
+    build:
+      context: .
+      args:
+        INSTALL_ML: "true"   # "false" = bản nhẹ không torch (đặt thêm EMBEDDING_BACKEND=bow)
+    image: worklify-ml
+    container_name: worklify-ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # backend-core chạy trên máy host (IDE) -> từ trong container gọi ra qua host.docker.internal
+      CORE_BASE_URL: ${CORE_BASE_URL:-http://host.docker.internal:8080}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-only-change-me}
+      EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-sentence-transformers}
+      # Ngưỡng kéo giãn cosine similarity — lấy từ mục 5 của notebook sau khi fine-tune
+      SEMANTIC_SIM_LOW: ${SEMANTIC_SIM_LOW:-0.15}
+      SEMANTIC_SIM_HIGH: ${SEMANTIC_SIM_HIGH:-0.75}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Có models/cv-jd-scorer/ (model fine-tune từ Colab) thì dùng nó, không thì tải model có sẵn
+      - ./models:/app/models:ro
+      - ml_model_cache:/app/.cache   # giữ model tải từ Hugging Face giữa các lần chạy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+volumes:
+  ml_model_cache:

@@ -9,7 +9,7 @@ Worklify: nền tảng tuyển dụng việc làm với 3 vai trò `CANDIDATE`, 
 - `frontend-app/`: React 18 + Vite 5 + Tailwind 4 (JavaScript/JSX, không dùng TypeScript).
 - `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
 - `docker-compose.yml` (gốc): stack đầy đủ, còn tham chiếu `backend-pdf/` (Node/Puppeteer) **không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
-- `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089, backend-ml 8000). Đây là file dùng khi chạy backend trên IDE.
+- `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089) và `include` `backend-ml/docker-compose.yml` (backend-ml 8000). Đây là file dùng khi chạy backend trên IDE. backend-ml chỉ được định nghĩa ở `backend-ml/docker-compose.yml`, sửa ở đó.
 - `worklify_db.sql`, `backend-core/init.sql`: schema + dữ liệu mẫu.
 - `gom_code.py`: script gom code để debug, không thuộc ứng dụng.
 
@@ -34,7 +34,7 @@ npm run dev      # http://localhost:5173
 npm run build
 ```
 
-backend-ml: `docker compose up -d --build backend-ml` (trong `backend-core/`); test chạy bằng `pytest` trong `backend-ml/` (máy dev không có Python thì chạy trong container `python:3.11-slim`).
+backend-ml: `docker compose up -d --build` (trong `backend-ml/`, hoặc `backend-core/` để chạy cùng hạ tầng); test chạy bằng `pytest` trong `backend-ml/` (máy dev không có Python thì chạy trong container `python:3.11-slim`).
 
 Backend Java và frontend **chưa có test** và chưa có linter. Cách kiểm tra thay đổi: build backend (`./mvnw -q compile`), chạy `npm run build` cho frontend, rồi thử trên giao diện hoặc Swagger.
 
