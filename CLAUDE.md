@@ -48,7 +48,7 @@ Package gốc `com.worklify.<module>`. Chiều phụ thuộc: `api → applicati
   - `persistence/entity` (JPA entity) + `persistence/mapper` (MapStruct) + `persistence/repository` (Spring Data) + `persistence/adapter` (`XxxRepositoryAdapter` implement interface repository của domain).
   - `security/` (JWT, `JwtAuthenticationFilter`), `config/SecurityConfig.java` (danh sách endpoint public).
   - `pdf/`: PDFBox đọc JSON nhúng trong CV PDF; Playwright render `/cv-print` của frontend ra PDF.
-  - `client/`: gọi backend-ml (`worklify.ml.base-url`) — `MlCvParsingClient` (`/parser/extract`), `MlCvJdScoringClient` (`/scoring/cv-jd`, gửi `worklify.internal.api-key`). Lỗi từ ML ném `AiServiceException` → HTTP 503.
+  - `client/`: gọi backend-ml (`worklify.ml.base-url`) — `MlCvParsingClient` (`/parser/extract`), `MlCvJdScoringClient` (`/scoring/cv-jd` và `/scoring/cv-jd/batch`, gửi `worklify.internal.api-key`). Lỗi từ ML ném `AiServiceException` → HTTP 503. DTO gửi sang ML phải có `@JsonInclude(NON_NULL)` (Pydantic không nhận `null` cho field danh sách).
   - `storage/LocalFileStorageService`: lưu file upload, phục vụ qua `/uploads/**`.
 - **api**: controller theo nghiệp vụ, `GlobalExceptionHandler`, `ApiResponse`.
 
@@ -60,6 +60,10 @@ Quy ước controller:
 - Có `@Tag(name = "N. Tên nhóm")` và `@Operation(summary = ...)` cho Swagger (tag được đánh số để sắp xếp).
 - Dùng Lombok (`@RequiredArgsConstructor`, inject qua constructor) và `@Valid` cho request body.
 
+Phân quyền theo chủ sở hữu: phần lớn controller cũ nhận `userId`/`companyId` trên URL mà không đối chiếu với người đăng nhập. Code mới nên lấy người dùng từ `Principal` (`principal.getName()` = email) như `MatchingController`, và ném `ForbiddenOperationException` (→ 403) khi không sở hữu tài nguyên. `AccessDeniedException` của `@PreAuthorize` đã được map về 403 trong `GlobalExceptionHandler`.
+
+AI matching (`/api/v1/matching`): `GET /jobs/{jobId}/me` (ứng viên tự xem điểm) và `GET /jobs/{jobId}/applications` (nhà tuyển dụng xếp hạng hồ sơ). `MatchingServiceImpl` cố ý không có `@Transactional` (xem comment trong class).
+
 Endpoint public (không cần JWT) được khai báo trong `SecurityConfig`: auth, swagger, `/uploads/**`, `GET /api/v1/jobs/**`, `GET /api/v1/employers/**`, `/api/internal/**` (tự bảo vệ bằng API key).
 
 Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`ddl-auto: update`). Profile mặc định là `dev`. Dự án **không dùng message broker** (RabbitMQ/Kafka đã được gỡ bỏ), đừng thêm lại.
@@ -70,6 +74,7 @@ Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`dd
 - `src/services/axiosClient.js`: axios instance, tự gắn `Bearer` token lấy từ `localStorage.user.accessToken`. baseURL đã gồm `/api/v1`, nên service chỉ gọi đường dẫn như `/jobs/search`.
 - `src/features/<domain>/<domain>Service.js`: object gom các hàm gọi API, trả về `response.data`.
 - `src/pages/<role>/<PageName>/index.jsx`: trang theo vai trò (`public`, `auth`, `candidate`, `employer`, `admin`); `src/router/index.jsx`: định tuyến.
+- AI matching: `features/matching/matchingService.js` và `components/shared/MatchScore` (`MatchScoreBadge`, `MatchScoreCard`), dùng ở `pages/public/JobDetailPage` và `pages/employer/ApplicationListPage`.
 - `src/components/common/*`: UI dùng chung (Button, Input, Modal, Table…); `components/layout/*`: layout theo vai trò; `components/cv-builder/*`: trình tạo CV (dnd-kit, react-grid-layout, TipTap).
 - Form: react-hook-form + zod. State: Redux Toolkit. Thông báo: react-hot-toast. Icon: lucide-react.
 - `pages/candidate/CvPrintPage` được backend (Playwright) mở để xuất PDF, nên thay đổi trang này ảnh hưởng tới file CV export.

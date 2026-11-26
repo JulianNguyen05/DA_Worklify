@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employerService from '../../../features/employer/employerService';
 import authService from '../../../features/auth/authService';
+import matchingService, { getMatchingErrorMessage } from '../../../features/matching/matchingService';
 import Button from '../../../components/common/Button';
 import Toast from '../../../components/common/Toast';
+import { MatchScoreBadge, MatchScoreCard } from '../../../components/shared/MatchScore';
 // BỔ SUNG: Import thêm icon Eye
-import { Briefcase, Users, FileText, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { Briefcase, Users, FileText, CheckCircle, XCircle, Clock, Eye, Sparkles } from 'lucide-react';
 
 export default function ApplicationListPage() {
   const navigate = useNavigate();
@@ -17,6 +19,11 @@ export default function ApplicationListPage() {
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
+
+  // AI matching: applicationId -> { match, note }; null = chưa chấm cho tin đang chọn
+  const [matchByAppId, setMatchByAppId] = useState(null);
+  const [isRanking, setIsRanking] = useState(false);
+  const [expandedAppId, setExpandedAppId] = useState(null);
 
   // 1. LẤY THÔNG TIN CÔNG TY VÀ DANH SÁCH CÔNG VIỆC LÀM TABS
   useEffect(() => {
@@ -58,6 +65,8 @@ export default function ApplicationListPage() {
   // 2. KHI CHUYỂN TAB, TẢI DANH SÁCH ỨNG VIÊN
   useEffect(() => {
     if (!activeJobId) return;
+    setMatchByAppId(null);
+    setExpandedAppId(null);
 
     const fetchApplications = async () => {
       setIsLoadingApps(true);
@@ -89,12 +98,37 @@ export default function ApplicationListPage() {
     }
   };
 
+  // 4. CHẤM ĐIỂM AI CHO TOÀN BỘ HỒ SƠ CỦA TIN ĐANG CHỌN
+  const handleRankWithAi = async () => {
+    setIsRanking(true);
+    try {
+      const res = await matchingService.rankApplicationsForJob(activeJobId);
+      const map = {};
+      (res.data || []).forEach((row) => {
+        map[row.applicationId] = { match: row.match, note: row.note };
+      });
+      setMatchByAppId(map);
+      setStatusMsg({ type: 'success', message: 'Đã chấm điểm và sắp xếp hồ sơ theo mức độ phù hợp.' });
+    } catch (error) {
+      setStatusMsg({ type: 'error', message: getMatchingErrorMessage(error) });
+    } finally {
+      setIsRanking(false);
+    }
+  };
+
+  // Đã chấm thì sắp xếp điểm cao trước, hồ sơ chưa chấm được xuống cuối
+  const displayedApplications = useMemo(() => {
+    if (!matchByAppId) return applications;
+    const scoreOf = (app) => matchByAppId[app.id]?.match?.score ?? -1;
+    return [...applications].sort((a, b) => scoreOf(b) - scoreOf(a));
+  }, [applications, matchByAppId]);
+
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'ACCEPTED': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Chấp nhận</span>;
-      case 'REJECTED': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Từ chối</span>;
-      case 'REVIEWED': return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Đã xem</span>;
-      default: return <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">Chờ duyệt</span>;
+      case 'ACCEPTED': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">Chấp nhận</span>;
+      case 'REJECTED': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">Từ chối</span>;
+      case 'REVIEWED': return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">Đã xem</span>;
+      default: return <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">Chờ duyệt</span>;
     }
   };
 
@@ -150,6 +184,15 @@ export default function ApplicationListPage() {
                   {applications.length} ứng viên
                 </span>
               </h3>
+              <Button
+                onClick={handleRankWithAi}
+                isLoading={isRanking}
+                disabled={applications.length === 0 || isLoadingApps}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-lg"
+              >
+                {!isRanking && <Sparkles className="w-3.5 h-3.5" />}
+                {isRanking ? 'AI đang chấm điểm...' : matchByAppId ? 'Chấm lại' : 'Chấm điểm AI'}
+              </Button>
             </div>
 
             <div className="overflow-x-auto bg-white rounded-b-lg">
@@ -158,6 +201,7 @@ export default function ApplicationListPage() {
                   <tr className="bg-gray-50/80 border-b border-gray-100">
                     <th className="p-4 font-bold text-gray-600 w-1/3">Ứng viên</th>
                     <th className="p-4 font-bold text-gray-600">Ngày nộp</th>
+                    <th className="p-4 font-bold text-gray-600 text-center whitespace-nowrap">Phù hợp AI</th>
                     <th className="p-4 font-bold text-gray-600 text-center">Trạng thái</th>
                     <th className="p-4 font-bold text-gray-600 text-right">Hành động</th>
                   </tr>
@@ -165,20 +209,24 @@ export default function ApplicationListPage() {
                 <tbody className="divide-y divide-gray-100">
                   {isLoadingApps ? (
                     <tr>
-                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                      <td colSpan="5" className="p-10 text-center text-gray-500">
                         <Clock className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-300" />
                         Đang tải danh sách hồ sơ...
                       </td>
                     </tr>
                   ) : applications.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="p-10 text-center text-gray-500">
+                      <td colSpan="5" className="p-10 text-center text-gray-500">
                         Chưa có ứng viên nào nộp hồ sơ cho vị trí này.
                       </td>
                     </tr>
                   ) : (
-                    applications.map((app) => (
-                      <tr key={app.id} className="hover:bg-indigo-50/30 transition-colors">
+                    displayedApplications.map((app) => {
+                      const aiResult = matchByAppId?.[app.id];
+                      const isExpanded = expandedAppId === app.id;
+                      return (
+                      <React.Fragment key={app.id}>
+                      <tr className={`hover:bg-indigo-50/30 transition-colors ${isExpanded ? 'bg-indigo-50/40' : ''}`}>
                         <td className="p-4">
                           <div className="font-bold text-gray-900">
                             {/* Hiển thị Tên Ứng viên */}
@@ -194,6 +242,19 @@ export default function ApplicationListPage() {
                           {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : 'Vừa mới nộp'}
                         </td>
                         <td className="p-4 text-center">
+                          {aiResult?.match ? (
+                            <MatchScoreBadge
+                              score={aiResult.match.score}
+                              onClick={() => setExpandedAppId(isExpanded ? null : app.id)}
+                              title={isExpanded ? 'Ẩn chi tiết' : 'Xem chi tiết điểm'}
+                            />
+                          ) : aiResult?.note ? (
+                            <span className="text-xs text-gray-400 italic" title={aiResult.note}>Chưa chấm được</span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
                           {getStatusBadge(app.status)}
                         </td>
                         <td className="p-4 text-right">
@@ -202,7 +263,7 @@ export default function ApplicationListPage() {
                             <Button 
                               variant="outline" 
                               onClick={() => navigate(`/employer/applications/${app.id}`)}
-                              className="px-3 py-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 text-xs rounded-md flex items-center gap-1"
+                              className="px-3 py-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 text-xs rounded-md flex items-center gap-1 whitespace-nowrap"
                             >
                               <Eye className="w-3.5 h-3.5" /> Chi tiết
                             </Button>
@@ -226,7 +287,18 @@ export default function ApplicationListPage() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      {isExpanded && aiResult?.match && (
+                        <tr className="bg-indigo-50/40">
+                          <td colSpan="5" className="px-6 pb-5 pt-1">
+                            <div className="max-w-xl bg-white rounded-xl border border-indigo-100 p-4">
+                              <MatchScoreCard match={aiResult.match} compact />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

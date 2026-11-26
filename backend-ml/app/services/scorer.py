@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 
 from app.config import Settings
-from app.schemas import CvJdScoreRequest, CvJdScoreResponse, ScoreBreakdown
+from app.schemas import CvInput, CvJdScoreRequest, CvJdScoreResponse, JdInput, ScoreBreakdown
 from app.services.embedder import Embedder
 from app.services.skills import SkillDictionary, find_skills
 from app.services.text_utils import clean_text, normalize_skill
@@ -50,31 +50,41 @@ class CvJdScorer:
     def model_version(self) -> str:
         return self._embedder.name
 
-    def _semantic_score(self, cv_text: str, jd_text: str) -> float:
-        raw = self._embedder.similarity(cv_text, jd_text)
+    def _calibrate(self, raw: float) -> float:
         low, high = self._settings.semantic_sim_low, self._settings.semantic_sim_high
         return _clamp01((raw - low) / (high - low)) if high > low else _clamp01(raw)
 
     def score(self, request: CvJdScoreRequest) -> CvJdScoreResponse:
-        cv_text, jd_text = clean_text(request.cv.text), clean_text(request.jd.text)
+        return self.score_batch(request.jd, [request.cv])[0]
 
-        # 1. Ngữ nghĩa
-        semantic = self._semantic_score(cv_text, jd_text)
+    def score_batch(self, jd: JdInput, cvs: list[CvInput]) -> list[CvJdScoreResponse]:
+        """Chấm nhiều CV cho cùng một JD: JD chỉ được embed và phân tích một lần."""
+        jd_text = clean_text(jd.text)
+        cv_texts = [clean_text(cv.text) for cv in cvs]
 
+        semantics = [self._calibrate(raw) for raw in self._embedder.similarities(jd_text, cv_texts)]
+        dictionary = self._skills.build(extra=[*jd.required_skills, *(s for cv in cvs for s in cv.skills)])
+        jd_skills = jd.required_skills or find_skills(jd_text, dictionary)
+        required_years = jd.min_years_of_experience
+        if required_years is None:
+            required_years = extract_required_years(jd_text)
+
+        return [
+            self._score_one(cv, cv_text, semantic, jd_skills, required_years, dictionary)
+            for cv, cv_text, semantic in zip(cvs, cv_texts, semantics)
+        ]
+
+    def _score_one(self, cv: CvInput, cv_text: str, semantic: float, jd_skills: list[str],
+                   required_years: float | None, dictionary: dict[str, str]) -> CvJdScoreResponse:
         # 2. Kỹ năng
-        dictionary = self._skills.build(extra=[*request.jd.required_skills, *request.cv.skills])
-        jd_skills = request.jd.required_skills or find_skills(jd_text, dictionary)
-        cv_skill_keys = {normalize_skill(s) for s in request.cv.skills}
+        cv_skill_keys = {normalize_skill(s) for s in cv.skills}
         cv_skill_keys |= {normalize_skill(s) for s in find_skills(cv_text, dictionary)}
         matched = [s for s in jd_skills if normalize_skill(s) in cv_skill_keys]
         missing = [s for s in jd_skills if normalize_skill(s) not in cv_skill_keys]
         skills = len(matched) / len(jd_skills) if jd_skills else None
 
         # 3. Kinh nghiệm
-        required_years = request.jd.min_years_of_experience
-        if required_years is None:
-            required_years = extract_required_years(jd_text)
-        cv_years = request.cv.years_of_experience or 0.0
+        cv_years = cv.years_of_experience or 0.0
         experience = None if not required_years else _clamp01(cv_years / required_years)
 
         # Ghép điểm, bỏ qua thành phần không có dữ liệu

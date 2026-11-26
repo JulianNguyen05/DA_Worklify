@@ -3,9 +3,11 @@ package com.worklify.api.common.exception;
 import com.worklify.api.common.response.ApiResponse;
 import com.worklify.application.common.exception.AiServiceException;
 import com.worklify.application.common.exception.CvPdfImportException;
+import com.worklify.application.common.exception.ForbiddenOperationException;
 import com.worklify.application.common.exception.ReferenceValueSuggestionPendingException;
 import com.worklify.application.common.exception.ResourceNotFoundException; // Nhớ import file này nhé!
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -106,5 +108,24 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE) // HTTP 503
     public ApiResponse<Void> handleAiServiceException(AiServiceException ex) {
         return ApiResponse.error(503, ex.getMessage());
+    }
+
+    /**
+     * 7. Đã đăng nhập nhưng không có quyền trên tài nguyên (vd xem ứng viên của công ty khác).
+     */
+    @ExceptionHandler(ForbiddenOperationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN) // HTTP 403
+    public ApiResponse<Void> handleForbiddenOperationException(ForbiddenOperationException ex) {
+        return ApiResponse.error(403, ex.getMessage());
+    }
+
+    /**
+     * 8. @PreAuthorize từ chối (sai vai trò). Nếu không bắt riêng, lỗi này rơi vào handler Exception chung
+     * ở trên và bị trả nhầm thành HTTP 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN) // HTTP 403
+    public ApiResponse<Void> handleAccessDeniedException(AccessDeniedException ex) {
+        return ApiResponse.error(403, "Bạn không có quyền thực hiện thao tác này.");
     }
 }

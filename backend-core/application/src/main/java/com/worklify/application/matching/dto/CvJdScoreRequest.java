@@ -1,5 +1,6 @@
 package com.worklify.application.matching.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,11 +11,13 @@ import java.util.List;
 /**
  * Payload gửi sang backend-ml POST /scoring/cv-jd.
  * Tên field khớp JSON camelCase phía FastAPI (app/schemas.py).
+ * Bỏ các field null khi serialize: backend-ml (Pydantic) không nhận null cho field kiểu danh sách.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CvJdScoreRequest {
 
     private Cv cv;
@@ -24,6 +27,7 @@ public class CvJdScoreRequest {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Cv {
         private String text;
         private List<String> skills;
@@ -34,6 +38,7 @@ public class CvJdScoreRequest {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Jd {
         private String text;
         /** Để trống thì backend-ml tự trích xuất kỹ năng từ text của JD. */

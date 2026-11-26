@@ -13,6 +13,7 @@ Frontend ──► backend-core (Spring, :8080) ──HTTP──► backend-ml (
 |---|---|---|
 | GET | `/health` | Trạng thái và model đang dùng |
 | POST | `/scoring/cv-jd` | Chấm điểm mức độ phù hợp CV–JD (cần API key) |
+| POST | `/scoring/cv-jd/batch` | Chấm nhiều CV với cùng một JD, JD chỉ embed một lần (cần API key) |
 | POST | `/parser/extract` | Phân tích file CV, **chưa triển khai** (trả 501) |
 
 Tài liệu tương tác: http://localhost:8000/docs

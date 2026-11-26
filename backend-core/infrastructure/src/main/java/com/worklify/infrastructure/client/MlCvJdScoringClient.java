@@ -1,6 +1,8 @@
 package com.worklify.infrastructure.client;
 
 import com.worklify.application.common.exception.AiServiceException;
+import com.worklify.application.matching.dto.CvJdBatchRequest;
+import com.worklify.application.matching.dto.CvJdBatchResponse;
 import com.worklify.application.matching.dto.CvJdScoreRequest;
 import com.worklify.application.matching.dto.CvJdScoreResponse;
 import com.worklify.application.matching.port.CvJdScoringPort;
@@ -16,6 +18,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Gọi sang backend-ml POST /scoring/cv-jd, xác thực bằng header X-Internal-Api-Key
@@ -34,21 +37,34 @@ public class MlCvJdScoringClient implements CvJdScoringPort {
     private String internalApiKey;
 
     public MlCvJdScoringClient(RestTemplateBuilder builder) {
+        // Read timeout dài vì chấm hàng loạt (xếp hạng cả trăm ứng viên) trên CPU có thể mất cả phút.
         this.restTemplate = builder
                 .setConnectTimeout(Duration.ofSeconds(5))
-                .setReadTimeout(Duration.ofSeconds(60))
+                .setReadTimeout(Duration.ofSeconds(180))
                 .build();
     }
 
     @Override
     public CvJdScoreResponse score(CvJdScoreRequest request) {
+        return post("/scoring/cv-jd", request, CvJdScoreResponse.class);
+    }
+
+    @Override
+    public List<CvJdScoreResponse> scoreBatch(CvJdBatchRequest request) {
+        CvJdBatchResponse response = post("/scoring/cv-jd/batch", request, CvJdBatchResponse.class);
+        if (response.getResults() == null || response.getResults().size() != request.getCvs().size()) {
+            throw new AiServiceException("Dịch vụ AI trả về kết quả chấm điểm không đầy đủ.");
+        }
+        return response.getResults();
+    }
+
+    private <T> T post(String path, Object body, Class<T> responseType) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Internal-Api-Key", internalApiKey);
 
         try {
-            CvJdScoreResponse response = restTemplate.postForObject(
-                    mlBaseUrl + "/scoring/cv-jd", new HttpEntity<>(request, headers), CvJdScoreResponse.class);
+            T response = restTemplate.postForObject(mlBaseUrl + path, new HttpEntity<>(body, headers), responseType);
             if (response == null) {
                 throw new AiServiceException("Không nhận được kết quả chấm điểm từ dịch vụ AI.");
             }

@@ -27,6 +27,10 @@ class Embedder(Protocol):
         """Cosine similarity trong khoảng [-1, 1]."""
         ...
 
+    def similarities(self, query: str, texts: list[str]) -> list[float]:
+        """Cosine similarity giữa query và từng text (query chỉ được xử lý một lần)."""
+        ...
+
 
 class BagOfWordsEmbedder:
     name = "bow-fallback"
@@ -39,6 +43,9 @@ class BagOfWordsEmbedder:
         norm = math.sqrt(sum(v * v for v in a.values())) * math.sqrt(sum(v * v for v in b.values()))
         return dot / norm if norm else 0.0
 
+    def similarities(self, query: str, texts: list[str]) -> list[float]:
+        return [self.similarity(query, text) for text in texts]
+
 
 class SentenceTransformerEmbedder:
     def __init__(self, model_ref: str, name: str):
@@ -47,15 +54,30 @@ class SentenceTransformerEmbedder:
         self._model = SentenceTransformer(model_ref, device="cpu")
         self.name = name
 
-    def _embed(self, text: str):
-        # Embed từng đoạn rồi lấy trung bình, để CV/JD dài không bị cắt mất phần sau.
-        vectors = self._model.encode(chunk_text(text), normalize_embeddings=True)
-        mean = vectors.mean(axis=0)
-        norm = float((mean ** 2).sum() ** 0.5)
-        return mean / norm if norm else mean
+    def _embed_many(self, texts: list[str]):
+        # Mỗi văn bản được tách thành đoạn (để CV/JD dài không bị cắt mất phần sau), tất cả các đoạn
+        # được encode chung một lượt theo lô, rồi lấy trung bình các đoạn của từng văn bản.
+        import numpy as np
+
+        chunks, owner = [], []
+        for i, text in enumerate(texts):
+            for chunk in chunk_text(text):
+                chunks.append(chunk)
+                owner.append(i)
+        vectors = self._model.encode(chunks, batch_size=64, normalize_embeddings=True, convert_to_numpy=True)
+        sums = np.zeros((len(texts), vectors.shape[1]), dtype=np.float32)
+        np.add.at(sums, np.array(owner), vectors)
+        return sums / np.clip(np.linalg.norm(sums, axis=1, keepdims=True), 1e-12, None)
 
     def similarity(self, text_a: str, text_b: str) -> float:
-        return float((self._embed(text_a) * self._embed(text_b)).sum())
+        a, b = self._embed_many([text_a, text_b])
+        return float(a @ b)
+
+    def similarities(self, query: str, texts: list[str]) -> list[float]:
+        if not texts:
+            return []
+        vectors = self._embed_many([query, *texts])
+        return [float(v @ vectors[0]) for v in vectors[1:]]
 
 
 def create_embedder(settings: Settings) -> Embedder:

@@ -58,6 +58,20 @@ def test_good_cv_scores_higher_than_unrelated_cv(scorer):
     assert bad_result.missing_skills == ["Java", "Spring Boot", "MySQL", "Docker", "React"]
 
 
+def test_batch_matches_single_scoring_and_keeps_order(scorer):
+    jd = JdInput(text=JD)
+    cvs = [
+        CvInput(text="Nhân viên kế toán, thành thạo Excel", years_of_experience=1),
+        CvInput(text="Backend 3 năm Java, Spring Boot, MySQL, Docker", years_of_experience=3),
+        CvInput(text="Frontend ReactJS 1 năm", skills=["React"], years_of_experience=1),
+    ]
+    batch = scorer.score_batch(jd, cvs)
+    single = [scorer.score(CvJdScoreRequest(cv=cv, jd=jd)) for cv in cvs]
+
+    assert [r.score for r in batch] == [r.score for r in single]
+    assert batch[1].score > batch[2].score > batch[0].score
+
+
 def test_missing_years_requirement_is_skipped(scorer):
     result = scorer.score(CvJdScoreRequest(cv=CvInput(text="Java"), jd=JdInput(text="Cần lập trình viên Java")))
     assert result.breakdown.experience is None
@@ -78,3 +92,18 @@ def test_api_uses_camel_case(monkeypatch):
         body = resp.json()
         assert {"score", "breakdown", "matchedSkills", "missingSkills", "explanation", "modelVersion"} <= body.keys()
         assert client.post("/parser/extract").status_code == 501
+
+        # Client Java gửi null cho các trường danh sách không có dữ liệu
+        with_nulls = client.post("/scoring/cv-jd", json={
+            "cv": {"text": "Java", "skills": None, "yearsOfExperience": None},
+            "jd": {"text": JD, "requiredSkills": None, "minYearsOfExperience": None},
+        })
+        assert with_nulls.status_code == 200, with_nulls.text
+
+        batch = client.post("/scoring/cv-jd/batch", json={
+            "jd": {"text": JD},
+            "cvs": [{"text": "Java Spring Boot"}, {"text": "Kế toán Excel"}],
+        })
+        assert batch.status_code == 200
+        assert len(batch.json()["results"]) == 2
+        assert client.post("/scoring/cv-jd/batch", json={"jd": {"text": JD}, "cvs": []}).status_code == 422

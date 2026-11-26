@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   MapPin, DollarSign, Briefcase, Clock, Calendar, 
-  Building2, Send, Heart, CheckCircle2, AlertCircle, Loader2
+  Building2, Send, Heart, CheckCircle2, AlertCircle, Loader2, Sparkles, RefreshCw
 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
@@ -10,9 +10,11 @@ import jobService from '../../../features/job/jobService';
 import authService from '../../../features/auth/authService';
 import applicationService from '../../../features/application/applicationService';
 import candidateService from '../../../features/candidate/candidateService';
+import matchingService, { getMatchingErrorMessage } from '../../../features/matching/matchingService';
 import Button from '../../../components/common/Button';
 import Modal from '../../../components/common/Modal';
 import Toast from '../../../components/common/Toast';
+import { MatchScoreCard } from '../../../components/shared/MatchScore';
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -29,6 +31,30 @@ export default function JobDetailPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [statusMsg, setStatusMsg] = useState({ type: null, message: '' });
   const [isSaved, setIsSaved] = useState(false); // State cho nút Lưu tin
+
+  // State AI matching: điểm phù hợp giữa hồ sơ ứng viên và tin này
+  const currentUser = authService.getCurrentUser();
+  const [match, setMatch] = useState(null);
+  const [isMatching, setIsMatching] = useState(false);
+  const [matchError, setMatchError] = useState('');
+
+  useEffect(() => {
+    setMatch(null);
+    setMatchError('');
+  }, [id]);
+
+  const handleCheckMatch = async () => {
+    setIsMatching(true);
+    setMatchError('');
+    try {
+      const res = await matchingService.getMyMatchForJob(id);
+      setMatch(res.data);
+    } catch (error) {
+      setMatchError(getMatchingErrorMessage(error));
+    } finally {
+      setIsMatching(false);
+    }
+  };
 
   useEffect(() => {
     fetchJobDetail();
@@ -249,6 +275,65 @@ export default function JobDetailPage() {
 
         {/* CỘT PHẢI: Tóm tắt & Thông tin chung */}
         <div className="w-full lg:w-1/3 space-y-6">
+          {/* AI MATCHING: chỉ hiện cho khách và ứng viên (nhà tuyển dụng/admin không có hồ sơ ứng viên) */}
+          {(!currentUser || currentUser.role === 'CANDIDATE') && (
+            <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-600" /> Mức độ phù hợp với bạn
+                </h3>
+                {match && (
+                  <button
+                    type="button"
+                    onClick={handleCheckMatch}
+                    disabled={isMatching}
+                    title="Chấm lại sau khi cập nhật hồ sơ"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isMatching ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+              </div>
+
+              {match ? (
+                <MatchScoreCard match={match} />
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500 mb-4">
+                    AI so sánh hồ sơ online của bạn với yêu cầu của công việc này và chỉ ra kỹ năng còn thiếu.
+                  </p>
+                  {matchError && (
+                    <div className="mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-lg p-3 flex gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>
+                        {matchError}{' '}
+                        {matchError.includes('hồ sơ') && (
+                          <button type="button" className="font-semibold underline" onClick={() => navigate('/candidate/profile')}>
+                            Cập nhật hồ sơ
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {currentUser ? (
+                    <Button
+                      onClick={handleCheckMatch}
+                      isLoading={isMatching}
+                      className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl"
+                    >
+                      {!isMatching && <Sparkles className="w-4 h-4" />}
+                      {isMatching ? 'AI đang chấm điểm...' : 'Xem mức độ phù hợp'}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => navigate('/auth/login')} className="w-full h-11 rounded-xl">
+                      Đăng nhập tài khoản ứng viên để xem
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Tổng quan công việc</h3>
             
