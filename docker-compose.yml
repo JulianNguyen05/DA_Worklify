@@ -90,6 +90,23 @@ services:
       start_period: 60s
 
   # ============================================================
+  # 4a. OLLAMA (LLM cho agent gợi ý sửa CV)
+  #     Lần đầu: docker compose exec ollama ollama pull qwen2.5:3b
+  # ============================================================
+  ollama:
+    image: ollama/ollama:0.40.18
+    container_name: worklify-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - worklify-network
+
+  # ============================================================
   # 4. PYTHON BACKEND (FastAPI ML)
   # ============================================================
   backend-ml:
@@ -103,10 +120,14 @@ services:
     environment:
       CORE_BASE_URL: http://backend-core:8080
       INTERNAL_API_KEY: local-dev-only-change-me
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: qwen2.5:3b
     volumes:
       - ./backend-ml/app:/app/app
       - ./backend-ml/models:/app/models
       - ml_model_cache:/app/.cache   # giữ model đã tải từ Hugging Face giữa các lần chạy
+    depends_on:
+      - ollama
     networks:
       - worklify-network
     healthcheck:
@@ -198,3 +219,5 @@ volumes:
     driver: local
   ml_model_cache:
     driver: local
+  ollama_models:
+    name: worklify-ollama-models

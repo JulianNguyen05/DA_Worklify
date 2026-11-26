@@ -15,6 +15,7 @@ import Button from '../../../components/common/Button';
 import Modal from '../../../components/common/Modal';
 import Toast from '../../../components/common/Toast';
 import { MatchScoreCard } from '../../../components/shared/MatchScore';
+import CvAdvicePanel from '../../../components/shared/CvAdvicePanel';
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -38,10 +39,24 @@ export default function JobDetailPage() {
   const [isMatching, setIsMatching] = useState(false);
   const [matchError, setMatchError] = useState('');
 
+  // Trợ lý AI gợi ý sửa hồ sơ (modal)
+  const [isAdviceOpen, setIsAdviceOpen] = useState(false);
+  const [hasAppliedAdvice, setHasAppliedAdvice] = useState(false);
+
   useEffect(() => {
     setMatch(null);
     setMatchError('');
+    setIsAdviceOpen(false);
   }, [id]);
+
+  const handleCloseAdvice = () => {
+    setIsAdviceOpen(false);
+    // Hồ sơ đã đổi -> chấm lại để điểm trên trang khớp với hồ sơ mới
+    if (hasAppliedAdvice) {
+      setHasAppliedAdvice(false);
+      handleCheckMatch();
+    }
+  };
 
   const handleCheckMatch = async () => {
     setIsMatching(true);
@@ -296,7 +311,16 @@ export default function JobDetailPage() {
               </div>
 
               {match ? (
-                <MatchScoreCard match={match} />
+                <>
+                  <MatchScoreCard match={match} />
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAdviceOpen(true)}
+                    className="w-full mt-4 h-11 rounded-xl text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                  >
+                    <Sparkles className="w-4 h-4" /> Nhờ AI gợi ý sửa hồ sơ
+                  </Button>
+                </>
               ) : (
                 <>
                   <p className="text-sm text-gray-500 mb-4">
@@ -384,6 +408,13 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ================= MODAL TRỢ LÝ AI SỬA HỒ SƠ ================= */}
+      <Modal isOpen={isAdviceOpen} onClose={handleCloseAdvice} title="Trợ lý AI: gợi ý sửa hồ sơ cho công việc này">
+        <div className="w-[min(900px,92vw)]">
+          {isAdviceOpen && <CvAdvicePanel jobId={id} onApplied={() => setHasAppliedAdvice(true)} />}
+        </div>
+      </Modal>
 
       {/* ================= MODAL ỨNG TUYỂN ================= */}
       <Modal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} title="Ứng tuyển công việc này">

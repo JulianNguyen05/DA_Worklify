@@ -45,5 +45,11 @@ class Settings:
     # Bắt buộc header X-Internal-Api-Key cho các endpoint chấm điểm (chỉ backend-core được gọi).
     require_api_key: bool = _env_bool("REQUIRE_API_KEY", True)
 
+    # LLM chạy bằng Ollama, dùng cho agent gợi ý sửa CV (/agent/cv-advice).
+    ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    ollama_model: str = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
+    # Chạy bằng CPU nên một lượt sinh có thể mất 1-2 phút.
+    ollama_timeout_seconds: float = _env_float("OLLAMA_TIMEOUT_SECONDS", 240)
+
 
 settings = Settings()

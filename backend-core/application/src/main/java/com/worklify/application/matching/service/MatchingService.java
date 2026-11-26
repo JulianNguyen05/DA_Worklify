@@ -1,6 +1,8 @@
 package com.worklify.application.matching.service;
 
 import com.worklify.application.matching.dto.ApplicationMatchResponse;
+import com.worklify.application.matching.dto.ApplyCvSuggestionRequest;
+import com.worklify.application.matching.dto.CvAdviceResponse;
 import com.worklify.application.matching.dto.CvJdScoreResponse;
 
 import java.util.List;
@@ -21,4 +23,15 @@ public interface MatchingService {
      * @param employerEmail email của nhà tuyển dụng lấy từ JWT
      */
     List<ApplicationMatchResponse> rankApplicationsForJob(String employerEmail, Long jobId);
+
+    /**
+     * Agent gợi ý viết lại phần giới thiệu / kinh nghiệm / dự án trong hồ sơ online của ứng viên
+     * cho sát với một tin tuyển dụng (backend-ml + LLM chạy bằng Ollama).
+     */
+    CvAdviceResponse adviseCandidateForJob(String candidateEmail, Long jobId);
+
+    /**
+     * Ghi nội dung của một gợi ý vào hồ sơ của chính ứng viên đang đăng nhập.
+     */
+    void applySuggestion(String candidateEmail, ApplyCvSuggestionRequest request);
 }

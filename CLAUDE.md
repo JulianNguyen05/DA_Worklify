@@ -7,9 +7,9 @@ Worklify: nền tảng tuyển dụng việc làm với 3 vai trò `CANDIDATE`, 
 
 - `backend-core/`: Java 21 + Spring Boot, Maven multi-module (DDD + Hexagonal).
 - `frontend-app/`: React 18 + Vite 5 + Tailwind 4 (JavaScript/JSX, không dùng TypeScript).
-- `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
+- `backend-ml/`: Python 3.11 + FastAPI, dịch vụ AI (chấm điểm CV–JD, agent gợi ý sửa CV dùng LLM qua Ollama; `/parser/extract` chưa triển khai). Chỉ backend-core gọi vào, xác thực bằng header `X-Internal-Api-Key`; không kết nối thẳng DB. Xem `backend-ml/README.md`.
 - `docker-compose.yml` (gốc): stack đầy đủ, còn tham chiếu `backend-pdf/` (Node/Puppeteer) **không có trong repo**, nên `docker-compose up` ở gốc sẽ lỗi build.
-- `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089) và `include` `backend-ml/docker-compose.yml` (backend-ml 8000). Đây là file dùng khi chạy backend trên IDE. backend-ml chỉ được định nghĩa ở `backend-ml/docker-compose.yml`, sửa ở đó.
+- `backend-core/docker-compose.yml`: hạ tầng cho dev (MySQL 3307, phpMyAdmin 8089) và `include` `backend-ml/docker-compose.yml` (backend-ml 8000, Ollama 11434 — lần đầu phải `docker compose exec ollama ollama pull qwen2.5:3b`). Đây là file dùng khi chạy backend trên IDE. backend-ml chỉ được định nghĩa ở `backend-ml/docker-compose.yml`, sửa ở đó.
 - `worklify_db.sql`, `backend-core/init.sql`: schema + dữ liệu mẫu.
 - `gom_code.py`: script gom code để debug, không thuộc ứng dụng.
 
@@ -62,7 +62,9 @@ Quy ước controller:
 
 Phân quyền theo chủ sở hữu: phần lớn controller cũ nhận `userId`/`companyId` trên URL mà không đối chiếu với người đăng nhập. Code mới nên lấy người dùng từ `Principal` (`principal.getName()` = email) như `MatchingController`, và ném `ForbiddenOperationException` (→ 403) khi không sở hữu tài nguyên. `AccessDeniedException` của `@PreAuthorize` đã được map về 403 trong `GlobalExceptionHandler`.
 
-AI matching (`/api/v1/matching`): `GET /jobs/{jobId}/me` (ứng viên tự xem điểm) và `GET /jobs/{jobId}/applications` (nhà tuyển dụng xếp hạng hồ sơ). `MatchingServiceImpl` cố ý không có `@Transactional` (xem comment trong class).
+AI matching (`/api/v1/matching`): `GET /jobs/{jobId}/me` (ứng viên tự xem điểm), `GET /jobs/{jobId}/applications` (nhà tuyển dụng xếp hạng hồ sơ), `POST /jobs/{jobId}/me/advice` (agent gợi ý sửa hồ sơ, gọi backend-ml `/agent/cv-advice` → Ollama, mất 25–60 giây) và `POST /me/suggestions/apply` (ghi một gợi ý vào hồ sơ). `MatchingServiceImpl` cố ý không có `@Transactional` (xem comment trong class).
+
+Validation: dự án **chưa có `hibernate-validator`** nên `@Valid`/`@NotBlank` hiện không có tác dụng — kiểm tra đầu vào quan trọng phải viết trong service.
 
 Endpoint public (không cần JWT) được khai báo trong `SecurityConfig`: auth, swagger, `/uploads/**`, `GET /api/v1/jobs/**`, `GET /api/v1/employers/**`, `/api/internal/**` (tự bảo vệ bằng API key).
 
@@ -74,7 +76,7 @@ Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`dd
 - `src/services/axiosClient.js`: axios instance, tự gắn `Bearer` token lấy từ `localStorage.user.accessToken`. baseURL đã gồm `/api/v1`, nên service chỉ gọi đường dẫn như `/jobs/search`.
 - `src/features/<domain>/<domain>Service.js`: object gom các hàm gọi API, trả về `response.data`.
 - `src/pages/<role>/<PageName>/index.jsx`: trang theo vai trò (`public`, `auth`, `candidate`, `employer`, `admin`); `src/router/index.jsx`: định tuyến.
-- AI matching: `features/matching/matchingService.js` và `components/shared/MatchScore` (`MatchScoreBadge`, `MatchScoreCard`), dùng ở `pages/public/JobDetailPage` và `pages/employer/ApplicationListPage`.
+- AI matching: `features/matching/matchingService.js`, `components/shared/MatchScore` (`MatchScoreBadge`, `MatchScoreCard`) và `components/shared/CvAdvicePanel` (trợ lý sửa hồ sơ, mở trong modal), dùng ở `pages/public/JobDetailPage` và `pages/employer/ApplicationListPage`.
 - `src/components/common/*`: UI dùng chung (Button, Input, Modal, Table…); `components/layout/*`: layout theo vai trò; `components/cv-builder/*`: trình tạo CV (dnd-kit, react-grid-layout, TipTap).
 - Form: react-hook-form + zod. State: Redux Toolkit. Thông báo: react-hot-toast. Icon: lucide-react.
 - `pages/candidate/CvPrintPage` được backend (Playwright) mở để xuất PDF, nên thay đổi trang này ảnh hưởng tới file CV export.
@@ -82,6 +84,7 @@ Cấu hình: `application.yml` (`ddl-auto: none`) và `application-dev.yml` (`dd
 ## Lưu ý / bẫy đã biết
 
 - Biến môi trường frontend không khớp nhau: `.env.development` đặt `VITE_API_URL`, nhưng `axiosClient` đọc `VITE_API_BASE_URL` (nên đang dùng giá trị fallback `http://localhost:8080/api/v1`). `docker-compose.yml` ở gốc lại đặt `VITE_API_BASE_URL` thiếu `/api/v1`.
+- DTO request có `private boolean isCurrent` + Lombok `@Data` (Experience/Education/Project/Activity): Jackson đặt tên property là `current`, nhưng frontend gửi `isCurrent` → giá trị này hiện **không được lưu**. Sửa bằng `@JsonProperty("isCurrent")` khi đụng tới.
 - Giới hạn upload là 10MB, phải đặt ở cả `spring.servlet.multipart` lẫn `server.tomcat.max-http-form-post-size`, nếu không Tomcat sẽ reset kết nối.
 - Mật khẩu DB và JWT secret đang ghi thẳng trong file cấu hình (chấp nhận được cho môi trường đồ án, đừng đưa thêm secret thật vào repo).
 - Comment và message trong code chủ yếu viết bằng tiếng Việt; giữ nguyên phong cách đó.

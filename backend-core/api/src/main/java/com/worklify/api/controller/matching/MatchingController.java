@@ -2,14 +2,19 @@ package com.worklify.api.controller.matching;
 
 import com.worklify.api.common.response.ApiResponse;
 import com.worklify.application.matching.dto.ApplicationMatchResponse;
+import com.worklify.application.matching.dto.ApplyCvSuggestionRequest;
+import com.worklify.application.matching.dto.CvAdviceResponse;
 import com.worklify.application.matching.dto.CvJdScoreResponse;
 import com.worklify.application.matching.service.MatchingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,5 +47,23 @@ public class MatchingController {
     public ApiResponse<List<ApplicationMatchResponse>> rankApplicationsForJob(
             @PathVariable("jobId") Long jobId, Principal principal) {
         return ApiResponse.success(matchingService.rankApplicationsForJob(principal.getName(), jobId));
+    }
+
+    // POST vì mỗi lần gọi là một lượt chạy LLM tốn 1-2 phút, không phải đọc dữ liệu có sẵn.
+    @PostMapping("/jobs/{jobId}/me/advice")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Agent AI gợi ý viết lại hồ sơ của ứng viên cho sát tin tuyển dụng (có thể mất 1-2 phút)")
+    public ApiResponse<CvAdviceResponse> adviseMyProfileForJob(
+            @PathVariable("jobId") Long jobId, Principal principal) {
+        return ApiResponse.success(matchingService.adviseCandidateForJob(principal.getName(), jobId));
+    }
+
+    @PostMapping("/me/suggestions/apply")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Ứng viên áp dụng một gợi ý của agent vào hồ sơ của mình")
+    public ApiResponse<Void> applySuggestion(
+            @Valid @RequestBody ApplyCvSuggestionRequest request, Principal principal) {
+        matchingService.applySuggestion(principal.getName(), request);
+        return ApiResponse.success(null, "Đã cập nhật hồ sơ theo gợi ý");
     }
 }

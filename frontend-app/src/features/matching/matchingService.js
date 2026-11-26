@@ -14,6 +14,18 @@ const matchingService = {
     const response = await axiosClient.get(`/matching/jobs/${jobId}/applications`);
     return response.data;
   },
+
+  // Ứng viên: agent AI gợi ý viết lại hồ sơ cho sát tin tuyển dụng (LLM chạy bằng CPU, có thể mất 1-2 phút)
+  getAdviceForJob: async (jobId) => {
+    const response = await axiosClient.post(`/matching/jobs/${jobId}/me/advice`);
+    return response.data;
+  },
+
+  // Ứng viên: áp dụng một gợi ý vào hồ sơ online ({ sectionType, sectionId, text })
+  applySuggestion: async (suggestion) => {
+    const response = await axiosClient.post('/matching/me/suggestions/apply', suggestion);
+    return response.data;
+  },
 };
 
 // Lấy thông báo lỗi tiếng Việt từ ApiResponse của backend (503 khi dịch vụ AI tắt, 403 khi không có quyền...)

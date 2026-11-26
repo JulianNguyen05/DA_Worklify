@@ -50,6 +50,10 @@ class CvJdScorer:
     def model_version(self) -> str:
         return self._embedder.name
 
+    def skill_map(self, extra: list[str] = ()) -> dict[str, str]:
+        """Danh mục kỹ năng (khoá chuẩn hoá -> tên hiển thị), dùng chung với agent gợi ý sửa CV."""
+        return self._skills.build(extra=extra)
+
     def _calibrate(self, raw: float) -> float:
         low, high = self._settings.semantic_sim_low, self._settings.semantic_sim_high
         return _clamp01((raw - low) / (high - low)) if high > low else _clamp01(raw)
