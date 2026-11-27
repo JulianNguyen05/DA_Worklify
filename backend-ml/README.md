@@ -43,22 +43,13 @@ Code: `app/services/cv_advisor.py`. Quy trình:
    phản hồi cụ thể, tối đa 1 lần.
 4. **Kiểm chứng**: chấm lại hồ sơ với từng gợi ý, loại gợi ý làm điểm giảm; tính điểm dự kiến.
 
-**LLM**: có `GEMINI_API_KEY` thì dùng Gemini API (mặc định `gemini-3.5-flash-lite`, trả lời vài giây, viết tốt
-hơn hẳn model nhỏ); Gemini lỗi / hết lượt miễn phí / mất mạng thì tự chuyển sang Ollama (`qwen2.5:3b`) cho lượt đó.
-Không có key thì chỉ dùng Ollama. Code: `app/services/llm.py`. Lưu ý khi dùng Gemini, nội dung hồ sơ ứng viên
-được gửi sang dịch vụ của Google.
-
-```
-# backend-ml/.env (không commit)
-GEMINI_API_KEY=...            # tạo tại https://aistudio.google.com/apikey
-GEMINI_MODEL=gemini-3.5-flash-lite
-```
+**LLM**: chạy trên máy bằng Ollama (mặc định `qwen2.5:3b`), dữ liệu hồ sơ không rời khỏi máy. Code: `app/services/llm.py`.
 
 Hạn chế: bộ lọc chỉ bắt được *kỹ năng* bịa, không bắt được *chi tiết* bịa (vd tự gán bối cảnh "hệ thống thanh toán"
-lấy từ JD), nên giao diện yêu cầu ứng viên đọc kỹ trước khi áp dụng. Model 3B mắc lỗi này thường xuyên; dùng Gemini
-để có chất lượng tốt.
+lấy từ JD), nên giao diện yêu cầu ứng viên đọc kỹ trước khi áp dụng. Model 3B mắc lỗi này khá thường xuyên;
+`qwen2.5:7b` (khoảng 4,7GB) tuân thủ tốt hơn nhưng chậm gấp đôi trên CPU — đổi bằng `OLLAMA_MODEL` trong `.env`.
 
-**Chuẩn bị Ollama** (dự phòng, một lần, model khoảng 1,9GB):
+**Chuẩn bị Ollama** (một lần, model khoảng 1,9GB):
 
 ```powershell
 docker compose up -d ollama
@@ -111,9 +102,6 @@ Chạy test: `pytest`
 | `REQUIRE_API_KEY` | `true` | Tắt khi muốn thử nhanh qua `/docs` |
 | `WEIGHT_SEMANTIC` / `WEIGHT_SKILLS` / `WEIGHT_EXPERIENCE` | `0.45` / `0.40` / `0.15` | Trọng số điểm |
 | `SEMANTIC_SIM_LOW` / `SEMANTIC_SIM_HIGH` | `0.15` / `0.75` | Ngưỡng kéo giãn cosine similarity |
-| `LLM_PROVIDER` | `gemini` nếu có key, không thì `ollama` | Chọn LLM cho agent |
-| `GEMINI_API_KEY` | (trống) | Key Gemini API |
-| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Model Gemini |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` (compose: `http://ollama:11434`) | Địa chỉ Ollama |
 | `OLLAMA_MODEL` | `qwen2.5:3b` | Model LLM cho agent gợi ý sửa CV |
 | `OLLAMA_TIMEOUT_SECONDS` | `240` | Thời gian chờ tối đa một lượt sinh |
@@ -134,7 +122,7 @@ app/
 ├── routers/           # scoring.py, agent.py, parser.py
 └── services/
     ├── cv_advisor.py  # agent gợi ý sửa CV
-    ├── llm.py         # client Gemini / Ollama và cơ chế dự phòng
+    ├── llm.py         # client Ollama
     ├── embedder.py    # model embedding (sentence-transformers / bag-of-words)
     ├── skills.py      # danh mục và trích xuất kỹ năng
     ├── scorer.py      # ghép điểm và sinh giải thích

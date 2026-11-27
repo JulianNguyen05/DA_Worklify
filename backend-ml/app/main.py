@@ -7,7 +7,7 @@ from app.config import settings
 from app.routers import agent, parser, scoring
 from app.services.cv_advisor import CvAdvisor
 from app.services.embedder import create_embedder
-from app.services.llm import create_llm_client
+from app.services.llm import OllamaClient
 from app.services.scorer import CvJdScorer
 from app.services.skills import SkillDictionary
 
@@ -20,8 +20,8 @@ async def lifespan(app: FastAPI):
     embedder = create_embedder(settings)
     scorer = CvJdScorer(embedder, SkillDictionary(settings), settings)
     app.state.scorer = scorer
-    # LLM không được gọi lúc khởi động: service vẫn chấm điểm được khi Gemini/Ollama chưa sẵn sàng.
-    app.state.cv_advisor = CvAdvisor(scorer, create_llm_client(settings))
+    # Ollama không được gọi lúc khởi động: service vẫn chấm điểm được khi Ollama chưa chạy.
+    app.state.cv_advisor = CvAdvisor(scorer, OllamaClient(settings))
     yield
 
 
@@ -40,10 +40,8 @@ app.include_router(parser.router)
 @app.get("/health", tags=["Health"])
 def health() -> dict:
     scorer = getattr(app.state, "scorer", None)
-    use_gemini = settings.llm_provider == "gemini" and bool(settings.gemini_api_key)
     return {
         "status": "ok",
         "model": scorer.model_version if scorer else None,
-        "llm": f"gemini:{settings.gemini_model} (dự phòng ollama:{settings.ollama_model})" if use_gemini
-        else f"ollama:{settings.ollama_model}",
+        "llm": f"ollama:{settings.ollama_model}",
     }

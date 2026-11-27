@@ -45,16 +45,7 @@ class Settings:
     # Bắt buộc header X-Internal-Api-Key cho các endpoint chấm điểm (chỉ backend-core được gọi).
     require_api_key: bool = _env_bool("REQUIRE_API_KEY", True)
 
-    # LLM cho agent gợi ý sửa CV (/agent/cv-advice):
-    #   "gemini" - Gemini API, tự chuyển sang Ollama khi Gemini lỗi / hết lượt (mặc định nếu có GEMINI_API_KEY)
-    #   "ollama" - chỉ dùng Ollama chạy trên máy
-    # `or`: docker-compose truyền chuỗi rỗng khi biến không được đặt, coi như chưa đặt
-    llm_provider: str = os.getenv("LLM_PROVIDER") or ("gemini" if os.getenv("GEMINI_API_KEY") else "ollama")
-    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model: str = os.getenv("GEMINI_MODEL") or "gemini-3.5-flash-lite"
-    gemini_base_url: str = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
-    gemini_timeout_seconds: float = _env_float("GEMINI_TIMEOUT_SECONDS", 60)
-
+    # LLM chạy bằng Ollama, dùng cho agent gợi ý sửa CV (/agent/cv-advice).
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     ollama_model: str = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
     # Chạy bằng CPU nên một lượt sinh có thể mất 1-2 phút.

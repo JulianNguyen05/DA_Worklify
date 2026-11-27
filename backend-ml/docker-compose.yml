@@ -5,8 +5,7 @@
 # Có thể ghi đè các biến bên dưới bằng file .env cạnh file này (không commit), ví dụ:
 #   SEMANTIC_SIM_LOW=0.42
 #   SEMANTIC_SIM_HIGH=0.73
-#   GEMINI_API_KEY=...        # lấy tại https://aistudio.google.com/apikey
-#   GEMINI_MODEL=gemini-3.5-flash-lite
+#   OLLAMA_MODEL=qwen2.5:7b    # nhớ ollama pull model đó trước
 #
 # Lần đầu dùng agent gợi ý sửa CV, tải model LLM vào Ollama (khoảng 1,9GB, chỉ cần một lần):
 #   docker compose exec ollama ollama pull qwen2.5:3b
@@ -30,10 +29,7 @@ services:
       # Ngưỡng kéo giãn cosine similarity — lấy từ mục 5 của notebook sau khi fine-tune
       SEMANTIC_SIM_LOW: ${SEMANTIC_SIM_LOW:-0.15}
       SEMANTIC_SIM_HIGH: ${SEMANTIC_SIM_HIGH:-0.75}
-      # LLM cho agent gợi ý sửa CV: có GEMINI_API_KEY thì dùng Gemini, lỗi/hết lượt thì tự chuyển sang Ollama
-      LLM_PROVIDER: ${LLM_PROVIDER:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      # LLM cho agent gợi ý sửa CV
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
     extra_hosts:
